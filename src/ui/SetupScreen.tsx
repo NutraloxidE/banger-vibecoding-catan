@@ -3,7 +3,7 @@ import { useGame } from '../game/store';
 import { MatchConfig, MapSize, Difficulty } from '../game/types';
 import { MAP_RADIUS } from '../game/board';
 import { randomSeedString, RNG } from '../game/rng';
-import { NPC_POOL } from '../game/names';
+import { NPC_POOL, pickNpcs } from '../game/names';
 import { sfx } from '../audio/sfx';
 import { useT } from './useT';
 import { LangToggle } from './LangToggle';
@@ -34,6 +34,13 @@ export function SetupScreen() {
     const colors = ['#2f8f4a', '#c06a3d', '#e3c24a', '#8fd05e', '#8d93a1', '#e0cd8f'];
     return Array.from({ length: MAP_TILES[mapSize] }, () => colors[rng.int(colors.length)]);
   }, [seed, mapSize]);
+
+  // The exact rivals this seed will produce (same RNG path as buildMatch),
+  // so the roster preview is a promise, not an illustration.
+  const roster = useMemo(() => {
+    const rng = new RNG((seed.trim() || 'x') + ':players');
+    return pickNpcs(rng, npcCount, difficulty);
+  }, [seed, npcCount, difficulty]);
 
   const start = () => {
     sfx.buildBig();
@@ -69,7 +76,7 @@ export function SetupScreen() {
             </div>
             <div className="hex-preview">
               {previewHexes.map((c, i) => (
-                <span key={i} className="hex-dot" style={{ background: c }} />
+                <span key={i} className="hex-dot" style={{ background: c, animationDelay: `${(i * 137) % 2600}ms` }} />
               ))}
             </div>
           </section>
@@ -85,13 +92,17 @@ export function SetupScreen() {
               ))}
             </div>
             <div className="npc-roster">
-              {NPC_POOL.slice(0, 4).map((n) => (
-                <div key={n.name} className="npc-mini" title={`${t(`pers.${n.personality}`)} — ${t(`tag.${n.name}`)}`}>
-                  <span className="npc-mini-emoji">{n.emoji}</span> {n.name}
-                </div>
-              ))}
-              <div className="dim tiny">{t('setup.pool', { n: NPC_POOL.length })}</div>
+              {NPC_POOL.map((n) => {
+                const joining = roster.some((r) => r.name === n.name);
+                return (
+                  <div key={n.name} className={`npc-mini ${joining ? 'joining' : ''}`}
+                    title={`${t(`pers.${n.personality}`)} — ${t(`tag.${n.name}`)}`}>
+                    <span className="npc-mini-emoji">{n.emoji}</span> {n.name}
+                  </div>
+                );
+              })}
             </div>
+            <div className="dim tiny">{t('setup.joining')}</div>
             <h3>{t('setup.difficulty')}</h3>
             <div className="seg">
               {(['chill', 'normal', 'ruthless'] as Difficulty[]).map((d) => (
@@ -142,6 +153,15 @@ export function SetupScreen() {
               <div className="warn-box">{t('setup.chaosWarn', { n: chaosCount })}</div>
             )}
           </section>
+        </div>
+
+        <div className="match-summary">
+          <span>🗺 {MAP_TILES[mapSize]} {t('setup.sumHexes')}</span>
+          <span className="sum-roster">🎭 {roster.map((r) => r.emoji).join(' ')}</span>
+          <span>🏆 {targetVp} VP</span>
+          <span>⏱ ≈{estMinutes}{t('setup.sumMin')}</span>
+          <span>🌱 {seed.trim() || '—'}</span>
+          {chaosCount > 0 && <span className="sum-chaos">🌀 ×{chaosCount}</span>}
         </div>
 
         <div className="setup-footer">

@@ -4,6 +4,29 @@ HEXTOPIA — a complete, playable, visually excessive 3D hex strategy game
 (Catan-like). Vite + React + TypeScript + react-three-fiber. Deploys to
 Vercel with zero configuration (no server, DB, env vars, or external assets).
 
+## Development workflow — `spec.md` is the Single Source of Truth
+
+Follow this order at the start of EVERY session / task:
+
+1. **Read `CLAUDE.md`** (this file) — conventions and commands.
+2. **Read `doc/PROGRESS.md`** — catch up on what was done, what is in
+   flight, and known issues.
+3. **Read `spec.md`** and check the request against it:
+   - If the request changes behavior, visuals, or rules → the spec must
+     change too. Update `spec.md` in the same commit as the code.
+   - If the request contradicts the spec, or the spec is silent on the
+     point, decide whether a spec change is needed BEFORE coding.
+   - When spec and code disagree, `spec.md` is the truth — fix the code
+     (or explicitly change the spec).
+4. **Write an implementation plan before implementing.** Confirm unclear
+   or ambiguous points with the user instead of guessing.
+5. After finishing: update `spec.md` if behavior changed, then append a
+   dated entry to `doc/PROGRESS.md`.
+
+Note: `spec.md` describes WHAT the game is (the contract); `PLAN.md` is the
+original one-shot brief kept for reference; `doc/PROGRESS.md` is the session
+log. The gameplay screen is spec-frozen — see the freeze note in `spec.md`.
+
 ## Progress & handoff — READ AND UPDATE `doc/PROGRESS.md`
 
 **At the start of a session:** read `doc/PROGRESS.md` first to catch up on

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useGame } from '../game/store';
 import { TitleScene } from '../scene/TitleScene';
 import { sfx } from '../audio/sfx';
@@ -10,9 +11,20 @@ export function TitleScreen() {
   const savedAvailable = useGame((s) => s.savedAvailable);
   const clearSave = useGame((s) => s.clearSave);
   const t = useT();
+  const [launching, setLaunching] = useState(false);
+
+  // START triggers a short flash + logo-zoom before the screen switches
+  // (spec.md §2: interaction must give sound AND motion feedback).
+  const launch = (next: () => void) => {
+    if (launching) return;
+    sfx.buildBig();
+    sfx.startMusic();
+    setLaunching(true);
+    window.setTimeout(next, 300);
+  };
 
   return (
-    <div className="screen title-screen">
+    <div className={`screen title-screen ${launching ? 'launching' : ''}`}>
       <div className="scene-bg"><TitleScene /></div>
       <div className="title-lang"><LangToggle /></div>
       <div className="title-overlay">
@@ -24,12 +36,14 @@ export function TitleScreen() {
         <div className="title-buttons">
           <button
             className="btn btn-huge btn-gold"
-            onClick={() => { sfx.click(); sfx.startMusic(); goSetup(); }}
+            onMouseEnter={() => sfx.hover()}
+            onClick={() => launch(goSetup)}
           >
             {t('title.start')}
           </button>
           {savedAvailable && (
-            <button className="btn btn-big" onClick={() => { sfx.click(); sfx.startMusic(); continueGame(); }}>
+            <button className="btn btn-big" onMouseEnter={() => sfx.hover()}
+              onClick={() => launch(continueGame)}>
               {t('title.continue')}
             </button>
           )}

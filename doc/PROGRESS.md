@@ -120,3 +120,39 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   before interpolating.
 - `i18n.ts` must NOT import the store (cycle). The `useT` hook lives in
   `ui/useT.ts` instead.
+
+---
+
+## 2026-07-22 — spec.md SSoT workflow + title/setup polish to PLAN.md spec
+
+### What changed
+- **`spec.md` created (repo root) as the Single Source of Truth**; CLAUDE.md
+  now mandates the session workflow: read CLAUDE.md → doc/PROGRESS.md →
+  spec.md, check whether the request needs a spec change, plan before
+  implementing, confirm unclear points with the user, and update
+  spec.md + PROGRESS.md when behavior changes.
+- **Gameplay screen is spec-frozen** (spec.md §4): current implementation is
+  the reference — do not touch without explicit user request + spec update.
+- Title/setup screens brought up to the original PLAN.md spec (user said they
+  had slightly degraded):
+  - Title (`TitleScene.tsx`): added rising golden particle motes (additive
+    Points) + a flapping bird flock; START/CONTINUE now play a launch
+    transition (build sfx + white flash + logo zoom, ~300 ms) and hover sfx
+    (`TitleScreen.tsx`).
+  - Setup (`SetupScreen.tsx`): deterministic rival preview — the exact NPCs
+    the seed will produce are highlighted gold in the full pool (same RNG
+    path as buildMatch); live match summary bar (hexes / rival emojis / VP /
+    est. minutes / seed / chaos count); pulsing hex preview with per-dot
+    delay; fixed JA button text wrapping (seg-btn nowrap + stacked hex
+    count for EN).
+
+### Verified
+- `npm run build` passes; Playwright screenshots (EN title with motes+bird,
+  EN/JA setup with roster highlight + summary bar) show no errors. Gameplay
+  screen untouched.
+
+### Gotchas
+- Title-only ambience lives in `TitleScene.tsx` (Motes/Birds) — do NOT add it
+  to shared `Ambient.tsx`, which the frozen gameplay screen uses.
+- Rival preview must keep using `new RNG(seed + ':players')` + `pickNpcs` so
+  it stays truthful to buildMatch.
