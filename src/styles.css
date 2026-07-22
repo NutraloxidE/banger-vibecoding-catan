@@ -443,7 +443,7 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
 .res-pick.on .res-pick-have { background: rgba(255, 206, 74, 0.3); }
 
 /* your-resources inventory strip (both tabs) */
-.trade-inventory { margin-top: 12px; margin-bottom: 16px; }
+.trade-inventory { margin-top: 12px; margin-bottom: 8px; }
 .trade-inv-row { display: flex; gap: 6px; margin-top: 5px; }
 .trade-inv-chip {
   flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
