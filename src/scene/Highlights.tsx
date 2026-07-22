@@ -6,11 +6,47 @@ import { validSettlementSpots, validRoadSpots } from '../game/rules';
 import { vertexScore } from '../game/board';
 import { sfx } from '../audio/sfx';
 
-const ringGeo = new THREE.TorusGeometry(0.2, 0.035, 10, 24);
-const hitSphere = new THREE.SphereGeometry(0.3, 8, 8);
+const ringGeo = new THREE.TorusGeometry(0.22, 0.045, 10, 24);
+const hitSphere = new THREE.SphereGeometry(0.34, 8, 8);
 const edgeGlow = new THREE.BoxGeometry(0.66, 0.1, 0.2);
-const edgeHit = new THREE.BoxGeometry(0.72, 0.5, 0.42);
+const edgeHit = new THREE.BoxGeometry(0.72, 0.6, 0.42);
 const ghostBox = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+const arrowGeo = new THREE.ConeGeometry(0.12, 0.24, 4);
+const pinStemGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.5, 6);
+
+// Always-on-top material so markers are never buried by trees/mountains.
+function overlayMat(color: string, opacity: number): THREE.MeshBasicMaterial {
+  return new THREE.MeshBasicMaterial({
+    color, transparent: true, opacity,
+    depthTest: false, depthWrite: false,
+  });
+}
+
+const RENDER_ORDER = 990;
+
+function markOverlay(obj: THREE.Object3D) {
+  obj.renderOrder = RENDER_ORDER;
+  obj.traverse((c) => { c.renderOrder = RENDER_ORDER; });
+}
+
+// A floating, bobbing downward arrow that hovers above a valid spot so it
+// stays visible from any angle, above all terrain decorations.
+function FloatArrow({ color, height = 0.95 }: { color: string; height?: number }) {
+  const ref = useRef<THREE.Group>(null);
+  const mat = useMemo(() => overlayMat(color, 0.95), [color]);
+  useFrame(({ clock }) => {
+    if (ref.current) {
+      ref.current.position.y = height + Math.sin(clock.elapsedTime * 3) * 0.09;
+      ref.current.rotation.y = clock.elapsedTime * 1.5;
+    }
+  });
+  return (
+    <group ref={ref} position={[0, height, 0]} onUpdate={markOverlay}>
+      <mesh geometry={arrowGeo} rotation={[Math.PI, 0, 0]} material={mat} renderOrder={RENDER_ORDER} />
+      <mesh geometry={pinStemGeo} position={[0, 0.36, 0]} material={mat} renderOrder={RENDER_ORDER} />
+    </group>
+  );
+}
 
 function Pulse({ children }: { children: React.ReactNode }) {
   const ref = useRef<THREE.Group>(null);
@@ -65,13 +101,18 @@ export function Highlights() {
           const score = vertexScore(board, vid);
           const good = score >= 9;
           const isHover = game.hoverSpot === vid;
+          const ringColor = good ? '#ffe066' : '#7fffd4';
           return (
-            <group key={vid} position={[v.x, 0.34, v.z]}>
+            <group key={vid} position={[v.x, 0.42, v.z]}>
               <Pulse>
-                <mesh geometry={ringGeo} rotation={[Math.PI / 2, 0, 0]}>
-                  <meshBasicMaterial color={good ? '#ffe066' : '#7fffd4'} transparent opacity={isHover ? 1 : 0.75} />
-                </mesh>
+                <mesh
+                  geometry={ringGeo}
+                  rotation={[Math.PI / 2, 0, 0]}
+                  material={overlayMat(ringColor, isHover ? 1 : 0.85)}
+                  renderOrder={RENDER_ORDER}
+                />
               </Pulse>
+              <FloatArrow color={isHover ? color : ringColor} height={0.95} />
               {isHover && (
                 <mesh geometry={ghostBox} position={[0, 0.12, 0]}>
                   <meshStandardMaterial color={color} transparent opacity={0.55} />
@@ -97,13 +138,19 @@ export function Highlights() {
         const e = board.edges[eid];
         if (!e) return null;
         const isHover = game.hoverSpot === eid;
+        const glowColor = isHover ? color : '#7fffd4';
         return (
-          <group key={eid} position={[e.x, 0.36, e.z]} rotation={[0, e.rot, 0]}>
-            <Pulse>
-              <mesh geometry={edgeGlow}>
-                <meshBasicMaterial color={isHover ? color : '#7fffd4'} transparent opacity={isHover ? 0.95 : 0.55} />
-              </mesh>
-            </Pulse>
+          <group key={eid} position={[e.x, 0.4, e.z]}>
+            <group rotation={[0, e.rot, 0]}>
+              <Pulse>
+                <mesh
+                  geometry={edgeGlow}
+                  material={overlayMat(glowColor, isHover ? 1 : 0.7)}
+                  renderOrder={RENDER_ORDER}
+                />
+              </Pulse>
+            </group>
+            <FloatArrow color={glowColor} height={0.72} />
             <mesh
               geometry={edgeHit}
               visible={false}
