@@ -181,3 +181,23 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 ### Lesson for next session
 - All three screens are now frozen to spec. Do not "improve" title/setup
   visuals again without an explicit user request + spec.md change.
+
+---
+
+## 2026-07-22 — Rename to HEXFALL
+
+### What changed
+- Game title renamed **HEXTOPIA → HEXFALL** per user request: title-screen
+  logo, index.html <title>, spec.md, README, CLAUDE.md. Title screen is
+  otherwise untouched; setup menu stays the first-commit version (already
+  restored last entry — the user's "初代" reference at
+  banger-vibecoding-catan.vercel.app matches it).
+- Internal identifiers intentionally NOT renamed (noted in spec.md):
+  localStorage keys `hextopia-*` (keeps existing saves) and the title-scene
+  seed `HEXTOPIA-TITLE` (keeps the title island's exact shape).
+- Note: vercel.app is blocked by this environment's network policy (403),
+  so the live site could not be viewed directly this session.
+
+### Verified
+- Build passes; screenshot shows the HEXFALL logo with the unchanged
+  first-commit title/setup screens. No page errors.

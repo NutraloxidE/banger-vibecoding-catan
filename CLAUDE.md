@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-HEXTOPIA — a complete, playable, visually excessive 3D hex strategy game
+HEXFALL (formerly HEXTOPIA) — a complete, playable, visually excessive 3D hex strategy game
 (Catan-like). Vite + React + TypeScript + react-three-fiber. Deploys to
 Vercel with zero configuration (no server, DB, env vars, or external assets).
 

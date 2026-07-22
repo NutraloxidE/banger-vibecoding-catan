@@ -1,4 +1,4 @@
-# HEXTOPIA — banger vibecoding catan
+# HEXFALL — banger vibecoding catan
 
 A complete, playable, visually excessive 3D hex strategy game inspired by Catan.
 One repository, zero configuration, deploys straight to Vercel.

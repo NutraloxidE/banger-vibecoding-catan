@@ -1,6 +1,10 @@
-# spec.md — HEXTOPIA 仕様書 (Single Source of Truth)
+# spec.md — HEXFALL 仕様書 (Single Source of Truth)
 
-This file is the contract for what HEXTOPIA is. When code and spec disagree,
+Game title: **HEXFALL** (renamed from HEXTOPIA by user request; internal
+identifiers like localStorage keys and the title-scene seed keep the old
+name so existing saves survive).
+
+This file is the contract for what HEXFALL is. When code and spec disagree,
 the spec wins — fix the code or explicitly change this file (same commit).
 Workflow rules live in `CLAUDE.md`. `PLAN.md` is the original one-shot brief,
 kept for reference only; anything promoted from it into gameplay must be
@@ -29,7 +33,7 @@ Keep it exactly as-is; the only later addition kept is the language toggle.
   auto-orbiting camera, atmospheric lighting, fog, sky, water, boats,
   drifting clouds. Nothing more (no particles, birds, or launch
   transitions — tried and rejected by the user).
-- Centered title block: kicker line, "HEXTOPIA" logo (gradient, drop
+- Centered title block: kicker line, "HEXFALL" logo (gradient, drop
   shadow, idle bobbing), subtitle.
 - Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
   `reset save` appear only when a valid save exists; footer tagline.

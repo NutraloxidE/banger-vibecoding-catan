@@ -18,7 +18,7 @@ export function TitleScreen() {
       <div className="title-overlay">
         <div className="title-block">
           <div className="title-kicker">{t('title.kicker')}</div>
-          <h1 className="title-logo">HEXTOPIA</h1>
+          <h1 className="title-logo">HEXFALL</h1>
           <div className="title-sub">{t('title.sub')}</div>
         </div>
         <div className="title-buttons">
