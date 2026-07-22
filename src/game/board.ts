@@ -127,6 +127,15 @@ export function generateBoard(mapSize: MapSize, seed: string): BoardModel {
   return { radius, tiles, vertices, edges };
 }
 
+// Golden Hex chaos modifier: deterministic pick so the setup preview can
+// show the exact tile the match will use.
+export function pickGoldenTile(board: BoardModel, seed: string): number | null {
+  const rng = new RNG(seed + ':golden');
+  const candidates = board.tiles.filter((t) => t.token !== null);
+  if (candidates.length === 0) return null;
+  return rng.pick(candidates).id;
+}
+
 export function desertTileId(board: BoardModel): number {
   const d = board.tiles.find((t) => t.terrain === 'desert');
   return d ? d.id : 0;

@@ -71,6 +71,7 @@ export interface ChaosFlags {
   friendlyRobber: boolean;
   maximumSheep: boolean;
   drama: boolean;
+  goldenHex: boolean;
 }
 
 export interface MatchConfig {
@@ -179,6 +180,8 @@ export interface MatchState {
   diceGiant: boolean;
   // robber
   robberTile: number;
+  // Golden Hex chaos modifier: id of the wildcard-producing tile (null = off)
+  goldenTile: number | null;
   // interaction
   placement: Placement | null;
   hoverSpot: string | null;

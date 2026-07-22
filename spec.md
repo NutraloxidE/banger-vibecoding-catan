@@ -39,24 +39,39 @@ Keep it exactly as-is; the only later addition kept is the language toggle.
   `reset save` appear only when a valid save exists; footer tagline.
 - Language toggle (EN / 日本語) top-right — the sole permitted overlay.
 
-## 3. Setup screen (world configuration) — first-commit look, FROZEN ✅
+## 3. Setup screen — "Configure Your World" (初代 design), FROZEN ✅
 
-**Same rule: keep the first-commit atmosphere.** A plain, readable card
-grid; the only later addition kept is the language toggle (top-right).
+**Modeled on the user's original first-generation deployment** (reference
+screenshots in the 2026-07-22 PROGRESS entry). Single-column, mobile-first
+(max-width ~620 px centered on desktop), flat sections with bold headings —
+not a card-grid form.
 
-- Centered `WORLD CONFIGURATION` heading.
-- **Map size** small/medium/large (19/37/61 hexes) with a static hex-dot
-  preview whose colors derive from the current seed.
-- **Rivals** 1–3 NPCs; a sample of 4 pool NPCs shown as simple chips with
-  personality/tagline tooltips, plus the "…drawn from a pool of 6" note.
-- **Difficulty** chill / normal / ruthless.
-- **Victory target** slider 7–14 VP with an estimated match length note.
-- **Seed** text field + randomize button; same seed ⇒ same world.
-- **World events** toggle; **chaos modifiers** (Turbo Economy, Friendly
-  Robber, Maximum Sheep, NPC Drama) with a warning when ≥2 are active.
-- Footer: `← back` and gold `GENERATE WORLD` (build sound, starts
-  immediately). No summary bars, roster highlighting, or pulse animations
-  (tried and rejected by the user).
+Order, top to bottom:
+
+1. Header row: `← Back` button, `Configure Your World` heading, language
+   toggle at the right.
+2. **Live map preview** — an SVG render of the *exact* board the current
+   seed + size will generate: terrain-colored pointy-top hexes with number
+   tokens (red for 6/8, desert blank). Caption `Live preview · seed XXX`.
+   When Golden Hex is enabled the chosen tile is outlined gold with a ✨.
+3. **Map Size** — segmented control, each option label + `N Tiles`
+   sublabel; the selected option is a solid gold pill.
+4. **Opponents: N** — slider 1–3 with player-color dots below
+   (you + N rivals).
+5. **Difficulty** — chill / normal / ruthless in the same segmented style.
+6. **Victory Points: N** — slider 7–14 with a caption: ≤8 "Quick
+   skirmish", 9–11 "Standard game", ≥12 "Long march".
+7. **Seed** — text input + 🎲 randomize. Same seed ⇒ same world, same
+   rivals, same golden tile.
+8. **Chaos Modifiers** — a 2-column grid of toggle cards (emoji, bold
+   name, short description; gold border when active): ⚡ Turbo Economy,
+   🌪️ World Events, ✨ Golden Hex, 🥺 Friendly Robber, 🎭 NPC Drama,
+   🐑 Maximum Sheep. Warning box when ≥2 economy-affecting modifiers are
+   active.
+9. **Rival personality chips** — one pill per joining rival
+   (emoji + personality label; deterministic from the seed).
+10. Full-width gold `GENERATE WORLD →` button (build sound, starts
+    immediately).
 
 ## 4. Gameplay screen — FROZEN ✅
 
@@ -67,6 +82,8 @@ request AND a matching update to this section. Its defining elements:
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
   water/boats/clouds, orbit/zoom/pan camera with soft auto-focus on events.
+  (Amendment: when the Golden Hex modifier is on, the golden tile carries a
+  static gold ring so the wildcard tile is identifiable.)
 - Placement: valid spots glow as pulsing always-on-top rings (gold ring =
   high-value corner); edge spots glow as bars; hover shows a ghost preview;
   invisible enlarged hit targets for touch. No floating arrows (removed by
@@ -101,6 +118,9 @@ request AND a matching update to this section. Its defining elements:
 - Dice 7 = robber: mover blocks a tile and steals 1 random card from an
   adjacent rival (no discard rule). Friendly Robber chaos: victim draws a
   consolation card.
+- Golden Hex (chaos): one token tile, picked deterministically from the
+  seed, additionally drops 1 random ("wildcard") resource per building hit
+  whenever it produces. Announced in the log at match start.
 - Bank trade 4:1 (3:1 during Trade Festival; sheep 2:1 under Maximum Sheep).
   NPC trades evaluated deterministically (needs/surplus/personality); the UI
   shows an honest interested/unimpressed hint. NPCs may counter-offer the
@@ -114,9 +134,9 @@ request AND a matching update to this section. Its defining elements:
   builder / sleeper. Heuristic AI (no search), personality-shifted.
 - Softlock guards: ≤14 AI actions per turn, dice-animation watchdog (4 s),
   setup fallbacks, auto turn advance. The game must never stall.
-- World events (optional): resource boom, localized storm, trade festival,
-  suspiciously productive sheep — announced with label/desc/duration, ≤2
-  rounds each.
+- World events (toggled via the 🌪️ World Events chaos card): resource boom,
+  localized storm, trade festival, suspiciously productive sheep — announced
+  with label/desc/duration, ≤2 rounds each.
 - Combo toasts at 3+/5+/7+ resources in one roll and single-resource jackpot
   variants. Presentation only; gains are always logged.
 - Near-win: tension vignette + music layer from target−2; match-point toast.

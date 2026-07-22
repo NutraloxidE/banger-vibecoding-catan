@@ -4,7 +4,7 @@ import {
   BuildKind, MatchConfig, MatchState, PlayerState, Resource, RESOURCES,
   TERRAIN_RESOURCE, Toast, PlayerStats,
 } from './types';
-import { generateBoard, desertTileId, vertexScore } from './board';
+import { generateBoard, desertTileId, pickGoldenTile, vertexScore } from './board';
 import {
   COSTS, VP, canAfford, payCost, validSettlementSpots, validRoadSpots, validSpots,
   computeProduction, bankRate, longestRoadLength, computeVp, handSize,
@@ -335,6 +335,7 @@ function maybeWorldEvent(g: MatchState, toasts: Toast[]) {
 
 function buildMatch(config: MatchConfig): MatchState {
   const board = generateBoard(config.mapSize, config.seed);
+  const goldenTile = config.chaos.goldenHex ? pickGoldenTile(board, config.seed) : null;
   const rng = new RNG(config.seed + ':players');
   const npcs = pickNpcs(rng, config.npcCount, config.difficulty);
   const players: PlayerState[] = [];
@@ -365,9 +366,10 @@ function buildMatch(config: MatchConfig): MatchState {
     setupQueue, setupIdx: 0, setupStage: 'settlement', setupLastVertex: null,
     dice: null, diceStartedAt: 0, diceGiant: false,
     robberTile: desertTileId(board),
+    goldenTile,
     placement: null, hoverSpot: null, npcOffer: null,
     worldEvent: null, longestRoad: null,
-    log: [t('g.newWorld')],
+    log: goldenTile !== null ? [t('g.newWorld'), t('g.goldenHex')] : [t('g.newWorld')],
     fx: [], focus: null, spectacle: 0,
     aiActionsThisTurn: 0,
     winner: null,
@@ -424,6 +426,9 @@ function loadMatch(): MatchState | null {
     g.placement = null;
     g.npcOffer = null;
     g.fx = [];
+    // fields added after v1 saves
+    g.goldenTile ??= null;
+    g.config.chaos.goldenHex ??= false;
     return g;
   } catch {
     return null;

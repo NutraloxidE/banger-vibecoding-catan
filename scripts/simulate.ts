@@ -86,14 +86,14 @@ function runOne(label: string, config: MatchConfig): boolean {
 const base: MatchConfig = {
   mapSize: 'medium', npcCount: 3, difficulty: 'normal', targetVp: 10,
   seed: 'SIM-1', worldEvents: true,
-  chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false },
+  chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false },
 };
 
 const runs: [string, MatchConfig][] = [
   ['small/2npc/chill', { ...base, mapSize: 'small', npcCount: 2, difficulty: 'chill', seed: 'SIM-SMALL' }],
   ['medium/3npc/normal', { ...base, seed: 'SIM-MED' }],
   ['large/3npc/ruthless', { ...base, mapSize: 'large', difficulty: 'ruthless', seed: 'SIM-LARGE', targetVp: 12 }],
-  ['turbo+sheep chaos', { ...base, seed: 'SIM-CHAOS', chaos: { turbo: true, friendlyRobber: true, maximumSheep: true, drama: true } }],
+  ['turbo+sheep chaos', { ...base, seed: 'SIM-CHAOS', chaos: { turbo: true, friendlyRobber: true, maximumSheep: true, drama: true, goldenHex: true } }],
   ['1npc/vp8', { ...base, mapSize: 'small', npcCount: 1, targetVp: 8, seed: 'SIM-DUEL' }],
 ];
 

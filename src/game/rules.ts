@@ -128,6 +128,11 @@ export function computeProduction(state: MatchState, total: number): GainMap {
       if (worldEvent?.kind === 'sheepmania' && res === 'sheep') n += 1;
       const g = (gains[b.owner] ??= {});
       g[res] = (g[res] ?? 0) + n;
+      // Golden Hex: this tile also drops 1 wildcard resource per building hit
+      if (state.goldenTile != null && tile.id === state.goldenTile) {
+        const wild = RESOURCES[Math.floor(Math.random() * RESOURCES.length)];
+        g[wild] = (g[wild] ?? 0) + 1;
+      }
     }
   }
   return gains;

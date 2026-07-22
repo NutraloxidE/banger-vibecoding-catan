@@ -201,3 +201,45 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 ### Verified
 - Build passes; screenshot shows the HEXFALL logo with the unchanged
   first-commit title/setup screens. No page errors.
+
+---
+
+## 2026-07-22 — Setup menu rebuilt as the 初代 "Configure Your World" design
+
+### What changed
+- User shared mobile screenshots of their original first-generation
+  deployment (banger-vibecoding-catan.vercel.app) — THAT is the "初代"
+  setup menu they wanted. Full redesign of `SetupScreen.tsx` to match:
+  single-column mobile-first layout, `← Back` + "Configure Your World"
+  header (+ compact lang toggle), **live SVG preview of the real board**
+  (terrain colors + tokens, red 6/8), gold-pill Map Size segmented control
+  with tile-count sublabels, Opponents slider + player-color dots,
+  Victory Points slider with quick/standard/long captions, seed row,
+  **chaos modifiers as a 2-column toggle-card grid** (gold border when on),
+  rival personality chips (deterministic from seed), full-width gold
+  `GENERATE WORLD →`.
+- **Golden Hex implemented as a real mechanic** (the 初代 menu has the card;
+  no fake buttons allowed): `chaos.goldenHex` flag → `pickGoldenTile()`
+  (RNG `seed+':golden'`, shared by preview + buildMatch) → the tile drops
+  +1 random wildcard resource per building hit when it produces
+  (`rules.ts::computeProduction`); gold ring marks the tile in 3D
+  (documented as a §4 amendment); announced in the log at match start.
+  Old saves migrate (`goldenTile ??= null`).
+- World Events moved from a checkbox into the 🌪️ chaos card (same flag).
+  Difficulty kept as a segmented row (the 初代 design had no difficulty
+  control; ours is preserved in matching style).
+- spec.md §3 rewritten to this design; §5/§6 document Golden Hex.
+
+### Verified
+- Build + all 5 simulations pass (chaos config now enables goldenHex).
+- Playwright: mobile (412×915) matches the reference screenshots (preview,
+  gold segmented control, chaos cards, chips, generate button); desktop JA
+  clean; Golden Hex flows into a real match (goldenTile set, log line,
+  ring). No page errors.
+
+### Gotchas
+- The setup preview MUST keep using `generateBoard(mapSize, seed)` and
+  `pickGoldenTile(board, seed)` — identical code paths to `buildMatch` — so
+  the preview stays a promise, not an illustration.
+- `.seg`/`.seg-btn` CSS still used by TradeModal tabs; the setup screen now
+  uses `.size-seg`/`.size-btn` and `.chaos-card` instead.

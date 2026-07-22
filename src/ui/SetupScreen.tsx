@@ -1,14 +1,75 @@
 import { useMemo, useState } from 'react';
 import { useGame } from '../game/store';
-import { MatchConfig, MapSize, Difficulty } from '../game/types';
-import { MAP_RADIUS } from '../game/board';
+import { MatchConfig, MapSize, Difficulty, Terrain } from '../game/types';
+import { generateBoard, pickGoldenTile } from '../game/board';
 import { randomSeedString, RNG } from '../game/rng';
-import { NPC_POOL } from '../game/names';
+import { pickNpcs, PLAYER_COLORS } from '../game/names';
 import { sfx } from '../audio/sfx';
 import { useT } from './useT';
 import { LangToggle } from './LangToggle';
 
 const MAP_TILES: Record<MapSize, number> = { small: 19, medium: 37, large: 61 };
+
+// 2D colors for the live preview (matches the 3D board's terrain palette)
+const PREVIEW_COLOR: Record<Terrain, string> = {
+  forest: '#2f8f4a',
+  hills: '#c06a3d',
+  fields: '#e3c24a',
+  pasture: '#8fd05e',
+  mountains: '#8d93a1',
+  desert: '#e0cd8f',
+};
+
+// Live SVG preview of the exact board this seed + size will generate.
+function MapPreview({ mapSize, seed, goldenHex }: { mapSize: MapSize; seed: string; goldenHex: boolean }) {
+  const board = useMemo(() => generateBoard(mapSize, seed.trim() || 'x'), [mapSize, seed]);
+  const golden = useMemo(
+    () => (goldenHex ? pickGoldenTile(board, seed.trim() || 'x') : null),
+    [board, seed, goldenHex],
+  );
+
+  const S = 30; // px per world unit
+  const shrink = 0.93; // gap between hexes
+  const pad = S * 1.2;
+  const xs = board.tiles.map((t) => t.x * S);
+  const ys = board.tiles.map((t) => t.z * S);
+  const minX = Math.min(...xs) - pad, maxX = Math.max(...xs) + pad;
+  const minY = Math.min(...ys) - pad, maxY = Math.max(...ys) + pad;
+
+  const hexPoints = (cx: number, cy: number) => {
+    const pts: string[] = [];
+    for (let k = 0; k < 6; k++) {
+      const a = (Math.PI / 180) * (60 * k - 30);
+      pts.push(`${(cx + Math.cos(a) * S * shrink).toFixed(1)},${(cy + Math.sin(a) * S * shrink).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  };
+
+  return (
+    <svg viewBox={`${minX} ${minY} ${maxX - minX} ${maxY - minY}`}>
+      {board.tiles.map((tile) => {
+        const cx = tile.x * S, cy = tile.z * S;
+        const hot = tile.token === 6 || tile.token === 8;
+        return (
+          <g key={tile.id}>
+            <polygon points={hexPoints(cx, cy)} fill={PREVIEW_COLOR[tile.terrain]}
+              stroke={golden === tile.id ? '#ffce4a' : 'none'} strokeWidth={golden === tile.id ? 3 : 0} />
+            {tile.token !== null && (
+              <text x={cx} y={cy + S * 0.2} textAnchor="middle"
+                fontSize={S * 0.58} fontWeight={700}
+                fill={hot ? '#b91c1c' : '#1c2430'} fontFamily="inherit">
+                {tile.token}
+              </text>
+            )}
+            {golden === tile.id && (
+              <text x={cx} y={cy - S * 0.42} textAnchor="middle" fontSize={S * 0.5}>✨</text>
+            )}
+          </g>
+        );
+      })}
+    </svg>
+  );
+}
 
 export function SetupScreen() {
   const newGame = useGame((s) => s.newGame);
@@ -26,14 +87,15 @@ export function SetupScreen() {
   const [friendlyRobber, setFriendlyRobber] = useState(false);
   const [maximumSheep, setMaximumSheep] = useState(false);
   const [drama, setDrama] = useState(true);
+  const [goldenHex, setGoldenHex] = useState(false);
 
-  const chaosCount = [turbo, friendlyRobber, maximumSheep].filter(Boolean).length;
+  const chaosCount = [turbo, friendlyRobber, maximumSheep, goldenHex].filter(Boolean).length;
 
-  const previewHexes = useMemo(() => {
-    const rng = new RNG(seed + mapSize);
-    const colors = ['#2f8f4a', '#c06a3d', '#e3c24a', '#8fd05e', '#8d93a1', '#e0cd8f'];
-    return Array.from({ length: MAP_TILES[mapSize] }, () => colors[rng.int(colors.length)]);
-  }, [seed, mapSize]);
+  // Rivals this seed will actually produce (same RNG path as buildMatch)
+  const roster = useMemo(() => {
+    const rng = new RNG((seed.trim() || 'x') + ':players');
+    return pickNpcs(rng, npcCount, difficulty);
+  }, [seed, npcCount, difficulty]);
 
   const start = () => {
     sfx.buildBig();
@@ -41,111 +103,105 @@ export function SetupScreen() {
       mapSize, npcCount, difficulty, targetVp,
       seed: seed.trim() || randomSeedString(),
       worldEvents,
-      chaos: { turbo, friendlyRobber, maximumSheep, drama },
+      chaos: { turbo, friendlyRobber, maximumSheep, drama, goldenHex },
     };
     newGame(config);
   };
 
-  const estMinutes = Math.round((targetVp * (turbo ? 1.4 : 2.2) * (MAP_RADIUS[mapSize] + 1)) / 3);
+  const vpCaption = targetVp <= 8 ? t('setup.vpQuick') : targetVp <= 11 ? t('setup.vpStandard') : t('setup.vpLong');
+
+  const chaosCards: { key: string; emoji: string; name: string; desc: string; on: boolean; toggle: () => void }[] = [
+    { key: 'turbo', emoji: '⚡', name: t('chaos.turbo'), desc: t('chaos.turboD'), on: turbo, toggle: () => setTurbo(!turbo) },
+    { key: 'events', emoji: '🌪️', name: t('chaos.events'), desc: t('chaos.eventsD'), on: worldEvents, toggle: () => setWorldEvents(!worldEvents) },
+    { key: 'golden', emoji: '✨', name: t('chaos.golden'), desc: t('chaos.goldenD'), on: goldenHex, toggle: () => setGoldenHex(!goldenHex) },
+    { key: 'friendly', emoji: '🥺', name: t('chaos.friendly'), desc: t('chaos.friendlyD'), on: friendlyRobber, toggle: () => setFriendlyRobber(!friendlyRobber) },
+    { key: 'drama', emoji: '🎭', name: t('chaos.drama'), desc: t('chaos.dramaD'), on: drama, toggle: () => setDrama(!drama) },
+    { key: 'sheep', emoji: '🐑', name: t('chaos.sheep'), desc: t('chaos.sheepD'), on: maximumSheep, toggle: () => setMaximumSheep(!maximumSheep) },
+  ];
 
   return (
     <div className="screen setup-screen">
-      <div className="setup-lang"><LangToggle /></div>
-      <div className="setup-panel">
-        <h2 className="setup-title">{t('setup.title')}</h2>
-
-        <div className="setup-grid">
-          <section className="setup-card">
-            <h3>{t('setup.mapSize')}</h3>
-            <div className="seg">
-              {(['small', 'medium', 'large'] as MapSize[]).map((m) => (
-                <button key={m} className={`seg-btn ${mapSize === m ? 'on' : ''}`}
-                  onClick={() => { sfx.click(); setMapSize(m); }}>
-                  {t(`setup.${m}`)} <span className="dim">{t('setup.hexes', { n: MAP_TILES[m] })}</span>
-                </button>
-              ))}
-            </div>
-            <div className="hex-preview">
-              {previewHexes.map((c, i) => (
-                <span key={i} className="hex-dot" style={{ background: c }} />
-              ))}
-            </div>
-          </section>
-
-          <section className="setup-card">
-            <h3>{t('setup.rivals')}</h3>
-            <div className="seg">
-              {[1, 2, 3].map((n) => (
-                <button key={n} className={`seg-btn ${npcCount === n ? 'on' : ''}`}
-                  onClick={() => { sfx.click(); setNpcCount(n); }}>
-                  {t(n > 1 ? 'setup.npcs' : 'setup.npc', { n })}
-                </button>
-              ))}
-            </div>
-            <div className="npc-roster">
-              {NPC_POOL.slice(0, 4).map((n) => (
-                <div key={n.name} className="npc-mini" title={`${t(`pers.${n.personality}`)} — ${t(`tag.${n.name}`)}`}>
-                  <span className="npc-mini-emoji">{n.emoji}</span> {n.name}
-                </div>
-              ))}
-              <div className="dim tiny">{t('setup.pool', { n: NPC_POOL.length })}</div>
-            </div>
-            <h3>{t('setup.difficulty')}</h3>
-            <div className="seg">
-              {(['chill', 'normal', 'ruthless'] as Difficulty[]).map((d) => (
-                <button key={d} className={`seg-btn ${difficulty === d ? 'on' : ''}`}
-                  onClick={() => { sfx.click(); setDifficulty(d); }}>
-                  {t(`diff.${d}`)}
-                </button>
-              ))}
-            </div>
-          </section>
-
-          <section className="setup-card">
-            <h3>{t('setup.victoryTarget', { n: targetVp })}</h3>
-            <input type="range" min={7} max={14} value={targetVp}
-              onChange={(e) => setTargetVp(Number(e.target.value))} />
-            <div className="dim tiny">{t('setup.estMatch', { n: estMinutes })}</div>
-            <h3>{t('setup.seed')}</h3>
-            <div className="seed-row">
-              <input className="seed-input" value={seed} onChange={(e) => setSeed(e.target.value)}
-                spellCheck={false} maxLength={24} />
-              <button className="btn btn-ghost" onClick={() => { sfx.click(); setSeed(randomSeedString()); }}>🎲</button>
-            </div>
-            <label className="chk">
-              <input type="checkbox" checked={worldEvents} onChange={(e) => setWorldEvents(e.target.checked)} />
-              {t('setup.worldEvents')}
-            </label>
-          </section>
-
-          <section className="setup-card">
-            <h3>{t('setup.chaos')}</h3>
-            <label className="chk">
-              <input type="checkbox" checked={turbo} onChange={(e) => setTurbo(e.target.checked)} />
-              <span dangerouslySetInnerHTML={{ __html: t('setup.turbo') }} />
-            </label>
-            <label className="chk">
-              <input type="checkbox" checked={friendlyRobber} onChange={(e) => setFriendlyRobber(e.target.checked)} />
-              <span dangerouslySetInnerHTML={{ __html: t('setup.friendly') }} />
-            </label>
-            <label className="chk">
-              <input type="checkbox" checked={maximumSheep} onChange={(e) => setMaximumSheep(e.target.checked)} />
-              <span dangerouslySetInnerHTML={{ __html: t('setup.maxSheep') }} />
-            </label>
-            <label className="chk">
-              <input type="checkbox" checked={drama} onChange={(e) => setDrama(e.target.checked)} />
-              <span dangerouslySetInnerHTML={{ __html: t('setup.drama') }} />
-            </label>
-            {chaosCount >= 2 && (
-              <div className="warn-box">{t('setup.chaosWarn', { n: chaosCount })}</div>
-            )}
-          </section>
-        </div>
-
-        <div className="setup-footer">
+      <div className="setup-panel cfg">
+        <div className="cfg-head">
           <button className="btn btn-ghost" onClick={() => { sfx.click(); goTitle(); }}>{t('setup.back')}</button>
-          <button className="btn btn-huge btn-gold" onClick={start}>{t('setup.generate')}</button>
+          <h2 className="cfg-title">{t('setup.title')}</h2>
+          <div className="cfg-head-spacer" />
+          <LangToggle compact />
         </div>
+
+        <div className="map-preview">
+          <MapPreview mapSize={mapSize} seed={seed} goldenHex={goldenHex} />
+          <div className="map-caption">{t('setup.livePreview', { seed: seed.trim() || '—' })}</div>
+        </div>
+
+        <h3 className="cfg-label">{t('setup.mapSize')}</h3>
+        <div className="size-seg">
+          {(['small', 'medium', 'large'] as MapSize[]).map((m) => (
+            <button key={m} className={`size-btn ${mapSize === m ? 'on' : ''}`}
+              onClick={() => { sfx.click(); setMapSize(m); }}>
+              <span className="size-name">{t(`setup.${m}`)}</span>
+              <span className="size-sub">{t('setup.tiles', { n: MAP_TILES[m] })}</span>
+            </button>
+          ))}
+        </div>
+
+        <h3 className="cfg-label">{t('setup.opponents', { n: npcCount })}</h3>
+        <input type="range" min={1} max={3} value={npcCount}
+          onChange={(e) => setNpcCount(Number(e.target.value))} />
+        <div className="dots-row">
+          {Array.from({ length: npcCount + 1 }, (_, i) => (
+            <span key={i} className="p-dot" style={{ background: PLAYER_COLORS[i] }} />
+          ))}
+        </div>
+
+        <h3 className="cfg-label">{t('setup.difficulty')}</h3>
+        <div className="size-seg">
+          {(['chill', 'normal', 'ruthless'] as Difficulty[]).map((d) => (
+            <button key={d} className={`size-btn ${difficulty === d ? 'on' : ''}`}
+              onClick={() => { sfx.click(); setDifficulty(d); }}>
+              <span className="size-name">{t(`diff.${d}`)}</span>
+            </button>
+          ))}
+        </div>
+
+        <h3 className="cfg-label">{t('setup.victoryPoints', { n: targetVp })}</h3>
+        <input type="range" min={7} max={14} value={targetVp}
+          onChange={(e) => setTargetVp(Number(e.target.value))} />
+        <div className="vp-caption">{vpCaption}</div>
+
+        <h3 className="cfg-label">{t('setup.seed')}</h3>
+        <div className="seed-row">
+          <input className="seed-input" value={seed} onChange={(e) => setSeed(e.target.value)}
+            spellCheck={false} maxLength={24} />
+          <button className="btn btn-ghost" onClick={() => { sfx.click(); setSeed(randomSeedString()); }}>🎲</button>
+        </div>
+
+        <h3 className="cfg-label">{t('setup.chaos')}</h3>
+        <div className="chaos-grid">
+          {chaosCards.map((c) => (
+            <button key={c.key} className={`chaos-card ${c.on ? 'on' : ''}`}
+              onClick={() => { sfx.click(); c.toggle(); }}>
+              <span className="chaos-emoji">{c.emoji}</span>
+              <span className="chaos-name">{c.name}</span>
+              <span className="chaos-desc">{c.desc}</span>
+            </button>
+          ))}
+        </div>
+        {chaosCount >= 2 && (
+          <div className="warn-box">{t('setup.chaosWarn', { n: chaosCount })}</div>
+        )}
+
+        <div className="pers-chips">
+          {roster.map((n) => (
+            <span key={n.name} className="pers-chip" title={t(`tag.${n.name}`)}>
+              {n.emoji} {t(`pers.${n.personality}`)}
+            </span>
+          ))}
+        </div>
+
+        <button className="btn btn-huge btn-gold cfg-generate" onClick={start}>
+          {t('setup.generate')}
+        </button>
       </div>
     </div>
   );

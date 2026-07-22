@@ -208,6 +208,7 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
   const phase = useGame((s) => s.game?.phase);
   const isHumanTurn = useGame((s) => (s.game ? !s.game.players[s.game.current].isNpc : false));
   const stormTile = useGame((s) => (s.game?.worldEvent?.kind === 'storm' ? s.game.worldEvent.tileId ?? -1 : -1));
+  const goldenTile = useGame((s) => s.game?.goldenTile ?? -1);
 
   const mats = useMemo(() => {
     const m: Partial<Record<Terrain, THREE.MeshStandardMaterial>> = {};
@@ -250,6 +251,12 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
             <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.34, 0]}>
               <ringGeometry args={[0.6, 0.95, 32]} />
               <meshBasicMaterial color="#7fb8ff" transparent opacity={0.4} />
+            </mesh>
+          )}
+          {goldenTile === tile.id && (
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.33, 0]}>
+              <ringGeometry args={[0.8, 0.95, 32]} />
+              <meshBasicMaterial color="#ffce4a" transparent opacity={0.55} />
             </mesh>
           )}
         </group>
