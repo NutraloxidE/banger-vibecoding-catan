@@ -11,8 +11,6 @@ const hitSphere = new THREE.SphereGeometry(0.34, 8, 8);
 const edgeGlow = new THREE.BoxGeometry(0.66, 0.1, 0.2);
 const edgeHit = new THREE.BoxGeometry(0.72, 0.6, 0.42);
 const ghostBox = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-const arrowGeo = new THREE.ConeGeometry(0.12, 0.24, 4);
-const pinStemGeo = new THREE.CylinderGeometry(0.012, 0.012, 0.5, 6);
 
 // Always-on-top material so markers are never buried by trees/mountains.
 function overlayMat(color: string, opacity: number): THREE.MeshBasicMaterial {
@@ -23,30 +21,6 @@ function overlayMat(color: string, opacity: number): THREE.MeshBasicMaterial {
 }
 
 const RENDER_ORDER = 990;
-
-function markOverlay(obj: THREE.Object3D) {
-  obj.renderOrder = RENDER_ORDER;
-  obj.traverse((c) => { c.renderOrder = RENDER_ORDER; });
-}
-
-// A floating, bobbing downward arrow that hovers above a valid spot so it
-// stays visible from any angle, above all terrain decorations.
-function FloatArrow({ color, height = 0.95 }: { color: string; height?: number }) {
-  const ref = useRef<THREE.Group>(null);
-  const mat = useMemo(() => overlayMat(color, 0.95), [color]);
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      ref.current.position.y = height + Math.sin(clock.elapsedTime * 3) * 0.09;
-      ref.current.rotation.y = clock.elapsedTime * 1.5;
-    }
-  });
-  return (
-    <group ref={ref} position={[0, height, 0]} onUpdate={markOverlay}>
-      <mesh geometry={arrowGeo} rotation={[Math.PI, 0, 0]} material={mat} renderOrder={RENDER_ORDER} />
-      <mesh geometry={pinStemGeo} position={[0, 0.36, 0]} material={mat} renderOrder={RENDER_ORDER} />
-    </group>
-  );
-}
 
 function Pulse({ children }: { children: React.ReactNode }) {
   const ref = useRef<THREE.Group>(null);
@@ -112,7 +86,6 @@ export function Highlights() {
                   renderOrder={RENDER_ORDER}
                 />
               </Pulse>
-              <FloatArrow color={isHover ? color : ringColor} height={0.95} />
               {isHover && (
                 <mesh geometry={ghostBox} position={[0, 0.12, 0]}>
                   <meshStandardMaterial color={color} transparent opacity={0.55} />
@@ -150,7 +123,6 @@ export function Highlights() {
                 />
               </Pulse>
             </group>
-            <FloatArrow color={glowColor} height={0.72} />
             <mesh
               geometry={edgeHit}
               visible={false}
