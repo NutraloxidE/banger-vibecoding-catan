@@ -299,3 +299,75 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   imports board). Don't introduce a board→…→board cycle.
 - Harbors are NOT drawn in the setup screen's SVG preview (that screen is the
   frozen 初代 design — left untouched on purpose).
+
+---
+
+## 2026-07-22 — Harbor sign enlarged for readability
+
+### What changed
+- Coastal harbor signs were small and their "N:1" rate text was hard to read
+  from the default camera. Enlarged the hanging sign so the rate + resource
+  emoji read at a glance (`src/scene/Ports.tsx`, `src/scene/textures.ts`):
+  - `signGeo` plane 0.32 → 0.52; `armGeo` 0.28 → 0.4 (wider to hold the sign);
+    `postGeo` mast 0.5 → 0.72 tall, and post/arm/sign repositioned so the
+    taller sign hangs from the arm (top y≈0.66) and clears the dock plank
+    (bottom y≈0.14, plank at y=0) — no dip into the water.
+  - `portSignTexture` canvas 128 → 256 with 2× drawing coords + larger fonts
+    (rate `bold 104px`, emoji `100px`) so the bigger plane stays crisp.
+- Frozen gameplay screen: changed on explicit user request; spec §4 harbor
+  amendment updated in the same commit.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs.
+- No Playwright screenshot this session (not installed; a full 3D-scene
+  navigation harness to frame one coastal harbor is disproportionate to a
+  geometry-scale tweak). Change is purely dimensional; mast geometry validated
+  by inspection. Nothing else in `Ports.tsx` / `textures.ts` touched.
+
+---
+
+## 2026-07-22 — Two-sided harbor sign + slightly larger boats
+
+### What changed
+- **Harbor sign text no longer mirrors when viewed from behind**
+  (`src/scene/Ports.tsx`): the single `DoubleSide` plane (which showed
+  reversed text on its back face) is replaced by two coincident `FrontSide`
+  planes rotated 180° apart, so each side shows non-mirrored text. Back-face
+  culling means only the side facing the camera draws — no z-fighting.
+- **Boats slightly enlarged** (`src/scene/Ambient.tsx`): the boat group now
+  renders at `scale={1.35}` for a bit more presence on the water. Scale is set
+  as a prop; `useFrame` only touches position/rotation, so animation is
+  unaffected.
+- Frozen gameplay screen: both on explicit user request; spec §4 updated in
+  the same commit (harbor amendment note + boats "slightly enlarged").
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs.
+- Render-only changes (no game logic touched). No Playwright this session
+  (not installed); sign two-sidedness and boat scale validated by inspection.
+
+---
+
+## 2026-07-22 — WASD camera panning (desktop)
+
+### What changed
+- **Desktop WASD movement** (`src/scene/CameraRig.tsx`): W/S/A/D now glide the
+  view horizontally across the ground, relative to the camera's facing
+  direction (forward is the camera direction flattened onto the XZ plane;
+  A/D strafe along its perpendicular). Both `camera.position` and the
+  OrbitControls `target` translate by the same delta, so the orbit
+  relationship is preserved (it's a pan, not a rotate).
+  - Speed scales with zoom distance so it feels consistent near/far.
+  - Target is clamped to `boardRadius*2.4+4` so you can't lose the board.
+  - Keys are ignored while a form field (input/textarea/select/
+    contentEditable) is focused; `blur` clears held keys (no stuck-key drift).
+  - While any WASD key is held, manual steering takes precedence over the
+    event auto-focus lerp.
+- No conflict with existing shortcuts (Esc / Space / Enter in `App.tsx`).
+- Frozen gameplay screen: added on explicit user request; spec §4 camera
+  bullet updated in the same commit.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs
+  (camera-only change; simulate is headless so unaffected). Manual key mapping
+  and vector math validated by inspection; no Playwright this session.
