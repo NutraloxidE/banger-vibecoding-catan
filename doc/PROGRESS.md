@@ -413,3 +413,34 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   the same commit.
 - Playwright was installed as a throwaway to screenshot, then reverted out of
   `package.json`/`package-lock.json` — it is NOT a committed dependency.
+
+---
+
+## 2026-07-22 — Player-color edge bars on event toasts
+
+### What changed (explicit user request)
+- Dopamine event toasts (gold combo / red warn frames) were ambiguous about
+  **whose** event they announced. Now, when a toast belongs to a specific
+  player, its frame shows that player's color as thin glowing bars on the
+  inner left + right edges (matches the player-chip colors at the top).
+- `Toast` gained an optional `color?: string` (`src/game/types.ts`);
+  `addToastTo(..., ttl, color?)` threads it through (`src/game/store.ts`).
+  Wired at the player-specific sites: production combos (3+/5+/7+ and
+  single-resource jackpots), mega-city rise, road dominance, harbor welcome,
+  match point (warn), and the human's robber-awakens (warn). Toasts with no
+  owning player (world-generated, world events, generic warnings) stay
+  bar-less.
+- Render: `src/ui/Overlays.tsx` adds class `toast-owned` + inline `--pc` when
+  `color` is set; `src/styles.css` `.toast` is now `position: relative` with
+  `.toast-owned::before/::after` color bars (extra horizontal padding to make
+  room). No change to bar-less toasts.
+
+### Verified
+- `npm run build` + all 5 `npm run simulate` configs pass.
+- Playwright (900×700): forced a gold combo (human = pink), a red MATCH POINT
+  (Dave = blue), and a plain WORLD EVENT (no color). Bars render in the exact
+  chip colors on combo/warn; the event toast has none. Zero page errors.
+
+### Notes / scope
+- Frozen §4 gameplay HUD touched on explicit request; spec §6 (presentation)
+  updated in the same commit. Only types/store/Overlays/styles changed.

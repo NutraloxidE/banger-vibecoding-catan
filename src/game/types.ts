@@ -160,6 +160,7 @@ export interface Toast {
   kind: 'combo' | 'info' | 'event' | 'warn';
   born: number;
   ttl: number;
+  color?: string; // owning player's color — shown as bars on the frame's inner edges
 }
 
 export interface NpcOffer {

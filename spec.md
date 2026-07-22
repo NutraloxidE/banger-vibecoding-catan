@@ -166,7 +166,10 @@ request AND a matching update to this section. Its defining elements:
   localized storm, trade festival, suspiciously productive sheep — announced
   with label/desc/duration, ≤2 rounds each.
 - Combo toasts at 3+/5+/7+ resources in one roll and single-resource jackpot
-  variants. Presentation only; gains are always logged.
+  variants. Presentation only; gains are always logged. When a toast belongs to
+  a specific player (production combos, mega city, road dominance, harbor
+  welcome, match point, robber), the gold/red frame shows that player's color
+  as thin bars on its inner left/right edges, so it's clear whose event it is.
 - Near-win: tension vignette + music layer from target−2; match-point toast.
 - Victory: confetti overlay, ranked results, useful + absurd statistics,
   rematch (same seed) / new world / setup / title — all without refresh.

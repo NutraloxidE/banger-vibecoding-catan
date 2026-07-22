@@ -331,11 +331,21 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   z-index: 40; pointer-events: none;
 }
 .toast {
+  position: relative;
   background: var(--panel); border-radius: 14px; padding: 10px 22px; text-align: center;
   border: 2px solid rgba(255,255,255,0.2);
   animation: toastIn 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
   max-width: 88vw;
 }
+/* owning player's color as bars on the frame's inner left/right edges */
+.toast-owned { padding-left: 30px; padding-right: 30px; }
+.toast-owned::before, .toast-owned::after {
+  content: ''; position: absolute; top: 6px; bottom: 6px; width: 4px;
+  border-radius: 3px; background: var(--pc);
+  box-shadow: 0 0 8px var(--pc), 0 0 2px var(--pc);
+}
+.toast-owned::before { left: 7px; }
+.toast-owned::after { right: 7px; }
 @keyframes toastIn { from { opacity: 0; transform: translateY(-18px) scale(0.8); } }
 .toast-title { font-weight: 900; font-size: 17px; letter-spacing: 0.1em; }
 .toast-sub { font-size: 12px; opacity: 0.85; margin-top: 2px; }
