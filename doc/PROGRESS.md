@@ -58,3 +58,21 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   NPC stats but not surfaced.
 - More world-event variety and ports/harbor trading.
 - Consider chunk-splitting the three.js bundle if build-size matters.
+
+---
+
+## 2026-07-22 — Token visibility fix
+
+### What changed
+- **Number tokens (dice probability tokens) were getting buried** in tile
+  decorations (trees/mountains). Fixed in `src/scene/Tiles.tsx`: the token disc
+  + number face now render always-on-top (`depthTest`/`depthWrite` off, high
+  `renderOrder` = `TOKEN_RENDER_ORDER`), and the token group was raised from
+  y=0.03 to y=0.12 so it reads as a floating label.
+- Same always-on-top technique as the placement highlights (`Highlights.tsx`) —
+  if more world-space labels get buried later, reuse this pattern.
+
+### Verified
+- `npm run build` passes. Playwright screenshots at wide / zoomed / low-angle
+  views confirm every token is legible over forests and mountains; no page
+  errors.

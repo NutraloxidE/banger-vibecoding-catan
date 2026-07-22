@@ -41,7 +41,10 @@ const brickMat2 = new THREE.MeshStandardMaterial({ color: '#8d3f22' });
 const woolMat = new THREE.MeshStandardMaterial({ color: '#f2f0e8' });
 const sheepFaceMat = new THREE.MeshStandardMaterial({ color: '#3a3630' });
 const cactusMat = new THREE.MeshStandardMaterial({ color: '#4f9e57' });
-const tokenMat = new THREE.MeshStandardMaterial({ color: '#efe3c0' });
+// Number tokens draw on top of terrain so they're never buried by trees,
+// mountains, or other tile decorations (depthTest off + high renderOrder).
+const TOKEN_RENDER_ORDER = 900;
+const tokenMat = new THREE.MeshStandardMaterial({ color: '#efe3c0', depthTest: false, depthWrite: false });
 const robberMat = new THREE.MeshStandardMaterial({ color: '#23222b', roughness: 0.4 });
 
 function ForestDeco({ rng }: { rng: RNG }) {
@@ -229,10 +232,10 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
           <group position={[0, 0.3, 0]}>
             <Deco tile={tile} seed={seed} />
             {tile.token !== null && (
-              <group position={[0, 0.03, 0]}>
-                <mesh geometry={tokenGeo} material={tokenMat} />
-                <mesh geometry={tokenFace} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.028, 0]}>
-                  <meshBasicMaterial map={tokenTexture(tile.token)} transparent />
+              <group position={[0, 0.12, 0]}>
+                <mesh geometry={tokenGeo} material={tokenMat} renderOrder={TOKEN_RENDER_ORDER} />
+                <mesh geometry={tokenFace} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.028, 0]} renderOrder={TOKEN_RENDER_ORDER + 1}>
+                  <meshBasicMaterial map={tokenTexture(tile.token)} transparent depthTest={false} depthWrite={false} />
                 </mesh>
               </group>
             )}
