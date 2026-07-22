@@ -81,12 +81,14 @@ request AND a matching update to this section. Its defining elements:
 
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
-  water/boats/clouds, orbit/zoom/pan camera with soft auto-focus on events.
+  water/boats (slightly enlarged for presence)/clouds, orbit/zoom/pan camera
+  with soft auto-focus on events.
   (Amendment: when the Golden Hex modifier is on, the golden tile carries a
   static gold ring so the wildcard tile is identifiable.)
   (Amendment: coastal harbors render as small docks with a hanging "N:1"
   sign out on the water; the sign hangs from a raised mast and is large
-  enough to read the rate + resource from the default camera; a claimed
+  enough to read the rate + resource from the default camera, and reads
+  correctly (non-mirrored) from either side; a claimed
   harbor shows a ring + buoy in the owner's color. Hovering a dock shows
   its name and rate.)
 - Placement: valid spots glow as pulsing always-on-top rings (gold ring =

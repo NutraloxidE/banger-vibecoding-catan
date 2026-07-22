@@ -55,9 +55,16 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
         <mesh geometry={plankGeo} material={woodMat} castShadow />
         <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.36, 0.04]} />
         <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
-        <mesh geometry={signGeo} position={[0.04, 0.4, 0.05]} rotation={[0, Math.PI, 0]}>
-          <meshBasicMaterial map={signTex} transparent side={THREE.DoubleSide} />
-        </mesh>
+        {/* two back-to-back front-facing planes so the text reads correctly
+            from either side (a single DoubleSide plane mirrors the back) */}
+        <group position={[0.04, 0.4, 0.05]}>
+          <mesh geometry={signGeo} rotation={[0, Math.PI, 0]}>
+            <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
+          </mesh>
+          <mesh geometry={signGeo} rotation={[0, 0, 0]}>
+            <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
+          </mesh>
+        </group>
         <mesh geometry={buoyGeo} material={buoyMat} position={[0.2, 0.05, -0.05]} />
         {ownerColor && (
           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>

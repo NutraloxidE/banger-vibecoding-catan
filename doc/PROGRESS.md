@@ -323,3 +323,25 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   navigation harness to frame one coastal harbor is disproportionate to a
   geometry-scale tweak). Change is purely dimensional; mast geometry validated
   by inspection. Nothing else in `Ports.tsx` / `textures.ts` touched.
+
+---
+
+## 2026-07-22 — Two-sided harbor sign + slightly larger boats
+
+### What changed
+- **Harbor sign text no longer mirrors when viewed from behind**
+  (`src/scene/Ports.tsx`): the single `DoubleSide` plane (which showed
+  reversed text on its back face) is replaced by two coincident `FrontSide`
+  planes rotated 180° apart, so each side shows non-mirrored text. Back-face
+  culling means only the side facing the camera draws — no z-fighting.
+- **Boats slightly enlarged** (`src/scene/Ambient.tsx`): the boat group now
+  renders at `scale={1.35}` for a bit more presence on the water. Scale is set
+  as a prop; `useFrame` only touches position/rotation, so animation is
+  unaffected.
+- Frozen gameplay screen: both on explicit user request; spec §4 updated in
+  the same commit (harbor amendment note + boats "slightly enlarged").
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs.
+- Render-only changes (no game logic touched). No Playwright this session
+  (not installed); sign two-sidedness and boat scale validated by inspection.

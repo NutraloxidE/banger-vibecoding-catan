@@ -45,7 +45,7 @@ function Boat({ radius, speed, phase, dir }: { radius: number; speed: number; ph
     g.rotation.z = Math.sin(clock.elapsedTime * 1.5 + phase) * 0.06;
   });
   return (
-    <group ref={ref} raycast={() => null}>
+    <group ref={ref} scale={1.35} raycast={() => null}>
       <mesh geometry={boatHull} material={hullMat} />
       <mesh geometry={boatSail} material={sailMat} position={[0, 0.24, 0]} />
     </group>
