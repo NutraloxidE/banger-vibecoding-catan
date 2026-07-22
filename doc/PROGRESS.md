@@ -156,3 +156,28 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   to shared `Ambient.tsx`, which the frozen gameplay screen uses.
 - Rival preview must keep using `new RNG(seed + ':players')` + `pickNpcs` so
   it stays truthful to buildMatch.
+
+---
+
+## 2026-07-22 — Title/setup reverted to first-commit atmosphere (user request)
+
+### What changed
+- User clarified: "最初のワンショット" meant **the repo's first commit
+  (07d9086)**, not the PLAN.md spec. Title + setup screens reverted to that
+  exact atmosphere; the previous session's additions (particle motes, bird
+  flock, launch flash transition, seed-based rival highlighting, match
+  summary bar, hex pulse, seg-btn nowrap tweaks) were all REMOVED.
+- Kept: bilingual i18n (a separately requested feature) — the language
+  toggle top-right is the only visual addition over the first commit.
+  Unused i18n keys (setup.joining/sumHexes/sumMin) removed.
+- `spec.md` §2/§3 rewritten: title + setup are now **spec-frozen to the
+  first-commit look**, with explicit "tried and rejected" notes so future
+  sessions don't re-add the same flourishes. Gameplay screen untouched.
+
+### Verified
+- Build passes; Playwright screenshots of title + setup match the first
+  commit's originals (except the lang toggle). No page errors.
+
+### Lesson for next session
+- All three screens are now frozen to spec. Do not "improve" title/setup
+  visuals again without an explicit user request + spec.md change.

@@ -20,39 +20,39 @@ written here.
 `title → setup → game → victory → (rematch | new world | setup | title)`
 — never requires a browser refresh.
 
-## 2. Title screen
+## 2. Title screen — first-commit look, FROZEN ✅
 
-Must feel alive before any interaction:
+**The atmosphere of the repository's first commit (07d9086) is the spec.**
+Keep it exactly as-is; the only later addition kept is the language toggle.
 
 - Animated 3D demo island (fixed seed `HEXTOPIA-TITLE`) with slowly
-  auto-orbiting camera, atmospheric lighting, fog, sky.
-- Ambient life: water, boats, drifting clouds, **rising golden particle
-  motes**, and a **flapping bird flock** circling the island.
-- Large gold `START GAME` button; `CONTINUE GAME` + `reset save` appear only
-  when a valid save exists. Language toggle (EN / 日本語) top-right.
-- Interaction feedback: hover plays a sound; START/CONTINUE trigger a
-  **launch transition** (build sound + white radial flash + logo zoom-out,
-  ~300 ms) before the screen switches.
-- Title logo "HEXTOPIA" with gradient, drop shadow, and idle bobbing.
+  auto-orbiting camera, atmospheric lighting, fog, sky, water, boats,
+  drifting clouds. Nothing more (no particles, birds, or launch
+  transitions — tried and rejected by the user).
+- Centered title block: kicker line, "HEXTOPIA" logo (gradient, drop
+  shadow, idle bobbing), subtitle.
+- Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
+  `reset save` appear only when a valid save exists; footer tagline.
+- Language toggle (EN / 日本語) top-right — the sole permitted overlay.
 
-## 3. Setup screen (world configuration)
+## 3. Setup screen (world configuration) — first-commit look, FROZEN ✅
 
-Must visualize how settings affect the game — not a plain settings form:
+**Same rule: keep the first-commit atmosphere.** A plain, readable card
+grid; the only later addition kept is the language toggle (top-right).
 
-- **Map size** small/medium/large (19/37/61 hexes) with a pulsing hex-dot
+- Centered `WORLD CONFIGURATION` heading.
+- **Map size** small/medium/large (19/37/61 hexes) with a static hex-dot
   preview whose colors derive from the current seed.
-- **Rivals** 1–3 NPCs. The full 6-NPC pool is listed; the rivals that will
-  actually join (deterministic from seed + count) are highlighted gold, the
-  rest dimmed. Tooltip shows personality + tagline.
+- **Rivals** 1–3 NPCs; a sample of 4 pool NPCs shown as simple chips with
+  personality/tagline tooltips, plus the "…drawn from a pool of 6" note.
 - **Difficulty** chill / normal / ruthless.
-- **Victory target** slider 7–14 VP with an estimated match length.
-- **Seed** text field + randomize; same seed ⇒ same world and same rivals.
+- **Victory target** slider 7–14 VP with an estimated match length note.
+- **Seed** text field + randomize button; same seed ⇒ same world.
 - **World events** toggle; **chaos modifiers** (Turbo Economy, Friendly
   Robber, Maximum Sheep, NPC Drama) with a warning when ≥2 are active.
-- **Live match summary bar** above the footer: hex count, joining rival
-  emojis, VP target, estimated minutes, seed, chaos count.
-- `GENERATE WORLD` starts immediately (build sound). Language toggle in the
-  header.
+- Footer: `← back` and gold `GENERATE WORLD` (build sound, starts
+  immediately). No summary bars, roster highlighting, or pulse animations
+  (tried and rejected by the user).
 
 ## 4. Gameplay screen — FROZEN ✅
 

@@ -96,8 +96,7 @@ body.tension-2 .game-screen::after {
 .lang-btn.on { border-color: var(--gold); background: rgba(255, 206, 74, 0.16); color: var(--gold); }
 .lang-toggle.compact .lang-btn { padding: 4px 8px; font-size: 11px; }
 .title-lang { position: absolute; top: 16px; right: 16px; z-index: 5; pointer-events: auto; }
-.setup-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.setup-head .setup-title { margin-bottom: 0; }
+.setup-lang { position: absolute; top: 16px; right: 16px; z-index: 5; }
 
 /* ---------- title screen ---------- */
 
@@ -125,18 +124,6 @@ body.tension-2 .game-screen::after {
 .title-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .title-footer { position: absolute; bottom: 18px; font-size: 11px; opacity: 0.6; text-shadow: 0 1px 4px #000; }
 
-/* START launch transition: quick flash + logo zoom before the screen switch */
-.title-screen.launching::after {
-  content: ''; position: absolute; inset: 0; z-index: 20; pointer-events: none;
-  background: radial-gradient(ellipse at center, #fff8e0, #ffffff);
-  animation: launchFlash 0.3s ease-in forwards;
-}
-@keyframes launchFlash { from { opacity: 0; } 60% { opacity: 0.85; } to { opacity: 1; } }
-.title-screen.launching .title-logo { animation: logoLaunch 0.3s ease-in forwards; }
-@keyframes logoLaunch { to { transform: scale(1.18) translateY(-8px); opacity: 0; } }
-.title-screen.launching .title-buttons { animation: fadeOutDown 0.25s ease-in forwards; }
-@keyframes fadeOutDown { to { opacity: 0; transform: translateY(14px); } }
-
 /* ---------- setup screen ---------- */
 
 .setup-screen { overflow-y: auto; background: linear-gradient(160deg, #0a1828, #10263c 60%, #0c1d2f); }
@@ -154,29 +141,19 @@ body.tension-2 .game-screen::after {
   flex: 1; min-width: 70px;
   background: rgba(255,255,255,0.05); color: var(--ink);
   border: 2px solid rgba(255,255,255,0.14); border-radius: 10px;
-  padding: 9px 6px; cursor: pointer; font-weight: 700; font-family: inherit; font-size: 12.5px;
+  padding: 9px 8px; cursor: pointer; font-weight: 700; font-family: inherit; font-size: 13px;
   transition: all 0.12s;
-  white-space: nowrap;
 }
 .seg-btn.on { border-color: var(--gold); background: rgba(255, 206, 74, 0.14); color: var(--gold); }
-.seg-btn .dim { display: block; font-size: 10.5px; margin-top: 1px; }
 .hex-preview { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 12px; max-width: 300px; }
 .hex-dot {
   width: 16px; height: 16px; display: inline-block;
   clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
-  animation: hexPulse 3.2s ease-in-out infinite;
 }
-@keyframes hexPulse { 50% { transform: scale(1.18); filter: brightness(1.25); } }
 .npc-roster { margin: 8px 0 6px; display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
 .npc-mini {
   background: rgba(255,255,255,0.06); border-radius: 8px; padding: 4px 8px; font-size: 12px; cursor: help;
-  border: 2px solid transparent; opacity: 0.45; transition: all 0.2s;
 }
-.npc-mini.joining {
-  opacity: 1; border-color: var(--gold); background: rgba(255, 206, 74, 0.12);
-  animation: joinPop 0.3s cubic-bezier(0.2, 1.6, 0.4, 1);
-}
-@keyframes joinPop { 0% { transform: scale(0.7); } }
 .npc-mini-emoji { font-size: 14px; }
 input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
 .seed-row { display: flex; gap: 6px; }
@@ -191,16 +168,7 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   margin-top: 8px; padding: 8px 12px; border-radius: 10px; font-size: 12px;
   background: rgba(255, 120, 60, 0.15); border: 1px solid rgba(255, 140, 60, 0.5);
 }
-.match-summary {
-  margin-top: 16px; display: flex; flex-wrap: wrap; gap: 8px 18px;
-  justify-content: center; align-items: center;
-  background: var(--panel-lite); border: 1px solid rgba(255, 206, 74, 0.35);
-  border-radius: 999px; padding: 10px 22px;
-  font-size: 13px; font-weight: 700;
-}
-.match-summary .sum-roster { letter-spacing: 0.15em; }
-.match-summary .sum-chaos { color: var(--gold); }
-.setup-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; gap: 12px; }
+.setup-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 12px; }
 
 /* ---------- top bar ---------- */
 
