@@ -14,9 +14,9 @@ const RES_EMOJI: Record<Resource, string> = {
 };
 
 const plankGeo = new THREE.BoxGeometry(0.5, 0.06, 0.22);
-const postGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6);
-const armGeo = new THREE.BoxGeometry(0.28, 0.04, 0.04);
-const signGeo = new THREE.PlaneGeometry(0.32, 0.32);
+const postGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.72, 6);
+const armGeo = new THREE.BoxGeometry(0.4, 0.04, 0.04);
+const signGeo = new THREE.PlaneGeometry(0.52, 0.52);
 const buoyGeo = new THREE.SphereGeometry(0.06, 8, 6);
 
 const woodMat = new THREE.MeshStandardMaterial({ color: '#8a5a33' });
@@ -53,9 +53,9 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
         onPointerOut={() => setHover(false)}
       >
         <mesh geometry={plankGeo} material={woodMat} castShadow />
-        <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.28, 0.04]} />
-        <mesh geometry={armGeo} material={postMat} position={[-0.04, 0.5, 0.04]} />
-        <mesh geometry={signGeo} position={[0.02, 0.36, 0.05]} rotation={[0, Math.PI, 0]}>
+        <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.36, 0.04]} />
+        <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
+        <mesh geometry={signGeo} position={[0.04, 0.4, 0.05]} rotation={[0, Math.PI, 0]}>
           <meshBasicMaterial map={signTex} transparent side={THREE.DoubleSide} />
         </mesh>
         <mesh geometry={buoyGeo} material={buoyMat} position={[0.2, 0.05, -0.05]} />

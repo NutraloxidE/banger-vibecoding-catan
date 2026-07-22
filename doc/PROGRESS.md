@@ -299,3 +299,27 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   imports board). Don't introduce a board→…→board cycle.
 - Harbors are NOT drawn in the setup screen's SVG preview (that screen is the
   frozen 初代 design — left untouched on purpose).
+
+---
+
+## 2026-07-22 — Harbor sign enlarged for readability
+
+### What changed
+- Coastal harbor signs were small and their "N:1" rate text was hard to read
+  from the default camera. Enlarged the hanging sign so the rate + resource
+  emoji read at a glance (`src/scene/Ports.tsx`, `src/scene/textures.ts`):
+  - `signGeo` plane 0.32 → 0.52; `armGeo` 0.28 → 0.4 (wider to hold the sign);
+    `postGeo` mast 0.5 → 0.72 tall, and post/arm/sign repositioned so the
+    taller sign hangs from the arm (top y≈0.66) and clears the dock plank
+    (bottom y≈0.14, plank at y=0) — no dip into the water.
+  - `portSignTexture` canvas 128 → 256 with 2× drawing coords + larger fonts
+    (rate `bold 104px`, emoji `100px`) so the bigger plane stays crisp.
+- Frozen gameplay screen: changed on explicit user request; spec §4 harbor
+  amendment updated in the same commit.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs.
+- No Playwright screenshot this session (not installed; a full 3D-scene
+  navigation harness to frame one coastal harbor is disproportionate to a
+  geometry-scale tweak). Change is purely dimensional; mast geometry validated
+  by inspection. Nothing else in `Ports.tsx` / `textures.ts` touched.
