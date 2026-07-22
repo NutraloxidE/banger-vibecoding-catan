@@ -76,3 +76,47 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 - `npm run build` passes. Playwright screenshots at wide / zoomed / low-angle
   views confirm every token is legible over forests and mountains; no page
   errors.
+
+---
+
+## 2026-07-22 — Bilingual (EN / 日本語) support
+
+### What changed
+- New `src/i18n.ts`: `Lang = 'en' | 'ja'`, a single `M` map of `[en, ja]`
+  tuples, and `t(key, params?, lang?)` with `{token}` interpolation. Module-
+  level `activeLang` mirrors the setting; `setActiveLang()` keeps it in sync.
+- New `src/ui/useT.ts` (`useT()` hook + `useLang()`), and `src/ui/LangToggle.tsx`
+  (EN / 日本語 segmented control). Toggle appears on the title screen (top-right),
+  setup header, and the in-game HUD settings popover.
+- `settings.lang` added (persisted; defaults to `ja` if `navigator.language`
+  starts with "ja", else `en`). `setSetting('lang', …)` calls `setActiveLang`.
+- All static UI switches live. Dynamic game text (log lines, toasts, NPC
+  speech, world-event labels) is generated in the active language **at event
+  time** via `t()` in `store.ts` / `names.ts` — so switching mid-game affects
+  new events + all chrome; already-logged history keeps its original language
+  (standard behavior, acceptable).
+- NPC speech moved from `names.ts` `LINES` into i18n (`npc.<key>` as
+  newline-joined variants; `npcLine()` splits + picks). `PERSONALITY_LABEL`
+  removed — components use `t('pers.<p>')`.
+- Human player name is translated at display time (`t('player.you')`) in
+  TopBar/VictoryScreen so it stays consistent after a live switch, even though
+  the stored `player.name` was baked at match creation.
+
+### Deliberately left in English
+- Procedural settlement names (e.g. "Grand Brick Point") and civ titles —
+  they're absurd brand-like proper nouns; translating fragment-generated names
+  naturally is out of scope. They read fine embedded in JA text.
+
+### Verified
+- `npm run build` + `npm run simulate` (all 5 configs) pass.
+- Playwright: title/setup/HUD in both languages, live switch title→JA and
+  in-game JA→EN, localized chronicle log + player chip; `player[0].name`
+  reads "あなた" in JA. No page errors.
+
+### Gotchas for next session
+- To add a string: add one `M['key'] = [en, ja]` entry in `i18n.ts`; use
+  `t('key', {params})` (components via `useT()`; store via imported `t`).
+  Localize resource/terrain params with `t('res.'+r)` / `t('terrain.'+x)`
+  before interpolating.
+- `i18n.ts` must NOT import the store (cycle). The `useT` hook lives in
+  `ui/useT.ts` instead.

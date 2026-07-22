@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { useGame } from '../game/store';
 import { MatchState } from '../game/types';
 import { sfx } from '../audio/sfx';
+import { useT } from './useT';
 
 function computeAbsurdStats(g: MatchState) {
   const sheepTotal = g.players.reduce((n, p) => n + p.stats.producedBy.sheep, 0);
@@ -23,10 +24,11 @@ export function VictoryScreen() {
   const rematch = useGame((s) => s.rematch);
   const goSetup = useGame((s) => s.goSetup);
   const goTitle = useGame((s) => s.goTitle);
+  const t = useT();
   const [showStats, setShowStats] = useState(false);
   const [skipped, setSkipped] = useState(false);
 
-  const confetti = useMemo(() => Array.from({ length: 60 }, (_, i) => ({
+  const confetti = useMemo(() => Array.from({ length: 60 }, () => ({
     left: Math.random() * 100,
     delay: Math.random() * 2.5,
     dur: 2.5 + Math.random() * 3,
@@ -38,6 +40,10 @@ export function VictoryScreen() {
   const winner = game.players[game.winner];
   const ranked = [...game.players].sort((a, b) => b.vp - a.vp);
   const abs = computeAbsurdStats(game);
+  const dName = (p: MatchState['players'][number]) => (p.isNpc ? p.name : t('player.you'));
+
+  const civ = winner.civTitle ? t('victory.civWith', { civ: winner.civTitle }) : '';
+  const subtitle = t('victory.subtitle', { civ, vp: winner.vp, turns: game.turnCount });
 
   return (
     <div className="victory-overlay" onClick={() => setSkipped(true)}>
@@ -49,46 +55,44 @@ export function VictoryScreen() {
       ))}
       <div className="victory-panel" onClick={(e) => e.stopPropagation()}>
         <div className="victory-crown">👑</div>
-        <h1 className="victory-name" style={{ color: winner.color }}>{winner.name}</h1>
-        <div className="victory-sub">
-          {winner.civTitle ? `${winner.civTitle} — ` : ''}wins with <b>{winner.vp} victory points</b> after {game.turnCount} turns
-        </div>
+        <h1 className="victory-name" style={{ color: winner.color }}>{dName(winner)}</h1>
+        <div className="victory-sub" dangerouslySetInnerHTML={{ __html: subtitle }} />
 
         <div className="ranking">
           {ranked.map((p, i) => (
             <div key={p.id} className="rank-row" style={{ ['--pc' as any]: p.color }}>
               <span className="rank-pos">{['🥇', '🥈', '🥉', '🏳'][i] ?? '🏳'}</span>
-              <span className="rank-name">{p.emoji} {p.name}</span>
+              <span className="rank-name">{p.emoji} {dName(p)}</span>
               <span className="rank-vp">⭐ {p.vp}</span>
-              <span className="dim tiny">{p.stats.produced} produced · {p.stats.roadsBuilt} roads</span>
+              <span className="dim tiny">{t('victory.rankSub', { produced: p.stats.produced, roads: p.stats.roadsBuilt })}</span>
             </div>
           ))}
         </div>
 
         <button className="btn btn-ghost" onClick={() => { sfx.click(); setShowStats(!showStats); }}>
-          {showStats ? '▲ hide' : '▼ RIDICULOUS STATISTICS'}
+          {showStats ? t('victory.hide') : t('victory.stats')}
         </button>
 
         {showStats && (
           <div className="stats-grid">
-            <div className="stat"><b>Rounds survived</b><span>{game.round}</span></div>
-            <div className="stat"><b>Most suspicious dice roll</b><span>{abs.bestRoll} (appeared {abs.bestRollN}×)</span></div>
-            <div className="stat"><b>Sheep economically mobilized</b><span>{abs.sheepTotal}</span></div>
-            <div className="stat"><b>Settlement with the strongest name</b><span>{abs.strongestName}</span></div>
-            {abs.angriest && <div className="stat"><b>Highest unresolved anger</b><span>{abs.angriest.emoji} {abs.angriest.name} ({abs.angriest.stats.tradesRejected + abs.angriest.stats.timesRobbed} grievances)</span></div>}
-            <div className="stat"><b>Responsible for the market situation</b><span>{abs.banker.emoji} {abs.banker.name} ({abs.banker.stats.tradesBank} bank trades)</span></div>
-            <div className="stat"><b>Most robbed</b><span>{abs.mostRobbed.emoji} {abs.mostRobbed.name} ({abs.mostRobbed.stats.timesRobbed}×)</span></div>
-            <div className="stat"><b>Longest road</b><span>{game.longestRoad ? `${game.players[game.longestRoad.owner].name} (${game.longestRoad.length} segments)` : 'nobody bothered (min 5)'}</span></div>
-            <div className="stat"><b>Biggest single harvest</b><span>{Math.max(...game.players.map((p) => p.stats.biggestHarvest))} cards</span></div>
-            <div className="stat"><b>World seed</b><span>{game.config.seed}</span></div>
+            <div className="stat"><b>{t('stat.rounds')}</b><span>{game.round}</span></div>
+            <div className="stat"><b>{t('stat.suspiciousRoll')}</b><span>{t('stat.rollAppeared', { roll: abs.bestRoll, n: abs.bestRollN })}</span></div>
+            <div className="stat"><b>{t('stat.sheepMobilized')}</b><span>{abs.sheepTotal}</span></div>
+            <div className="stat"><b>{t('stat.strongestName')}</b><span>{abs.strongestName}</span></div>
+            {abs.angriest && <div className="stat"><b>{t('stat.anger')}</b><span>{t('stat.angerVal', { emoji: abs.angriest.emoji, name: abs.angriest.name, n: abs.angriest.stats.tradesRejected + abs.angriest.stats.timesRobbed })}</span></div>}
+            <div className="stat"><b>{t('stat.market')}</b><span>{t('stat.marketVal', { emoji: abs.banker.emoji, name: abs.banker.name, n: abs.banker.stats.tradesBank })}</span></div>
+            <div className="stat"><b>{t('stat.mostRobbed')}</b><span>{t('stat.mostRobbedVal', { emoji: abs.mostRobbed.emoji, name: abs.mostRobbed.name, n: abs.mostRobbed.stats.timesRobbed })}</span></div>
+            <div className="stat"><b>{t('stat.longestRoad')}</b><span>{game.longestRoad ? t('stat.longestRoadVal', { name: game.players[game.longestRoad.owner].name, n: game.longestRoad.length }) : t('stat.longestRoadNone')}</span></div>
+            <div className="stat"><b>{t('stat.biggestHarvest')}</b><span>{t('stat.cards', { n: Math.max(...game.players.map((p) => p.stats.biggestHarvest)) })}</span></div>
+            <div className="stat"><b>{t('stat.seed')}</b><span>{game.config.seed}</span></div>
           </div>
         )}
 
         <div className="victory-btns">
-          <button className="btn btn-big btn-gold" onClick={() => { sfx.click(); rematch(false); }}>🌍 NEW WORLD</button>
-          <button className="btn btn-big" onClick={() => { sfx.click(); rematch(true); }}>🔁 REMATCH (same seed)</button>
-          <button className="btn btn-ghost" onClick={() => { sfx.click(); goSetup(); }}>⚙ change settings</button>
-          <button className="btn btn-ghost" onClick={() => { sfx.click(); goTitle(); }}>🏠 title</button>
+          <button className="btn btn-big btn-gold" onClick={() => { sfx.click(); rematch(false); }}>{t('victory.newWorld')}</button>
+          <button className="btn btn-big" onClick={() => { sfx.click(); rematch(true); }}>{t('victory.rematch')}</button>
+          <button className="btn btn-ghost" onClick={() => { sfx.click(); goSetup(); }}>{t('victory.changeSettings')}</button>
+          <button className="btn btn-ghost" onClick={() => { sfx.click(); goTitle(); }}>{t('victory.title')}</button>
         </div>
       </div>
     </div>

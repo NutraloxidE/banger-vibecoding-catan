@@ -3,13 +3,15 @@ import { useGame } from '../game/store';
 import { RESOURCES, Resource } from '../game/types';
 import { bankRate } from '../game/rules';
 import { aiEvaluateTrade } from '../game/ai';
-import { RES_EMOJI, RES_LABEL } from './util';
+import { RES_EMOJI } from './util';
 import { sfx } from '../audio/sfx';
+import { useT } from './useT';
 
 export function TradeModal({ onClose }: { onClose: () => void }) {
   const game = useGame((s) => s.game);
   const bankTrade = useGame((s) => s.bankTrade);
   const tradeWithNpc = useGame((s) => s.tradeWithNpc);
+  const t = useT();
   const [tab, setTab] = useState<'bank' | 'npc'>('bank');
   const [give, setGive] = useState<Resource>('wood');
   const [want, setWant] = useState<Resource>('wheat');
@@ -33,13 +35,13 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
   const doBank = () => {
     if (!bankOk) { sfx.invalid(); return; }
     bankTrade(give, want);
-    setResult(`Bank accepted: ${rate} ${RES_EMOJI[give]} → 1 ${RES_EMOJI[want]}`);
+    setResult(t('trade.bankAccepted', { rate, give: RES_EMOJI[give], get: RES_EMOJI[want] }));
   };
 
   const doNpc = () => {
     if (!npcOk) { sfx.invalid(); return; }
     const ok = tradeWithNpc(npc.id, give, giveN, want, wantN);
-    setResult(ok ? `${npc.name} ACCEPTED the deal 🤝` : `${npc.name} REJECTED you 🚫`);
+    setResult(ok ? t('trade.npcAccepted', { name: npc.name }) : t('trade.npcRejected', { name: npc.name }));
   };
 
   const ResPicker = ({ value, onPick, label }: { value: Resource; onPick: (r: Resource) => void; label: string }) => (
@@ -49,7 +51,7 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
         {RESOURCES.map((r) => (
           <button key={r} className={`res-pick ${value === r ? 'on' : ''}`}
             onClick={() => { sfx.click(); onPick(r); setResult(null); }}>
-            {RES_EMOJI[r]}<span className="res-pick-n">{tab === 'npc' ? '' : ''}</span>
+            {RES_EMOJI[r]}
           </button>
         ))}
       </div>
@@ -60,25 +62,26 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal trade-modal" onClick={(e) => e.stopPropagation()}>
         <div className="modal-head">
-          <h3>🔁 THE MARKET</h3>
+          <h3>{t('trade.market')}</h3>
           <button className="btn btn-ghost" onClick={onClose}>✕</button>
         </div>
         <div className="seg">
           <button className={`seg-btn ${tab === 'bank' ? 'on' : ''}`} onClick={() => { sfx.click(); setTab('bank'); setResult(null); }}>
-            🏦 World Bank
+            {t('trade.bank')}
           </button>
           <button className={`seg-btn ${tab === 'npc' ? 'on' : ''}`} onClick={() => { sfx.click(); setTab('npc'); setResult(null); }}>
-            🎭 Rivals
+            {t('trade.rivals')}
           </button>
         </div>
 
         {tab === 'bank' && (
           <div className="trade-body">
-            <ResPicker value={give} onPick={setGive} label={`You give (${rate}:1${game.worldEvent?.kind === 'festival' ? ' — festival discount!' : ''})`} />
+            <ResPicker value={give} onPick={setGive}
+              label={t('trade.youGiveRate', { rate, festival: game.worldEvent?.kind === 'festival' ? t('trade.festival') : '' })} />
             <div className="trade-arrow">{rate} {RES_EMOJI[give]} → 1 {RES_EMOJI[want]}</div>
-            <ResPicker value={want} onPick={setWant} label="You receive" />
+            <ResPicker value={want} onPick={setWant} label={t('trade.youReceive')} />
             <button className={`btn btn-big ${bankOk ? 'btn-gold' : 'disabled'}`} onClick={doBank}>
-              {bankOk ? '🏦 EXECUTE TRADE' : me.resources[give] < rate ? `need ${rate} ${RES_LABEL[give].toLowerCase()}` : 'pick different goods'}
+              {bankOk ? t('trade.execute') : me.resources[give] < rate ? t('trade.needN', { n: rate, res: t(`res.${give}`) }) : t('trade.pickDiff')}
             </button>
           </div>
         )}
@@ -96,7 +99,7 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
             </div>
             <div className="trade-cols">
               <div>
-                <ResPicker value={give} onPick={setGive} label="You give" />
+                <ResPicker value={give} onPick={setGive} label={t('trade.youGive')} />
                 <div className="stepper">
                   <button className="btn btn-ghost" onClick={() => setGiveN(Math.max(1, giveN - 1))}>−</button>
                   <b>{giveN}</b>
@@ -105,7 +108,7 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
               </div>
               <div className="trade-arrow">↔</div>
               <div>
-                <ResPicker value={want} onPick={setWant} label="You receive" />
+                <ResPicker value={want} onPick={setWant} label={t('trade.youReceive')} />
                 <div className="stepper">
                   <button className="btn btn-ghost" onClick={() => setWantN(Math.max(1, wantN - 1))}>−</button>
                   <b>{wantN}</b>
@@ -115,14 +118,14 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
             </div>
             {npc && (
               <div className={`npc-mood-hint ${npcLikely ? 'yes' : 'no'}`}>
-                {!iHaveGoods ? `You don't have ${giveN} ${RES_LABEL[give].toLowerCase()}`
-                  : !npcHasGoods ? `${npc.name} doesn't have ${wantN} ${RES_LABEL[want].toLowerCase()}`
-                  : npcLikely ? `${npc.emoji} ${npc.name} looks interested…`
-                  : `${npc.emoji} ${npc.name} looks deeply unimpressed`}
+                {!iHaveGoods ? t('trade.noHaveGive', { n: giveN, res: t(`res.${give}`) })
+                  : !npcHasGoods ? t('trade.npcNoHave', { name: npc.name, n: wantN, res: t(`res.${want}`) })
+                  : npcLikely ? t('trade.interested', { emoji: npc.emoji, name: npc.name })
+                  : t('trade.unimpressed', { emoji: npc.emoji, name: npc.name })}
               </div>
             )}
             <button className={`btn btn-big ${npcOk ? 'btn-gold' : 'disabled'}`} onClick={doNpc}>
-              💼 MAKE THE OFFER
+              {t('trade.makeOffer')}
             </button>
           </div>
         )}

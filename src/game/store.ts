@@ -14,6 +14,7 @@ import { aiSetupVertex, aiSetupRoad, aiMainAction, aiRobberChoice, aiEvaluateTra
 import { RNG, randomSeedString } from './rng';
 import { pickNpcs, settlementName, civTitle, npcLine, PLAYER_COLORS } from './names';
 import { sfx } from '../audio/sfx';
+import { t, setActiveLang, Lang } from '../i18n';
 
 const SAVE_KEY = 'hextopia-save-v1';
 const SETTINGS_KEY = 'hextopia-settings-v1';
@@ -27,7 +28,11 @@ export interface Settings {
   volFx: number;
   volVoice: number;
   fastMode: boolean;
+  lang: Lang;
 }
+
+// localized resource / terrain words for log + toast interpolation
+const resName = (r: Resource) => t(`res.${r}`);
 
 interface Store {
   screen: 'title' | 'setup' | 'game';
@@ -43,7 +48,7 @@ interface Store {
   continueGame: () => void;
   clearSave: () => void;
 
-  setSetting: (k: keyof Settings, v: number | boolean) => void;
+  setSetting: (k: keyof Settings, v: number | boolean | string) => void;
 
   clickVertex: (id: string) => void;
   clickEdge: (id: string) => void;
@@ -131,8 +136,8 @@ function updateLongestRoad(g: MatchState, toasts: Toast[]) {
     g.longestRoad = newHolder;
     if (newHolder) {
       const name = g.players[newHolder.owner].name;
-      pushLog(g, `🛣️ ${name} now holds the LONGEST ROAD (+2 VP)`);
-      addToastTo(toasts, 'ROAD-BASED DOMINANCE', 'combo', `${name} holds the longest road (+2 VP)`);
+      pushLog(g, t('g.longestRoad', { name }));
+      addToastTo(toasts, t('g.roadDominance'), 'combo', t('g.roadDominanceSub', { name }));
     }
   } else if (newHolder) {
     g.longestRoad = newHolder;
@@ -147,9 +152,9 @@ function checkWinner(g: MatchState, toasts: Toast[]) {
       g.phase = 'gameover';
       g.placement = null;
       g.npcOffer = null;
-      pushLog(g, `👑 ${p.name} WINS with ${p.vp} victory points!`);
+      pushLog(g, t('g.wins', { name: p.name, vp: p.vp }));
       for (const q of g.players) {
-        if (q.id !== p.id && q.isNpc) say(g, q.id, q.personality === 'gambler' ? 'The dice betrayed me.' : 'This is a dark day for my economy.');
+        if (q.id !== p.id && q.isNpc) say(g, q.id, q.personality === 'gambler' ? t('g.loseGambler') : t('g.loseOther'));
       }
       sfx.fanfare();
       return;
@@ -159,7 +164,7 @@ function checkWinner(g: MatchState, toasts: Toast[]) {
   const threat = g.players.find((p) => p.vp === g.config.targetVp - 1);
   if (threat && !g.matchPointAnnounced) {
     g.matchPointAnnounced = true;
-    addToastTo(toasts, 'MATCH POINT', 'warn', `${threat.name} is ONE build from victory`, 4200);
+    addToastTo(toasts, t('g.matchPoint'), 'warn', t('g.matchPointSub', { name: threat.name }), 4200);
     sfx.matchPoint();
     for (const q of g.players) {
       if (q.isNpc && q.id !== threat.id) say(g, q.id, npcLine(new RNG(Math.random() * 1e9), 'threatened'));
@@ -186,7 +191,7 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     addFx(g, 'burst', e.x, e.z, p.color);
     if (p.isNpc) focus(g, e.x, e.z);
     sfx.place();
-    pushLog(g, `${p.emoji} ${p.name} builds a road`);
+    pushLog(g, t('g.buildRoad', { emoji: p.emoji, name: p.name }));
     if (p.isNpc && Math.random() < 0.3) say(g, pid, npcLine(rng, 'buildRoad'));
   } else if (kind === 'settlement') {
     const name = settlementName(rng);
@@ -196,7 +201,7 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     addFx(g, 'burst', v.x, v.z, p.color);
     focus(g, v.x, v.z);
     sfx.buildBig();
-    pushLog(g, `${p.emoji} ${p.name} founds ${name} (+1 VP)`);
+    pushLog(g, t('g.foundSettlementVp', { emoji: p.emoji, name: p.name, place: name }));
     if (p.isNpc && Math.random() < 0.5) say(g, pid, npcLine(rng, 'buildSettlement'));
   } else if (kind === 'city') {
     const b = g.buildings[spot];
@@ -206,8 +211,8 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     addFx(g, 'ring', v.x, v.z, p.color);
     focus(g, v.x, v.z);
     sfx.buildBig();
-    pushLog(g, `${p.emoji} ${p.name} upgrades ${b.name} into a CITY (+1 VP)`);
-    addToastTo(toasts, 'URBANIZATION', 'info', `${b.name} is now a city`);
+    pushLog(g, t('g.upgradeCity', { emoji: p.emoji, name: p.name, place: b.name }));
+    addToastTo(toasts, t('g.urbanization'), 'info', t('g.urbanizationSub', { place: b.name }));
     if (p.isNpc) say(g, pid, npcLine(rng, 'buildCity'));
   } else if (kind === 'megacity') {
     const b = g.buildings[spot];
@@ -218,8 +223,8 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     addFx(g, 'mega', v.x, v.z, p.color);
     focus(g, v.x, v.z);
     sfx.mega();
-    pushLog(g, `🌆 ${p.emoji} ${p.name} raises ${b.name} into a MEGA CITY! They are now "${p.civTitle}"`);
-    addToastTo(toasts, 'MEGA CITY RISES', 'combo', `${b.name} — a civilization-scale threshold has been crossed`, 5000);
+    pushLog(g, t('g.raiseMega', { emoji: p.emoji, name: p.name, place: b.name, civ: p.civTitle }));
+    addToastTo(toasts, t('g.megaRises'), 'combo', t('g.megaRisesSub', { place: b.name }), 5000);
     if (p.isNpc) say(g, pid, npcLine(rng, 'buildMega'));
     g.spectacle = Math.min(10, g.spectacle + 5);
   }
@@ -239,12 +244,12 @@ function stealRandom(g: MatchState, thiefId: number, victimId: number, toasts: T
   g.players[thiefId].resources[res] += 1;
   victim.stats.timesRobbed++;
   g.players[thiefId].stats.robberiesDone++;
-  pushLog(g, `🦹 ${g.players[thiefId].name} steals a card from ${victim.name}`);
+  pushLog(g, t('g.steal', { thief: g.players[thiefId].name, victim: victim.name }));
   if (victim.isNpc) say(g, victimId, npcLine(new RNG(Math.random() * 1e9), 'robbed'));
   if (g.config.chaos.friendlyRobber) {
     const consolation = RESOURCES[Math.floor(Math.random() * RESOURCES.length)];
     victim.resources[consolation] += 1;
-    pushLog(g, `🤝 Friendly Robber: ${victim.name} receives a consolation ${consolation}`);
+    pushLog(g, t('g.friendlyRobber', { victim: victim.name, res: resName(consolation) }));
   }
 }
 
@@ -252,7 +257,7 @@ function applyProduction(g: MatchState, toasts: Toast[], total: number) {
   const gains = computeProduction(g, total);
   const pids = Object.keys(gains).map(Number);
   if (pids.length === 0) {
-    pushLog(g, `🎲 Rolled ${total}. The economy did nothing.`);
+    pushLog(g, t('g.rolledNothing', { total }));
     return;
   }
   for (const pid of pids) {
@@ -272,26 +277,26 @@ function applyProduction(g: MatchState, toasts: Toast[], total: number) {
       }
     }
     p.stats.biggestHarvest = Math.max(p.stats.biggestHarvest, totalN);
-    pushLog(g, `📦 ${p.emoji} ${p.name} gains ${totalN} resource${totalN > 1 ? 's' : ''}`);
+    pushLog(g, t('g.gains', { emoji: p.emoji, name: p.name, n: totalN }));
 
     // combo feedback (presentation only; the actual gain is already logged)
     if (totalN >= 4 && !mixed && soleRes) {
-      const comboNames: Record<Resource, string> = {
-        wheat: 'ABSURD WHEAT EVENT', sheep: 'THE FLOCK PROVIDES', wood: 'THE FOREST HAS SPOKEN',
-        brick: 'INDUSTRIAL INCIDENT', ore: 'THE MOUNTAIN YIELDS',
+      const comboKeys: Record<Resource, string> = {
+        wheat: 'g.comboWheat', sheep: 'g.comboSheep', wood: 'g.comboWood',
+        brick: 'g.comboBrick', ore: 'g.comboOre',
       };
-      addToastTo(toasts, comboNames[soleRes], 'combo', `${p.name} gains ${totalN}× ${soleRes}`);
+      addToastTo(toasts, t(comboKeys[soleRes]), 'combo', t('g.comboSub', { name: p.name, n: totalN, res: resName(soleRes) }));
       sfx.combo();
       g.spectacle = Math.min(10, g.spectacle + 2);
     } else if (totalN >= 7) {
-      addToastTo(toasts, 'THE ECONOMY ASCENDS', 'combo', `${p.name} gains ${totalN} resources at once`);
+      addToastTo(toasts, t('g.economyAscends'), 'combo', t('g.economyAscendsSub', { name: p.name, n: totalN }));
       sfx.combo();
       g.spectacle = Math.min(10, g.spectacle + 3);
     } else if (totalN >= 5) {
-      addToastTo(toasts, 'SUPPLY CHAIN', 'combo', `${p.name} gains ${totalN} resources`);
+      addToastTo(toasts, t('g.supplyChain'), 'combo', t('g.comboGenericSub', { name: p.name, n: totalN }));
       sfx.combo();
     } else if (totalN >= 3) {
-      addToastTo(toasts, 'DOUBLE HARVEST', 'combo', `${p.name} gains ${totalN} resources`);
+      addToastTo(toasts, t('g.doubleHarvest'), 'combo', t('g.comboGenericSub', { name: p.name, n: totalN }));
     }
     if (p.isNpc && totalN >= 3) say(g, pid, npcLine(new RNG(Math.random() * 1e9), 'goodRoll'));
   }
@@ -304,7 +309,7 @@ function applyProduction(g: MatchState, toasts: Toast[], total: number) {
 function maybeWorldEvent(g: MatchState, toasts: Toast[]) {
   if (!g.config.worldEvents) return;
   if (g.worldEvent && g.round > g.worldEvent.untilRound) {
-    pushLog(g, `🌤️ World event ends: ${g.worldEvent.label}`);
+    pushLog(g, t('g.worldEventEnds', { label: g.worldEvent.label }));
     g.worldEvent = null;
   }
   if (g.worldEvent || g.round < 3 || Math.random() > 0.22) return;
@@ -313,18 +318,18 @@ function maybeWorldEvent(g: MatchState, toasts: Toast[]) {
   const until = g.round + 2;
   if (kind === 'boom') {
     const res = rng.pick(RESOURCES);
-    g.worldEvent = { kind, resource: res, untilRound: until, label: `${res.toUpperCase()} BOOM`, desc: `${res} tiles produce +1 for 2 rounds` };
+    g.worldEvent = { kind, resource: res, untilRound: until, label: t('g.eventBoomLabel', { res: resName(res) }), desc: t('g.eventBoomDesc', { res: resName(res) }) };
   } else if (kind === 'storm') {
     const candidates = g.board.tiles.filter((t) => t.token !== null);
     const tile = rng.pick(candidates);
-    g.worldEvent = { kind, tileId: tile.id, untilRound: until, label: 'LOCALIZED STORM', desc: `One ${tile.terrain} tile produces nothing for 2 rounds` };
+    g.worldEvent = { kind, tileId: tile.id, untilRound: until, label: t('g.eventStormLabel'), desc: t('g.eventStormDesc', { terrain: t(`terrain.${tile.terrain}`) }) };
     addFx(g, 'ring', tile.x, tile.z, '#7fb8ff');
   } else if (kind === 'festival') {
-    g.worldEvent = { kind, untilRound: until, label: 'TRADE FESTIVAL', desc: 'Bank trades cost 3:1 for 2 rounds' };
+    g.worldEvent = { kind, untilRound: until, label: t('g.eventFestivalLabel'), desc: t('g.eventFestivalDesc') };
   } else {
-    g.worldEvent = { kind, untilRound: until, label: 'SUSPICIOUSLY PRODUCTIVE SHEEP', desc: 'Pastures produce +1 for 2 rounds. No one knows why.' };
+    g.worldEvent = { kind, untilRound: until, label: t('g.eventSheepLabel'), desc: t('g.eventSheepDesc') };
   }
-  pushLog(g, `🌍 WORLD EVENT: ${g.worldEvent.label} — ${g.worldEvent.desc}`);
+  pushLog(g, t('g.worldEvent', { label: g.worldEvent.label, desc: g.worldEvent.desc }));
   addToastTo(toasts, g.worldEvent.label, 'event', g.worldEvent.desc, 4500);
 }
 
@@ -334,7 +339,7 @@ function buildMatch(config: MatchConfig): MatchState {
   const npcs = pickNpcs(rng, config.npcCount, config.difficulty);
   const players: PlayerState[] = [];
   players.push({
-    id: 0, name: 'You', emoji: '🫅', color: PLAYER_COLORS[0], isNpc: false,
+    id: 0, name: t('player.you'), emoji: '🫅', color: PLAYER_COLORS[0], isNpc: false,
     personality: 'builder',
     resources: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
     vp: 0, mood: 'ready', speech: null, speechAt: 0, civTitle: null, stats: emptyStats(),
@@ -362,7 +367,7 @@ function buildMatch(config: MatchConfig): MatchState {
     robberTile: desertTileId(board),
     placement: null, hoverSpot: null, npcOffer: null,
     worldEvent: null, longestRoad: null,
-    log: ['🌍 A new world rises from the sea. Place your first settlement.'],
+    log: [t('g.newWorld')],
     fx: [], focus: null, spectacle: 0,
     aiActionsThisTurn: 0,
     winner: null,
@@ -373,13 +378,22 @@ function buildMatch(config: MatchConfig): MatchState {
 
 // ---------- persistence ---------------------------------------------------
 
+function defaultLang(): Lang {
+  try {
+    if (typeof navigator !== 'undefined' && /^ja/i.test(navigator.language || '')) return 'ja';
+  } catch { /* ignore */ }
+  return 'en';
+}
+
 function loadSettings(): Settings {
-  const def: Settings = { volMaster: 0.8, volMusic: 0.5, volFx: 0.8, volVoice: 0.7, fastMode: false };
+  const def: Settings = { volMaster: 0.8, volMusic: 0.5, volFx: 0.8, volVoice: 0.7, fastMode: false, lang: defaultLang() };
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
     if (!raw) return def;
     const parsed = JSON.parse(raw);
-    return { ...def, ...parsed };
+    const merged = { ...def, ...parsed };
+    if (merged.lang !== 'en' && merged.lang !== 'ja') merged.lang = def.lang;
+    return merged;
   } catch {
     return def;
   }
@@ -418,7 +432,11 @@ function loadMatch(): MatchState | null {
 
 // ---------- store ----------------------------------------------------------
 
-const initialSettings = typeof window !== 'undefined' ? loadSettings() : { volMaster: 0.8, volMusic: 0.5, volFx: 0.8, volVoice: 0.7, fastMode: false };
+const initialSettings: Settings = typeof window !== 'undefined'
+  ? loadSettings()
+  : { volMaster: 0.8, volMusic: 0.5, volFx: 0.8, volVoice: 0.7, fastMode: false, lang: 'en' };
+
+setActiveLang(initialSettings.lang);
 
 export const useGame = create<Store>()(immer((set, get) => {
   // apply persisted volumes to the audio engine
@@ -440,7 +458,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       s.lastConfig = config;
       s.screen = 'game';
       s.toasts = [];
-      addToastTo(s.toasts, 'WORLD GENERATED', 'info', `Seed: ${config.seed} — place your first settlement`, 4000);
+      addToastTo(s.toasts, t('g.worldGenerated'), 'info', t('g.worldGeneratedSub', { seed: config.seed }), 4000);
     }),
 
     continueGame: () => set((s) => {
@@ -449,10 +467,10 @@ export const useGame = create<Store>()(immer((set, get) => {
         s.game = g;
         s.lastConfig = g.config;
         s.screen = 'game';
-        addToastTo(s.toasts, 'GAME RESTORED', 'info', `Round ${g.round} — welcome back`, 3000);
+        addToastTo(s.toasts, t('g.gameRestored'), 'info', t('g.gameRestoredSub', { round: g.round }), 3000);
       } else {
         s.savedAvailable = false;
-        addToastTo(s.toasts, 'NO VALID SAVE', 'warn', 'Starting fresh instead');
+        addToastTo(s.toasts, t('g.noSave'), 'warn', t('g.noSaveSub'));
         s.screen = 'setup';
       }
     }),
@@ -469,6 +487,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       if (k === 'volMusic') sfx.setVolume('music', v as number);
       if (k === 'volFx') sfx.setVolume('fx', v as number);
       if (k === 'volVoice') sfx.setVolume('voice', v as number);
+      if (k === 'lang') setActiveLang(v as Lang);
     }),
 
     // ---- 3D interaction routing ----
@@ -538,18 +557,18 @@ export const useGame = create<Store>()(immer((set, get) => {
       if (g.placement?.kind === kind) { g.placement = null; return; } // toggle off
       if (!canAfford(p, kind)) {
         sfx.invalid();
-        addToastTo(s.toasts, 'CANNOT AFFORD', 'warn', costText(kind), 2500);
+        addToastTo(s.toasts, t('g.cannotAfford'), 'warn', costText(kind), 2500);
         return;
       }
       const spots = validSpots(g, p.id, kind);
       if (spots.length === 0) {
         sfx.invalid();
         const reason =
-          kind === 'road' ? 'No free edges connect to your network' :
-          kind === 'settlement' ? 'No valid spots — build roads to reach open corners (2 apart from any settlement)' :
-          kind === 'city' ? 'You need a settlement to upgrade' :
-          `Needs a city + ${MEGA_ROAD_REQ} roads owned (one Mega City per player)`;
-        addToastTo(s.toasts, 'NOWHERE TO BUILD', 'warn', reason, 3200);
+          kind === 'road' ? t('g.reasonRoad') :
+          kind === 'settlement' ? t('g.reasonSettlement') :
+          kind === 'city' ? t('g.reasonCity') :
+          t('g.reasonMega', { roads: MEGA_ROAD_REQ });
+        addToastTo(s.toasts, t('g.nowhereToBuild'), 'warn', reason, 3200);
         return;
       }
       sfx.click();
@@ -576,7 +595,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       focus(g, 0, 0);
       sfx.diceThrow();
       const p = g.players[g.current];
-      pushLog(g, `🎲 ${p.emoji} ${p.name} rolls the economy...`);
+      pushLog(g, t('g.rolls', { emoji: p.emoji, name: p.name }));
     }),
 
     finishDice: () => set((s) => {
@@ -584,15 +603,15 @@ export const useGame = create<Store>()(immer((set, get) => {
       if (!g || g.phase !== 'dice' || !g.dice) return;
       const total = g.dice[0] + g.dice[1];
       sfx.diceLand(total);
-      pushLog(g, `🎲 ${g.dice[0]} + ${g.dice[1]} = ${total}${g.diceGiant ? ' (the dice were ENORMOUS today)' : ''}`);
+      pushLog(g, t('g.diceResult', { a: g.dice[0], b: g.dice[1], total, giant: g.diceGiant ? t('g.giantSuffix') : '' }));
       if (total === 7) {
         g.phase = 'robber';
         sfx.robber();
         const p = g.players[g.current];
         if (!p.isNpc) {
-          addToastTo(s.toasts, 'THE ROBBER AWAKENS', 'warn', 'Pick a tile to block. Adjacent rivals get robbed.', 4000);
+          addToastTo(s.toasts, t('g.robberAwakens'), 'warn', t('g.robberAwakensSub'), 4000);
         } else {
-          pushLog(g, `🦹 ${p.name} commands the robber...`);
+          pushLog(g, t('g.commandsRobber', { name: p.name }));
         }
       } else {
         applyProduction(g, s.toasts, total);
@@ -613,7 +632,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       p.resources[want] += 1;
       p.stats.tradesBank++;
       sfx.tradeDone();
-      pushLog(g, `🏦 ${p.emoji} ${p.name} trades ${rate} ${give} → 1 ${want} at the bank`);
+      pushLog(g, t('g.bankTrade', { emoji: p.emoji, name: p.name, rate, give: resName(give), want: resName(want) }));
       saveMatch(g);
     }),
 
@@ -637,13 +656,13 @@ export const useGame = create<Store>()(immer((set, get) => {
           accepted = true;
           say(g, npcId, npcLine(rng, 'tradeAccept'));
           sfx.tradeDone();
-          pushLog(g, `🤝 ${p.name} trades ${giveN} ${give} ↔ ${wantN} ${want} with ${npc.name}`);
+          pushLog(g, t('g.npcTrade', { name: p.name, giveN, give: resName(give), wantN, want: resName(want), other: npc.name }));
         } else {
           say(g, npcId, npcLine(rng, 'tradeReject'));
           npc.stats.tradesRejected++;
           p.stats.tradesRejected++;
           sfx.invalid();
-          pushLog(g, `🚫 ${npc.name} rejects the trade`);
+          pushLog(g, t('g.npcRejects', { name: npc.name }));
         }
         saveMatch(g);
       });
@@ -659,7 +678,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       g.npcOffer = null;
       // both sides must still have the goods
       if (npc.resources[o.give] < o.giveN || human.resources[o.get] < o.getN) {
-        addToastTo(s.toasts, 'DEAL FELL THROUGH', 'warn', 'The resources are gone. Awkward.');
+        addToastTo(s.toasts, t('g.dealFell'), 'warn', t('g.dealFellSub'));
         return;
       }
       npc.resources[o.give] -= o.giveN;
@@ -670,7 +689,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       npc.stats.tradesNpc++;
       say(g, o.from, npcLine(new RNG(Math.random() * 1e9), 'tradeAccept'));
       sfx.tradeDone();
-      pushLog(g, `🤝 You accept ${npc.name}'s offer: ${o.giveN} ${o.give} for ${o.getN} ${o.get}`);
+      pushLog(g, t('g.acceptOffer', { name: npc.name, giveN: o.giveN, give: resName(o.give), getN: o.getN, get: resName(o.get) }));
       saveMatch(g);
     }),
 
@@ -678,9 +697,9 @@ export const useGame = create<Store>()(immer((set, get) => {
       const g = s.game;
       if (!g || !g.npcOffer) return;
       const npc = g.players[g.npcOffer.from];
-      say(g, npc.id, 'Your loss. Probably.');
+      say(g, npc.id, t('g.declineOfferSpeech'));
       npc.stats.tradesRejected++;
-      pushLog(g, `🚫 You decline ${npc.name}'s offer`);
+      pushLog(g, t('g.declineOffer', { name: npc.name }));
       g.npcOffer = null;
     }),
 
@@ -724,7 +743,7 @@ export const useGame = create<Store>()(immer((set, get) => {
         g2.fx = g2.fx.filter((f) => now2 - f.born <= 2600);
         st.toasts = st.toasts.filter((t) => now2 - t.born <= t.ttl);
         if (g2.npcOffer && now2 > g2.npcOffer.expiresAt) {
-          pushLog(g2, `⌛ ${g2.players[g2.npcOffer.from].name}'s offer expires`);
+          pushLog(g2, t('g.offerExpires', { name: g2.players[g2.npcOffer.from].name }));
           g2.npcOffer = null;
         }
 
@@ -746,7 +765,7 @@ export const useGame = create<Store>()(immer((set, get) => {
           g2.phase = 'dice';
           g2.rollCounts[a + b]++;
           sfx.diceThrow();
-          pushLog(g2, `🎲 ${p.emoji} ${p.name} rolls the economy...`);
+          pushLog(g2, t('g.rolls', { emoji: p.emoji, name: p.name }));
           return;
         }
         if (g2.phase === 'robber') {
@@ -766,7 +785,7 @@ export const useGame = create<Store>()(immer((set, get) => {
               p.resources[action.give] -= rate;
               p.resources[action.get] += 1;
               p.stats.tradesBank++;
-              pushLog(g2, `🏦 ${p.emoji} ${p.name} trades ${rate} ${action.give} → 1 ${action.get}`);
+              pushLog(g2, t('g.bankTrade', { emoji: p.emoji, name: p.name, rate, give: resName(action.give), want: resName(action.get) }));
             }
           } else if (action.type === 'offerHuman') {
             const rng = new RNG(Math.random() * 1e9);
@@ -775,8 +794,8 @@ export const useGame = create<Store>()(immer((set, get) => {
               line: npcLine(rng, 'offer'),
               expiresAt: Date.now() + 9000,
             };
-            say(g2, p.id, 'I have... a proposal.');
-            pushLog(g2, `💬 ${p.name} offers you 1 ${action.give} for 1 ${action.get}`);
+            say(g2, p.id, t('g.proposalSpeech'));
+            pushLog(g2, t('g.npcOffers', { name: p.name, give: resName(action.give), get: resName(action.get) }));
           } else {
             advanceTurn(g2, st.toasts);
             saveMatch(g2);
@@ -797,7 +816,7 @@ export const useGame = create<Store>()(immer((set, get) => {
       s.lastConfig = config;
       s.screen = 'game';
       s.toasts = [];
-      addToastTo(s.toasts, sameSeed ? 'REMATCH — SAME WORLD' : 'NEW WORLD', 'info', `Seed: ${config.seed}`, 3500);
+      addToastTo(s.toasts, sameSeed ? t('g.rematchSame') : t('g.newWorldToast'), 'info', t('g.seedSub', { seed: config.seed }), 3500);
     }),
   };
 }));
@@ -809,7 +828,7 @@ if (typeof window !== 'undefined') (window as any).__game = useGame;
 
 function costText(kind: BuildKind): string {
   const c = COSTS[kind];
-  return Object.entries(c).map(([r, n]) => `${n} ${r}`).join(' + ');
+  return Object.entries(c).map(([r, n]) => `${n} ${resName(r as Resource)}`).join(' + ');
 }
 
 function placeSetupSettlement(g: MatchState, toasts: Toast[], pid: number, vertexId: string) {
@@ -823,7 +842,7 @@ function placeSetupSettlement(g: MatchState, toasts: Toast[], pid: number, verte
   addFx(g, 'burst', v.x, v.z, g.players[pid].color);
   focus(g, v.x, v.z);
   sfx.buildBig();
-  pushLog(g, `${g.players[pid].emoji} ${g.players[pid].name} founds ${name}`);
+  pushLog(g, t('g.foundSettlement', { emoji: g.players[pid].emoji, name: g.players[pid].name, place: name }));
 
   // second-pass settlement grants starting resources from adjacent tiles
   const n = g.players.length;
@@ -852,8 +871,8 @@ function placeSetupRoad(g: MatchState, toasts: Toast[], pid: number, edgeId: str
     g.phase = 'roll';
     g.current = 0;
     g.round = 1;
-    pushLog(g, '⚔️ The age of expansion begins. Roll the economy!');
-    addToastTo(toasts, 'THE AGE OF EXPANSION', 'event', 'Setup complete — first turn begins', 3800);
+    pushLog(g, t('g.ageBegins'));
+    addToastTo(toasts, t('g.ageOfExpansion'), 'event', t('g.ageOfExpansionSub'), 3800);
   } else {
     g.current = g.setupQueue[g.setupIdx];
   }
@@ -895,7 +914,7 @@ function moveRobberTo(g: MatchState, toasts: Toast[], pid: number, tileId: numbe
   const tile = g.board.tiles[tileId];
   addFx(g, 'ring', tile.x, tile.z, '#222222');
   focus(g, tile.x, tile.z);
-  pushLog(g, `🦹 ${g.players[pid].name} moves the robber`);
+  pushLog(g, t('g.movesRobber', { name: g.players[pid].name }));
 
   // find victims adjacent to the tile
   const victims = new Set<number>();
@@ -931,7 +950,7 @@ function advanceTurn(g: MatchState, toasts: Toast[]) {
   }
   g.spectacle = Math.max(0, g.spectacle - 1);
   const p = g.players[g.current];
-  pushLog(g, `— Turn ${g.turnCount + 1}: ${p.emoji} ${p.name} —`);
+  pushLog(g, t('g.turnHeader', { n: g.turnCount + 1, emoji: p.emoji, name: p.name }));
   if (p.isNpc && p.vp >= g.config.targetVp - 2 && Math.random() < 0.4) {
     say(g, p.id, npcLine(new RNG(Math.random() * 1e9), 'nearWin'));
   }

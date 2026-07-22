@@ -3,8 +3,10 @@ import { useGame } from '../game/store';
 import { MatchConfig, MapSize, Difficulty } from '../game/types';
 import { MAP_RADIUS } from '../game/board';
 import { randomSeedString, RNG } from '../game/rng';
-import { NPC_POOL, PERSONALITY_LABEL } from '../game/names';
+import { NPC_POOL } from '../game/names';
 import { sfx } from '../audio/sfx';
+import { useT } from './useT';
+import { LangToggle } from './LangToggle';
 
 const MAP_TILES: Record<MapSize, number> = { small: 19, medium: 37, large: 61 };
 
@@ -12,6 +14,7 @@ export function SetupScreen() {
   const newGame = useGame((s) => s.newGame);
   const goTitle = useGame((s) => s.goTitle);
   const lastConfig = useGame((s) => s.lastConfig);
+  const t = useT();
 
   const [mapSize, setMapSize] = useState<MapSize>(lastConfig?.mapSize ?? 'medium');
   const [npcCount, setNpcCount] = useState(lastConfig?.npcCount ?? 3);
@@ -48,16 +51,19 @@ export function SetupScreen() {
   return (
     <div className="screen setup-screen">
       <div className="setup-panel">
-        <h2 className="setup-title">🌍 WORLD CONFIGURATION</h2>
+        <div className="setup-head">
+          <h2 className="setup-title">{t('setup.title')}</h2>
+          <LangToggle />
+        </div>
 
         <div className="setup-grid">
           <section className="setup-card">
-            <h3>Map Size</h3>
+            <h3>{t('setup.mapSize')}</h3>
             <div className="seg">
               {(['small', 'medium', 'large'] as MapSize[]).map((m) => (
                 <button key={m} className={`seg-btn ${mapSize === m ? 'on' : ''}`}
                   onClick={() => { sfx.click(); setMapSize(m); }}>
-                  {m} <span className="dim">({MAP_TILES[m]} hexes)</span>
+                  {t(`setup.${m}`)} <span className="dim">{t('setup.hexes', { n: MAP_TILES[m] })}</span>
                 </button>
               ))}
             </div>
@@ -69,40 +75,40 @@ export function SetupScreen() {
           </section>
 
           <section className="setup-card">
-            <h3>Rivals</h3>
+            <h3>{t('setup.rivals')}</h3>
             <div className="seg">
               {[1, 2, 3].map((n) => (
                 <button key={n} className={`seg-btn ${npcCount === n ? 'on' : ''}`}
                   onClick={() => { sfx.click(); setNpcCount(n); }}>
-                  {n} NPC{n > 1 ? 's' : ''}
+                  {t(n > 1 ? 'setup.npcs' : 'setup.npc', { n })}
                 </button>
               ))}
             </div>
             <div className="npc-roster">
               {NPC_POOL.slice(0, 4).map((n) => (
-                <div key={n.name} className="npc-mini" title={`${PERSONALITY_LABEL[n.personality]} — ${n.tagline}`}>
+                <div key={n.name} className="npc-mini" title={`${t(`pers.${n.personality}`)} — ${t(`tag.${n.name}`)}`}>
                   <span className="npc-mini-emoji">{n.emoji}</span> {n.name}
                 </div>
               ))}
-              <div className="dim tiny">…drawn from a pool of {NPC_POOL.length} unstable characters</div>
+              <div className="dim tiny">{t('setup.pool', { n: NPC_POOL.length })}</div>
             </div>
-            <h3>Difficulty</h3>
+            <h3>{t('setup.difficulty')}</h3>
             <div className="seg">
               {(['chill', 'normal', 'ruthless'] as Difficulty[]).map((d) => (
                 <button key={d} className={`seg-btn ${difficulty === d ? 'on' : ''}`}
                   onClick={() => { sfx.click(); setDifficulty(d); }}>
-                  {d === 'chill' ? '😌 chill' : d === 'normal' ? '⚔️ normal' : '💀 ruthless'}
+                  {t(`diff.${d}`)}
                 </button>
               ))}
             </div>
           </section>
 
           <section className="setup-card">
-            <h3>Victory Target — <span className="gold">{targetVp} VP</span></h3>
+            <h3>{t('setup.victoryTarget', { n: targetVp })}</h3>
             <input type="range" min={7} max={14} value={targetVp}
               onChange={(e) => setTargetVp(Number(e.target.value))} />
-            <div className="dim tiny">≈ {estMinutes} min match · settlement 1 · city 2 · MEGA CITY 3 · longest road +2</div>
-            <h3>Seed</h3>
+            <div className="dim tiny">{t('setup.estMatch', { n: estMinutes })}</div>
+            <h3>{t('setup.seed')}</h3>
             <div className="seed-row">
               <input className="seed-input" value={seed} onChange={(e) => setSeed(e.target.value)}
                 spellCheck={false} maxLength={24} />
@@ -110,37 +116,37 @@ export function SetupScreen() {
             </div>
             <label className="chk">
               <input type="checkbox" checked={worldEvents} onChange={(e) => setWorldEvents(e.target.checked)} />
-              🌦 World events (storms, booms, festivals)
+              {t('setup.worldEvents')}
             </label>
           </section>
 
           <section className="setup-card">
-            <h3>Chaos Modifiers</h3>
+            <h3>{t('setup.chaos')}</h3>
             <label className="chk">
               <input type="checkbox" checked={turbo} onChange={(e) => setTurbo(e.target.checked)} />
-              ⚡ <b>Turbo Economy</b> — every tile produces +1, shorter games
+              <span dangerouslySetInnerHTML={{ __html: t('setup.turbo') }} />
             </label>
             <label className="chk">
               <input type="checkbox" checked={friendlyRobber} onChange={(e) => setFriendlyRobber(e.target.checked)} />
-              🤝 <b>Friendly Robber</b> — victims get a consolation card
+              <span dangerouslySetInnerHTML={{ __html: t('setup.friendly') }} />
             </label>
             <label className="chk">
               <input type="checkbox" checked={maximumSheep} onChange={(e) => setMaximumSheep(e.target.checked)} />
-              🐑 <b>Maximum Sheep</b> — pastures +1, bank takes sheep at 2:1. This is serious.
+              <span dangerouslySetInnerHTML={{ __html: t('setup.maxSheep') }} />
             </label>
             <label className="chk">
               <input type="checkbox" checked={drama} onChange={(e) => setDrama(e.target.checked)} />
-              🎭 <b>NPC Drama</b> — amplified emotions and trade harassment
+              <span dangerouslySetInnerHTML={{ __html: t('setup.drama') }} />
             </label>
             {chaosCount >= 2 && (
-              <div className="warn-box">⚠️ {chaosCount} chaos modifiers active. The economy may become emotionally unstable.</div>
+              <div className="warn-box">{t('setup.chaosWarn', { n: chaosCount })}</div>
             )}
           </section>
         </div>
 
         <div className="setup-footer">
-          <button className="btn btn-ghost" onClick={() => { sfx.click(); goTitle(); }}>← back</button>
-          <button className="btn btn-huge btn-gold" onClick={start}>⚒ GENERATE WORLD</button>
+          <button className="btn btn-ghost" onClick={() => { sfx.click(); goTitle(); }}>{t('setup.back')}</button>
+          <button className="btn btn-huge btn-gold" onClick={start}>{t('setup.generate')}</button>
         </div>
       </div>
     </div>
