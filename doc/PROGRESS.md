@@ -345,3 +345,29 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 - `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs.
 - Render-only changes (no game logic touched). No Playwright this session
   (not installed); sign two-sidedness and boat scale validated by inspection.
+
+---
+
+## 2026-07-22 — WASD camera panning (desktop)
+
+### What changed
+- **Desktop WASD movement** (`src/scene/CameraRig.tsx`): W/S/A/D now glide the
+  view horizontally across the ground, relative to the camera's facing
+  direction (forward is the camera direction flattened onto the XZ plane;
+  A/D strafe along its perpendicular). Both `camera.position` and the
+  OrbitControls `target` translate by the same delta, so the orbit
+  relationship is preserved (it's a pan, not a rotate).
+  - Speed scales with zoom distance so it feels consistent near/far.
+  - Target is clamped to `boardRadius*2.4+4` so you can't lose the board.
+  - Keys are ignored while a form field (input/textarea/select/
+    contentEditable) is focused; `blur` clears held keys (no stuck-key drift).
+  - While any WASD key is held, manual steering takes precedence over the
+    event auto-focus lerp.
+- No conflict with existing shortcuts (Esc / Space / Enter in `App.tsx`).
+- Frozen gameplay screen: added on explicit user request; spec §4 camera
+  bullet updated in the same commit.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs
+  (camera-only change; simulate is headless so unaffected). Manual key mapping
+  and vector math validated by inspection; no Playwright this session.
