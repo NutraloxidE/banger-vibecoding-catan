@@ -49,9 +49,11 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
       <div className="dim tiny">{label}</div>
       <div className="res-picker-row">
         {RESOURCES.map((r) => (
-          <button key={r} className={`res-pick ${value === r ? 'on' : ''}`}
+          <button key={r} className={`res-pick ${value === r ? 'on' : ''} ${me.resources[r] === 0 ? 'empty' : ''}`}
+            title={t(`res.${r}`)}
             onClick={() => { sfx.click(); onPick(r); setResult(null); }}>
-            {RES_EMOJI[r]}
+            <span className="res-pick-emoji">{RES_EMOJI[r]}</span>
+            <span className="res-pick-have">{me.resources[r]}</span>
           </button>
         ))}
       </div>
@@ -64,6 +66,17 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
         <div className="modal-head">
           <h3>{t('trade.market')}</h3>
           <button className="btn btn-ghost" onClick={onClose}>✕</button>
+        </div>
+        <div className="trade-inventory">
+          <div className="dim tiny">{t('trade.yourResources')}</div>
+          <div className="trade-inv-row">
+            {RESOURCES.map((r) => (
+              <div key={r} className={`trade-inv-chip ${me.resources[r] === 0 ? 'empty' : ''}`} title={t(`res.${r}`)}>
+                <span className="trade-inv-emoji">{RES_EMOJI[r]}</span>
+                <span className="trade-inv-count">{me.resources[r]}</span>
+              </div>
+            ))}
+          </div>
         </div>
         <div className="seg">
           <button className={`seg-btn ${tab === 'bank' ? 'on' : ''}`} onClick={() => { sfx.click(); setTab('bank'); setResult(null); }}>

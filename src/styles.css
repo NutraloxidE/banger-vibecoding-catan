@@ -10,7 +10,11 @@
   --danger: #ff5d5d;
   --ok: #63e6a5;
   --radius: 14px;
-  --font-display: 'Trebuchet MS', 'Verdana', system-ui, sans-serif;
+  /* Color-emoji fonts appended last so glyphs missing from the text fonts
+     (notably 🪵 wood / 🪨 ore, Unicode 13) resolve to a real emoji font
+     instead of a tofu box on desktop. Text still uses Trebuchet/Verdana. */
+  --font-emoji: 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', 'Segoe UI Symbol', 'Noto Emoji';
+  --font-display: 'Trebuchet MS', 'Verdana', system-ui, sans-serif, var(--font-emoji);
 }
 
 html, body, #root { height: 100%; overflow: hidden; }
@@ -422,11 +426,33 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
 .trade-body { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
 .res-picker-row { display: flex; gap: 6px; margin-top: 4px; }
 .res-pick {
-  flex: 1; font-size: 21px; padding: 8px 2px; border-radius: 10px; cursor: pointer;
+  flex: 1; padding: 7px 2px 5px; border-radius: 10px; cursor: pointer;
   background: rgba(255,255,255,0.06); border: 2px solid rgba(255,255,255,0.14);
   transition: all 0.1s;
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
 }
+.res-pick-emoji { font-size: 21px; line-height: 1; }
+.res-pick-have {
+  font-size: 11px; font-weight: 800; line-height: 1;
+  padding: 1px 6px; border-radius: 999px; min-width: 18px;
+  background: rgba(255,255,255,0.12); color: var(--ink);
+}
+.res-pick.empty .res-pick-emoji { opacity: 0.45; }
+.res-pick.empty .res-pick-have { opacity: 0.55; }
 .res-pick.on { border-color: var(--gold); background: rgba(255, 206, 74, 0.18); transform: scale(1.08); }
+.res-pick.on .res-pick-have { background: rgba(255, 206, 74, 0.3); }
+
+/* your-resources inventory strip (both tabs) */
+.trade-inventory { margin-top: 12px; }
+.trade-inv-row { display: flex; gap: 6px; margin-top: 5px; }
+.trade-inv-chip {
+  flex: 1; display: flex; align-items: center; justify-content: center; gap: 4px;
+  padding: 6px 4px; border-radius: 10px;
+  background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.12);
+}
+.trade-inv-emoji { font-size: 18px; line-height: 1; }
+.trade-inv-count { font-size: 15px; font-weight: 800; }
+.trade-inv-chip.empty { opacity: 0.4; }
 .trade-arrow { text-align: center; font-size: 17px; font-weight: 800; opacity: 0.9; }
 .trade-cols { display: grid; grid-template-columns: 1fr auto 1fr; gap: 10px; align-items: center; }
 .stepper { display: flex; gap: 10px; align-items: center; justify-content: center; margin-top: 8px; font-size: 17px; }
@@ -529,4 +555,14 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   .npc-offer { top: 70px; right: 8px; width: 220px; }
   .hud-corner { top: auto; bottom: 200px; right: 8px; }
   .stats-grid { grid-template-columns: 1fr; }
+
+  /* trade modal: keep everything inside the viewport on phones */
+  .modal { padding: 14px; width: 96vw; }
+  .trade-body { gap: 10px; margin-top: 12px; }
+  .res-pick { padding: 6px 1px 4px; }
+  .res-pick-emoji { font-size: 19px; }
+  /* stack the give/receive columns so the 5-button pickers don't overflow */
+  .trade-cols { grid-template-columns: 1fr; gap: 8px; }
+  .trade-cols .trade-arrow { transform: rotate(90deg); margin: 2px 0; }
+  .npc-target { flex: 1 1 44%; white-space: normal; font-size: 12px; }
 }
