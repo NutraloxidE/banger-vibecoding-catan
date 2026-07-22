@@ -243,3 +243,19 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   the preview stays a promise, not an illustration.
 - `.seg`/`.seg-btn` CSS still used by TradeModal tabs; the setup screen now
   uses `.size-seg`/`.size-btn` and `.chaos-card` instead.
+
+---
+
+## 2026-07-22 — Change-discipline guardrail added to CLAUDE.md
+
+### What changed
+- Docs only. Added a **"Change discipline — do not break what you were not
+  asked to touch"** section to `CLAUDE.md` (right after the SSoT workflow).
+  Abstracts the recurring failure mode this session — loose "vibe" edits
+  that redesigned frozen screens or changed shared code and silently broke
+  another surface — into 5 general rules: (1) scope strictly to the request,
+  (2) FROZEN surfaces off-limits without explicit request + spec update,
+  (3) blast-radius check before editing shared code (store/types/i18n/
+  Ambient/shared CSS classes), (4) smallest reversible diff, (5) prove no
+  collateral damage (build + simulate + screenshot near the change).
+- No code touched; build/sim status unchanged from previous entry.

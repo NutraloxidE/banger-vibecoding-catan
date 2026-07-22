@@ -27,6 +27,38 @@ Note: `spec.md` describes WHAT the game is (the contract); `PLAN.md` is the
 original one-shot brief kept for reference; `doc/PROGRESS.md` is the session
 log. The gameplay screen is spec-frozen — see the freeze note in `spec.md`.
 
+## Change discipline — do not break what you were not asked to touch
+
+Loose, fast "vibe" editing has repeatedly damaged things the request never
+mentioned (frozen screens got redesigned; shared code changed one surface
+and silently altered another). Treat every task as **surgical**: change the
+smallest set of things that satisfies the request, and nothing else.
+
+1. **Scope to the request.** Do not "improve", polish, refactor, restyle,
+   rename, or reorganize anything the task did not ask for. If you spot
+   something worth changing, propose it to the user — do not do it silently
+   in the same edit.
+2. **Frozen surfaces are off-limits by default.** Anything marked FROZEN in
+   `spec.md` (currently the gameplay screen, title, and setup screens) must
+   not change in look, layout, or behavior without an explicit user request
+   AND a matching `spec.md` update in the same commit. "It looked better to
+   me" is not a request.
+3. **Check the blast radius before editing shared code.** Some things are
+   consumed by many surfaces — e.g. `game/store.ts`, `game/types.ts`,
+   `i18n.ts` keys, `scene/Ambient.tsx`, and shared CSS classes
+   (`.btn`, `.seg`/`.seg-btn`, etc.). Before touching one, enumerate every
+   consumer and confirm the change is safe for all of them. When only one
+   surface needs to differ, prefer a screen-local copy over mutating the
+   shared primitive.
+4. **Smallest reversible diff wins.** Additive and scoped beats broad
+   rewrites. If a rewrite is genuinely needed, say so and keep unrelated
+   behavior byte-for-byte identical.
+5. **Prove you did no collateral damage.** After any change, `npm run build`
+   and `npm run simulate` must still pass, and you must re-check the
+   surfaces near your change — especially frozen ones — (screenshot them)
+   to confirm they are unchanged. Regressions you introduce are your
+   responsibility to catch, not the user's.
+
 ## Progress & handoff — READ AND UPDATE `doc/PROGRESS.md`
 
 **At the start of a session:** read `doc/PROGRESS.md` first to catch up on
