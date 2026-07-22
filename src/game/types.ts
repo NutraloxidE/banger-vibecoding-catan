@@ -41,11 +41,29 @@ export interface EdgeNode {
   tiles: number[];
 }
 
+// A harbor. `generic` = trade any 3 identical resources for 1 (3:1);
+// a Resource kind = trade 2 of that resource for 1 of anything (2:1).
+// Usable by a player who owns a building on either adjacent vertex.
+export type PortKind = 'generic' | Resource;
+
+export interface Port {
+  id: string;
+  edge: string; // the coastal edge this harbor sits on
+  vertices: [string, string]; // the two vertices that can use it
+  x: number; // dock position, pushed out into the water
+  z: number;
+  angle: number; // outward facing angle (for orienting the dock)
+  kind: PortKind;
+  rate: number; // 3 for generic, 2 for a resource port
+  name: string; // generated harbor name
+}
+
 export interface BoardModel {
   radius: number;
   tiles: Tile[];
   vertices: Record<string, VertexNode>;
   edges: Record<string, EdgeNode>;
+  ports: Port[];
 }
 
 export type BuildKind = 'road' | 'settlement' | 'city' | 'megacity';

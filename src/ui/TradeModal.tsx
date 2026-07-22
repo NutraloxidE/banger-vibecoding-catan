@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useGame } from '../game/store';
 import { RESOURCES, Resource } from '../game/types';
-import { bankRate } from '../game/rules';
+import { bankRate, ownedPorts } from '../game/rules';
 import { aiEvaluateTrade } from '../game/ai';
 import { RES_EMOJI } from './util';
 import { sfx } from '../audio/sfx';
@@ -83,6 +83,20 @@ export function TradeModal({ onClose }: { onClose: () => void }) {
             <button className={`btn btn-big ${bankOk ? 'btn-gold' : 'disabled'}`} onClick={doBank}>
               {bankOk ? t('trade.execute') : me.resources[give] < rate ? t('trade.needN', { n: rate, res: t(`res.${give}`) }) : t('trade.pickDiff')}
             </button>
+            <div className="ports-box">
+              <div className="dim tiny">{t('trade.ports')}</div>
+              {ownedPorts(game, 0).length === 0 ? (
+                <div className="ports-none">{t('trade.portsNone')}</div>
+              ) : (
+                <div className="ports-list">
+                  {ownedPorts(game, 0).map((p) => (
+                    <span key={p.id} className="port-chip" title={p.name}>
+                      {p.kind === 'generic' ? '⚓' : RES_EMOJI[p.kind]} {p.rate}:1
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
 

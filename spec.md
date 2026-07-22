@@ -84,6 +84,9 @@ request AND a matching update to this section. Its defining elements:
   water/boats/clouds, orbit/zoom/pan camera with soft auto-focus on events.
   (Amendment: when the Golden Hex modifier is on, the golden tile carries a
   static gold ring so the wildcard tile is identifiable.)
+  (Amendment: coastal harbors render as small docks with a hanging "N:1"
+  sign out on the water; a claimed harbor shows a ring + buoy in the owner's
+  color. Hovering a dock shows its name and rate.)
 - Placement: valid spots glow as pulsing always-on-top rings (gold ring =
   high-value corner); edge spots glow as bars; hover shows a ghost preview;
   invisible enlarged hit targets for touch. No floating arrows (removed by
@@ -121,6 +124,19 @@ request AND a matching update to this section. Its defining elements:
 - Golden Hex (chaos): one token tile, picked deterministically from the
   seed, additionally drops 1 random ("wildcard") resource per building hit
   whenever it produces. Announced in the log at match start.
+- **Harbors / ports** (always on, standard Catan): generated on coastal edges
+  (edges touching one tile), spaced around the coast, never sharing a vertex.
+  Per board there is (room permitting) one 2:1 harbor per resource + several
+  generic 3:1 harbors; count scales with the coastline (~4–9). A player
+  controls a harbor while owning a building (settlement/city/megacity) on
+  either of its two vertices, and then trades at that harbor's rate:
+  generic = 3 identical → 1 any; resource = 2 of that resource → 1 any.
+  `bankRate` returns the best rate available to the current trader (harbor
+  vs. festival vs. Maximum Sheep vs. the 4:1 base).
+  Flavor: each harbor gets a themed generated name; **claiming a harbor**
+  (first settlement on a harbor vertex) fires a HARBOR WELCOME toast + a
+  one-time +1 welcome card. Harbor vertices are worth extra in the AI/
+  placement-hint scoring. Old saves (pre-harbor) simply have no harbors.
 - Bank trade 4:1 (3:1 during Trade Festival; sheep 2:1 under Maximum Sheep).
   NPC trades evaluated deterministically (needs/surplus/personality); the UI
   shows an honest interested/unimpressed hint. NPCs may counter-offer the

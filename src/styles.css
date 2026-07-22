@@ -443,6 +443,13 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
 .npc-mood-hint.yes { background: rgba(99, 230, 165, 0.12); color: var(--ok); }
 .npc-mood-hint.no { background: rgba(255, 93, 93, 0.12); color: #ffb0a0; }
 .trade-result { text-align: center; font-weight: 800; padding: 8px; font-size: 15px; animation: countPop 0.4s; }
+.ports-box { margin-top: 4px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); }
+.ports-none { font-size: 12px; opacity: 0.6; margin-top: 4px; }
+.ports-list { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.port-chip {
+  background: rgba(255, 206, 74, 0.12); border: 1px solid rgba(255, 206, 74, 0.5);
+  border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 700; cursor: help;
+}
 
 /* ---------- victory ---------- */
 

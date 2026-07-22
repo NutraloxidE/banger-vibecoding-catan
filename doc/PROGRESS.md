@@ -259,3 +259,43 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
   Ambient/shared CSS classes), (4) smallest reversible diff, (5) prove no
   collateral damage (build + simulate + screenshot near the change).
 - No code touched; build/sim status unchanged from previous entry.
+
+---
+
+## 2026-07-22 — Harbors / ports (standard Catan trade discount + flavor)
+
+### What changed
+- Added standard Catan **harbors** (always on). New `Port`/`PortKind` types +
+  `board.ports: Port[]`. `generatePorts(board, seed)` (in `board.ts`, called
+  by `generateBoard`) picks coastal edges (tiles.length===1), spaced by angle
+  around the coast with no shared vertices, ~4–9 per board; assigns one 2:1
+  harbor per resource (room permitting) + generic 3:1 for the rest.
+- Trade math: `rules.ts` gains `ownedPorts()` + `portRate()`; `bankRate()`
+  now takes `min(base/festival/maxSheep, portRate(state.current))`. Because
+  the trade modal, `bankTrade`, and NPC bank trades all already call
+  `bankRate`, the discount flows everywhere with no caller changes.
+- Presentation: new `scene/Ports.tsx` renders a dock + hanging "N:1" sign
+  (canvas texture `portSignTexture`) out on the water per harbor; owner-color
+  ring + buoy when claimed; hover name tag. Added `<Ports/>` to GameScene.
+  TradeModal bank tab shows a "⚓ Your harbors" chip list.
+- Flavor (my spin): themed harbor names (`names.ts::portName`, English proper
+  nouns like settlement names); **claiming a harbor** (first settlement on a
+  harbor vertex — `store.ts::claimPorts`, called from main + setup builds)
+  gives a HARBOR WELCOME toast + one-time +1 welcome card + NPC speech.
+  Harbor vertices get +2 in `vertexScore` so AI + gold-ring hints value them.
+- Migration: `loadMatch` sets `g.board.ports ??= []` (old saves = no harbors).
+- spec.md §4 amended (dock visuals) and §5 documents the harbor rules; sim
+  config unchanged (ports always on).
+
+### Verified
+- `npm run build` + all 5 `npm run simulate` configs pass.
+- Playwright: 9 harbors on a medium board (one 2:1 per resource + 4 generic);
+  human claiming a harbor logs the welcome + gets a card; trade modal shows
+  wood at 3:1 (via generic port) with the "Your harbors" chips 🐑2:1 / ⚓3:1;
+  docks visible on the coast; no page errors.
+
+### Gotchas
+- `board.ts` now imports `names.ts` (portName) → `i18n.ts`. Safe (names never
+  imports board). Don't introduce a board→…→board cycle.
+- Harbors are NOT drawn in the setup screen's SVG preview (that screen is the
+  frozen 初代 design — left untouched on purpose).

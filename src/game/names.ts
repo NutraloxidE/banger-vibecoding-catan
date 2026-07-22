@@ -1,4 +1,4 @@
-import { Personality, Difficulty } from './types';
+import { Personality, Difficulty, PortKind } from './types';
 import { RNG } from './rng';
 import { t } from '../i18n';
 
@@ -39,6 +39,21 @@ const CIV_OF = ['Eternal Wheat', 'the Sacred Hexagon', 'Applied Sheep', 'Infinit
 
 export function civTitle(rng: RNG): string {
   return `${rng.pick(CIV_KIND)} of ${rng.pick(CIV_OF)}`;
+}
+
+// Harbor names — themed by what they trade. Proper nouns, kept English
+// (same convention as settlement names).
+const PORT_NAMES: Record<PortKind, string[]> = {
+  generic: ['The Free Port', 'Open Wharf', 'Anything-Goes Docks', 'The Bargain Pier', 'Duty-Free Landing', 'Miscellany Bay'],
+  wood: ['Timber Wharf', 'The Lumber Docks', 'Splinter Bay', 'Sawdust Landing'],
+  brick: ['Kiln Docks', 'The Clay Quay', 'Brickmouth Harbor', 'Mortar Pier'],
+  wheat: ['Grain Pier', 'The Breadbasket Docks', 'Mill Landing', 'Chaff Harbor'],
+  sheep: ['The Wool Exchange', 'Fleece Wharf', 'Baa Harbor', 'Mutton Quay'],
+  ore: ['Ore Harbor', 'The Iron Jetty', 'Gravel Quay', 'Slag Landing'],
+};
+
+export function portName(rng: RNG, kind: PortKind): string {
+  return rng.pick(PORT_NAMES[kind]);
 }
 
 // NPC speech line categories. The actual phrases live in i18n (`npc.<key>`)

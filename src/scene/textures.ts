@@ -72,3 +72,33 @@ export function diceFaceTexture(v: number): THREE.CanvasTexture {
   diceCache.set(v, tex);
   return tex;
 }
+
+const portCache = new Map<string, THREE.CanvasTexture>();
+
+// A small hanging harbor sign: "N:1" over a resource emoji (or ⚓ for generic).
+export function portSignTexture(rate: number, emoji: string): THREE.CanvasTexture {
+  const key = `${rate}:${emoji}`;
+  const hit = portCache.get(key);
+  if (hit) return hit;
+  const c = document.createElement('canvas');
+  c.width = c.height = 128;
+  const ctx = c.getContext('2d')!;
+  // weathered plank
+  ctx.fillStyle = '#f2e4c2';
+  const r = 14;
+  ctx.beginPath();
+  ctx.moveTo(r, 6); ctx.arcTo(122, 6, 122, 122, r); ctx.arcTo(122, 122, 6, 122, r);
+  ctx.arcTo(6, 122, 6, 6, r); ctx.arcTo(6, 6, 122, 6, r); ctx.closePath();
+  ctx.fill();
+  ctx.lineWidth = 6; ctx.strokeStyle = '#a9884f'; ctx.stroke();
+  ctx.fillStyle = '#2f2413';
+  ctx.font = 'bold 46px Georgia, serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(`${rate}:1`, 64, 40);
+  ctx.font = '46px system-ui, sans-serif';
+  ctx.fillText(emoji, 64, 92);
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = 4;
+  portCache.set(key, tex);
+  return tex;
+}

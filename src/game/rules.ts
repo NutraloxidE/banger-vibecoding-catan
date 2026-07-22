@@ -140,10 +140,28 @@ export function computeProduction(state: MatchState, total: number): GainMap {
 
 // --- bank trade rate ----------------------------------------------------
 
+// Harbors a player controls (owns a building on an adjacent vertex).
+export function ownedPorts(state: MatchState, pid: number) {
+  return state.board.ports.filter((p) =>
+    p.vertices.some((v) => state.buildings[v]?.owner === pid));
+}
+
+// Best harbor rate this player can get when giving `give`.
+export function portRate(state: MatchState, pid: number, give: Resource): number {
+  let best = 4;
+  for (const p of ownedPorts(state, pid)) {
+    if (p.kind === 'generic') best = Math.min(best, 3);
+    else if (p.kind === give) best = Math.min(best, 2);
+  }
+  return best;
+}
+
 export function bankRate(state: MatchState, give: Resource): number {
   let rate = 4;
   if (state.worldEvent?.kind === 'festival') rate = 3;
   if (state.config.chaos.maximumSheep && give === 'sheep') rate = Math.min(rate, 2);
+  // harbors belong to whoever is currently trading (their turn)
+  rate = Math.min(rate, portRate(state, state.current, give));
   return rate;
 }
 

@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import { useGame } from '../game/store';
 import { Tiles } from './Tiles';
+import { Ports } from './Ports';
 import { Pieces } from './Pieces';
 import { Highlights } from './Highlights';
 import { FxLayer } from './FxLayer';
@@ -29,6 +30,7 @@ export function GameScene() {
       <Sky sunPosition={[60, 40, 20]} turbidity={6} rayleigh={1.6} />
       <Ambient boardRadius={boardRadius} />
       <Tiles board={board} seed={seed} />
+      <Ports />
       <Pieces />
       <Highlights />
       <FxLayer />

@@ -1,5 +1,6 @@
-import { BoardModel, EdgeNode, MapSize, Terrain, Tile, VertexNode } from './types';
+import { BoardModel, EdgeNode, MapSize, Port, PortKind, RESOURCES, Terrain, Tile, VertexNode } from './types';
 import { RNG } from './rng';
+import { portName } from './names';
 
 const SQRT3 = Math.sqrt(3);
 
@@ -124,7 +125,69 @@ export function generateBoard(mapSize: MapSize, seed: string): BoardModel {
     vertices[e.b].adj.push(e.a);
   }
 
-  return { radius, tiles, vertices, edges };
+  const base: BoardModel = { radius, tiles, vertices, edges, ports: [] };
+  base.ports = generatePorts(base, seed);
+  return base;
+}
+
+// Ports sit on coastal edges (edges touching exactly one tile). Catan-style:
+// 4-ish generic 3:1 harbors + one 2:1 harbor per resource, spaced around the
+// coast and never sharing a vertex (so each harbor's two vertices are its own).
+export function generatePorts(board: BoardModel, seed: string): Port[] {
+  const rng = new RNG(seed + ':ports');
+  const coastal = Object.values(board.edges).filter((e) => e.tiles.length === 1);
+  if (coastal.length === 0) return [];
+
+  // walk the coast in angular order so picks spread evenly around the ring
+  const ordered = coastal
+    .map((e) => ({ e, ang: Math.atan2(e.z, e.x) }))
+    .sort((a, b) => a.ang - b.ang);
+
+  const target = Math.max(4, Math.min(9, Math.round(coastal.length / 2.4)));
+  const usedV = new Set<string>();
+  const picked: EdgeNode[] = [];
+  const minGap = ((2 * Math.PI) / target) * 0.6;
+
+  let lastAng = -Infinity;
+  for (const { e, ang } of ordered) {
+    if (picked.length >= target) break;
+    if (usedV.has(e.a) || usedV.has(e.b)) continue;
+    if (ang - lastAng < minGap) continue;
+    picked.push(e); usedV.add(e.a); usedV.add(e.b); lastAng = ang;
+  }
+  // top up (ignoring the spacing gap, still no shared vertices) if short
+  if (picked.length < target) {
+    for (const { e } of ordered) {
+      if (picked.length >= target) break;
+      if (usedV.has(e.a) || usedV.has(e.b)) continue;
+      picked.push(e); usedV.add(e.a); usedV.add(e.b);
+    }
+  }
+
+  // kinds: one 2:1 per resource first (if room), then generic 3:1, shuffled
+  const kinds: PortKind[] = [];
+  const resPool = rng.shuffle([...RESOURCES]);
+  for (let i = 0; i < picked.length; i++) kinds.push(i < resPool.length ? resPool[i] : 'generic');
+  const finalKinds = rng.shuffle(kinds);
+
+  return picked.map((e, i) => {
+    const kind = finalKinds[i];
+    const len = Math.hypot(e.x, e.z) || 1;
+    const ox = e.x / len, oz = e.z / len; // outward from board center
+    const off = 0.6;
+    const nrng = new RNG(seed + ':portname:' + e.id);
+    return {
+      id: e.id,
+      edge: e.id,
+      vertices: [e.a, e.b] as [string, string],
+      x: e.x + ox * off,
+      z: e.z + oz * off,
+      angle: Math.atan2(oz, ox),
+      kind,
+      rate: kind === 'generic' ? 3 : 2,
+      name: portName(nrng, kind),
+    };
+  });
 }
 
 // Golden Hex chaos modifier: deterministic pick so the setup preview can
@@ -152,5 +215,7 @@ export function vertexScore(board: BoardModel, vertexId: string): number {
     if (t.token) score += TOKEN_WEIGHT[t.token] ?? 0;
     if (t.terrain !== 'desert') seen.add(t.terrain);
   }
+  // harbor-adjacent corners are strategically valuable — nudge AI + hints
+  if (board.ports.some((p) => p.vertices.includes(vertexId))) score += 2;
   return score + seen.size * 0.6;
 }

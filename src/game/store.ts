@@ -203,6 +203,7 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     sfx.buildBig();
     pushLog(g, t('g.foundSettlementVp', { emoji: p.emoji, name: p.name, place: name }));
     if (p.isNpc && Math.random() < 0.5) say(g, pid, npcLine(rng, 'buildSettlement'));
+    claimPorts(g, toasts, pid, spot);
   } else if (kind === 'city') {
     const b = g.buildings[spot];
     b.kind = 'city';
@@ -232,6 +233,25 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
   updateLongestRoad(g, toasts);
   recomputeVpAll(g);
   checkWinner(g, toasts);
+}
+
+// Claiming a harbor: first building on a port vertex. Fun flavor — a one-time
+// welcome card + a HARBOR WELCOME toast. The lasting benefit is the trade rate.
+function claimPorts(g: MatchState, toasts: Toast[], pid: number, vertexId: string) {
+  for (const port of g.board.ports) {
+    if (!port.vertices.includes(vertexId)) continue;
+    const p = g.players[pid];
+    const gift: Resource = port.kind === 'generic'
+      ? RESOURCES[Math.floor(Math.random() * RESOURCES.length)]
+      : port.kind;
+    p.resources[gift] += 1; // welcome card (not counted as production)
+    const what = port.kind === 'generic' ? t('port.any') : resName(port.kind);
+    pushLog(g, t('g.portClaim', { name: port.name, rate: port.rate, what }));
+    addToastTo(toasts, t('g.portWelcome'), 'combo', t('g.portWelcomeSub', { name: port.name, rate: port.rate, what }));
+    sfx.tradeDone();
+    if (p.isNpc) say(g, pid, t('g.portSpeech'));
+    g.spectacle = Math.min(10, g.spectacle + 1);
+  }
 }
 
 function stealRandom(g: MatchState, thiefId: number, victimId: number, toasts: Toast[]) {
@@ -429,6 +449,7 @@ function loadMatch(): MatchState | null {
     // fields added after v1 saves
     g.goldenTile ??= null;
     g.config.chaos.goldenHex ??= false;
+    g.board.ports ??= [];
     return g;
   } catch {
     return null;
@@ -848,6 +869,7 @@ function placeSetupSettlement(g: MatchState, toasts: Toast[], pid: number, verte
   focus(g, v.x, v.z);
   sfx.buildBig();
   pushLog(g, t('g.foundSettlement', { emoji: g.players[pid].emoji, name: g.players[pid].name, place: name }));
+  claimPorts(g, toasts, pid, vertexId);
 
   // second-pass settlement grants starting resources from adjacent tiles
   const n = g.players.length;
