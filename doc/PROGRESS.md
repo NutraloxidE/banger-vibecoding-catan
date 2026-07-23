@@ -758,3 +758,33 @@ toggles, applied "traditional-style" across all map sizes (small = exact).
   the classic spiral (trigger reads 🌾 Normal), MAXXING both off, then toggling
   a card by hand flips the trigger to 🎛️ Custom; zero page errors. Playwright
   reverted out of package.json.
+
+---
+
+## 2026-07-23 — Harbor ratio sign faces up when camera is near top-down
+
+### What changed
+- `src/scene/Ports.tsx`: the hanging "N:1" harbor sign now tilts flat to face
+  upward as the camera orbits toward an overhead view, so the trade ratio stays
+  readable when looking (nearly) straight down. Previously the vertical sign
+  went edge-on and unreadable from above.
+- Implementation: each `PortDock`'s `useFrame` reads the camera's world
+  direction; `elevation = -dir.y` (0 = horizontal view, 1 = straight down). A
+  `THREE.MathUtils.smoothstep(elevation, 0.65, 0.92)` factor `t` drives the
+  sign group's `rotation.x` from `0` (vertical) to `-π/2` (flat, front face up).
+  A shared module-level `camDir` scratch vector avoids per-frame allocation.
+- `spec.md` §4 (frozen gameplay screen) harbor amendment updated to describe
+  the tilt (explicit user request + matching spec change, per CLAUDE.md).
+
+### Why the default/frozen view is provably unchanged
+- Default camera is `[7,9,9]` looking at origin → view dir downward component
+  `9/√211 ≈ 0.62`, below the `0.65` lower threshold. `smoothstep` clamps to
+  exactly `0` at/below its min, so `rotation.x = 0` at the default angle and all
+  lower (more horizontal) angles — the sign is byte-for-byte the prior look.
+  The tilt engages only when the user deliberately orbits toward overhead.
+
+### Verified
+- `npm run build` passes (tsc + vite).
+- `npm run simulate` reaches a winner on all 8 configs.
+- Note: no live top-down screenshot this session (Playwright not installed);
+  the default-view invariance is guaranteed by the threshold math above.

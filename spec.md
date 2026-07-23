@@ -114,7 +114,9 @@ request AND a matching update to this section. Its defining elements:
   enough to read the rate + resource from the default camera, and reads
   correctly (non-mirrored) from either side; a claimed
   harbor shows a ring + buoy in the owner's color. Hovering a dock shows
-  its name and rate.)
+  its name and rate. As the camera orbits toward a near top-down view the
+  otherwise-vertical sign tilts flat so the N:1 ratio faces upward and stays
+  readable from above; at the default and low angles it stays vertical.)
 - Placement: valid spots glow as pulsing always-on-top rings (gold ring =
   high-value corner); edge spots glow as bars; hover shows a ghost preview;
   invisible enlarged hit targets for touch. No floating arrows (removed by

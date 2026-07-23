@@ -22,8 +22,11 @@ const buoyGeo = new THREE.SphereGeometry(0.06, 8, 6);
 const woodMat = new THREE.MeshStandardMaterial({ color: '#8a5a33' });
 const postMat = new THREE.MeshStandardMaterial({ color: '#6f4a2b' });
 
+const camDir = new THREE.Vector3();
+
 function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null }) {
   const ref = useRef<THREE.Group>(null);
+  const signRef = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const signTex = useMemo(
     () => portSignTexture(port.rate, port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind]),
@@ -39,8 +42,17 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
   );
   const phase = useMemo(() => port.x + port.z, [port.x, port.z]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock, camera }) => {
     if (ref.current) ref.current.position.y = 0.02 + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
+    // When the camera looks down from near overhead, the vertical sign is
+    // edge-on and unreadable — tilt it flat so the N:1 ratio faces upward.
+    // elevation = downward component of the view (0 = horizontal, 1 = top-down).
+    if (signRef.current) {
+      camera.getWorldDirection(camDir);
+      const elevation = THREE.MathUtils.clamp(-camDir.y, 0, 1);
+      const t = THREE.MathUtils.smoothstep(elevation, 0.65, 0.92);
+      signRef.current.rotation.x = -Math.PI / 2 * t;
+    }
   });
 
   // face the sign back toward the island center
@@ -57,7 +69,7 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
         <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
         {/* two back-to-back front-facing planes so the text reads correctly
             from either side (a single DoubleSide plane mirrors the back) */}
-        <group position={[0.04, 0.4, 0.05]}>
+        <group ref={signRef} position={[0.04, 0.4, 0.05]}>
           <mesh geometry={signGeo} rotation={[0, Math.PI, 0]}>
             <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
           </mesh>
