@@ -59,7 +59,7 @@ Order, top to bottom:
 4. **Opponents: N** — slider 1–3 with player-color dots below
    (you + N rivals).
 5. **Difficulty** — chill / normal / ruthless in the same segmented style.
-6. **Victory Points: N** — slider 7–14 with a caption: ≤8 "Quick
+6. **Victory Points: N** — slider 7–20 with a caption: ≤8 "Quick
    skirmish", 9–11 "Standard game", ≥12 "Long march".
 7. **Seed** — text input + 🎲 randomize. Same seed ⇒ same world, same
    rivals, same golden tile.
@@ -153,7 +153,7 @@ request AND a matching update to this section. Its defining elements:
   button carries an owned-count badge so the player always sees what they hold
   while trading. On phones the modal fits the viewport and the NPC give/receive
   columns stack vertically instead of overflowing.
-- Victory: first to the configured VP target (7–14, default 10), checked
+- Victory: first to the configured VP target (7–20, default 10), checked
   after every VP change. Match point is announced.
 
 ## 6. NPCs, events, presentation
