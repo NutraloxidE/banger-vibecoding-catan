@@ -50,27 +50,38 @@ Order, top to bottom:
 
 1. Header row: `← Back` button, `Configure Your World` heading, language
    toggle at the right.
-2. **Live map preview** — an SVG render of the *exact* board the current
+2. **World Preset** — a 2×2 grid of single-select cards that bundle the
+   chaos modifiers into escalating flavors; **Banger** is the default.
+   Selecting one applies its full set of toggles below; tweaking any
+   individual modifier afterward drops to an unselected "Custom" state
+   (a caption notes this). The presets:
+   - 🌾 **Normal** — really just plain Catan: every chaos modifier and
+     World Events off.
+   - 🔥 **Banger** (default) — pleasantly weird: World Events + NPC Drama on.
+   - 💥 **BANGER CORE** — a bit weirder: Banger + Golden Hex + Crazy Cards.
+   - 🌋 **BANGER MAXXING** — every chaos element maxed: all modifiers on.
+3. **Live map preview** — an SVG render of the *exact* board the current
    seed + size will generate: terrain-colored pointy-top hexes with number
    tokens (red for 6/8, desert blank). Caption `Live preview · seed XXX`.
    When Golden Hex is enabled the chosen tile is outlined gold with a ✨.
-3. **Map Size** — segmented control, each option label + `N Tiles`
+4. **Map Size** — segmented control, each option label + `N Tiles`
    sublabel; the selected option is a solid gold pill.
-4. **Opponents: N** — slider 1–3 with player-color dots below
+5. **Opponents: N** — slider 1–3 with player-color dots below
    (you + N rivals).
-5. **Difficulty** — chill / normal / ruthless in the same segmented style.
-6. **Victory Points: N** — slider 7–20 with a caption: ≤8 "Quick
+6. **Difficulty** — chill / normal / ruthless in the same segmented style.
+7. **Victory Points: N** — slider 7–20 with a caption: ≤8 "Quick
    skirmish", 9–11 "Standard game", ≥12 "Long march".
-7. **Seed** — text input + 🎲 randomize. Same seed ⇒ same world, same
+8. **Seed** — text input + 🎲 randomize. Same seed ⇒ same world, same
    rivals, same golden tile.
-8. **Chaos Modifiers** — a 2-column grid of toggle cards (emoji, bold
+9. **Chaos Modifiers** — a 2-column grid of toggle cards (emoji, bold
    name, short description; gold border when active): ⚡ Turbo Economy,
    🌪️ World Events, ✨ Golden Hex, 🥺 Friendly Robber, 🎭 NPC Drama,
    🐑 Maximum Sheep, 🃏 Crazy Cards. Warning box when ≥2 economy-affecting
-   modifiers are active.
-9. **Rival personality chips** — one pill per joining rival
-   (emoji + personality label; deterministic from the seed).
-10. Full-width gold `GENERATE WORLD →` button (build sound, starts
+   modifiers are active. The **World Preset** selector (item 2) is a
+   shortcut over exactly these toggles.
+10. **Rival personality chips** — one pill per joining rival
+    (emoji + personality label; deterministic from the seed).
+11. Full-width gold `GENERATE WORLD →` button (build sound, starts
     immediately).
 
 ## 4. Gameplay screen — FROZEN ✅

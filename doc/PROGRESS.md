@@ -617,3 +617,44 @@ you're choosing.
 - `moveRobberTo` is the single commit point for card-triggered robbers (dice-7
   robber has `robberSource===null` → no knight credit, not cancelable). NPC
   knight/earthquake go through the same path via `resolveDevInline`.
+
+---
+
+## 2026-07-23 — World presets (Normal / Banger / CORE / MAXXING)
+
+### What changed (user request: ワールド作成プリセットを選べるように)
+Added a **World Preset** selector to the setup screen — a one-tap shortcut that
+bundles the existing chaos modifiers into escalating flavors. Purely a UI-layer
+convenience over the same `MatchConfig`; no store/types/rules/simulate changes.
+
+- **`src/ui/SetupScreen.tsx`**: new `PRESETS` map + `matchPreset()` helper.
+  A 2×2 `.preset-grid` of single-select cards inserted right after the header
+  (before the live map preview). Selecting one calls `applyPreset()`, which sets
+  all seven flag `useState`s (`worldEvents` + the six `chaos` toggles). The
+  active preset is *derived* from current flag values each render, so tweaking
+  any individual Chaos Modifier card afterward drops to an unhighlighted
+  "Custom" state (a caption notes this). Presets:
+  - 🌾 **Normal** — every modifier + World Events OFF (plain Catan).
+  - 🔥 **Banger** (default) — World Events + NPC Drama on (== the prior default).
+  - 💥 **BANGER CORE** — Banger + Golden Hex + Crazy Cards.
+  - 🌋 **BANGER MAXXING** — all seven flags on.
+- **`src/i18n.ts`**: `setup.preset`, `preset.{normal,banger,core,maxxing}` (+`D`
+  descriptions), `preset.customD` (en/ja).
+- **`src/styles.css`**: `.preset-grid` / `.preset-card(.on)` / `.preset-emoji` /
+  `.preset-name` / `.preset-desc` / `.preset-custom` (modeled on `.chaos-card`).
+- **`spec.md` §3** rewritten (new item 2 = World Preset; list renumbered; §3.9
+  notes the preset is a shortcut over the Chaos Modifier toggles).
+
+### Verified
+- `npm run build` + all 6 `npm run simulate` configs pass (simulate builds
+  `MatchConfig` directly, unaffected by the UI presets).
+- Playwright (throwaway, reverted out of package.json): setup screen at 412×915.
+  Banger highlighted by default; selecting MAXXING lights all chaos cards +
+  the live preview gains the Golden Hex ring/✨ + warn-box reads "5 chaos
+  modifiers active"; Normal clears them. Zero page errors.
+
+### Notes / scope
+- Frozen setup screen touched on explicit user request; matching `spec.md`
+  update shipped in the same commit. The preset just drives the existing
+  toggles — no new mechanic, and the Chaos Modifier cards stay fully editable
+  (that's what produces the "Custom" state).
