@@ -467,3 +467,39 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 - Frozen setup screen touched on explicit user request; matching `spec.md`
   update shipped in the same commit. Only the slider `max` and two spec lines
   changed — no other setup control, caption logic, or store code altered.
+
+---
+
+## 2026-07-23 — Difficulty actually changes NPC competence (chill = dumber)
+
+### What changed (user request: 低難易度でもっとバカで非効率な選択に)
+Before, `difficulty` barely affected play — every positional pick used the same
+`rand()*0.3` jitter, and `chill` only nudged the sleeper personality + trade
+leniency. Now `chill` rivals play deliberately badly, all in `src/game/ai.ts`:
+- **`pickNoise(state)` helper** (chill 7 / normal 0.3 / ruthless 0.12) fed into a
+  new `noise` param on `pickBest`. The big chill jitter routinely drowns out
+  `vertexScore`, so setup settlements/roads AND in-game mega/city/settlement/road
+  picks land on clearly worse spots.
+- **Laziness:** chill NPCs `end` the turn ~28% of the time even when they could
+  build (sit on cards), on top of the existing sleeper skip.
+- **Wasteful bank trade:** chill NPCs ~25% of turns dump a fat surplus
+  (≥ rate+2) into a *random* resource they don't need, before the goal-directed
+  trade logic.
+- **Sloppy robber:** `aiRobberChoice` adds `rand()*8` noise on chill and drops
+  the +5 leader-hunt bonus → near-random tile, no leader targeting.
+- **Exploitable trades:** chill acceptance bonus 0.4 → 1.2 (easily talked into
+  lopsided deals in the trade modal).
+`normal`/`ruthless` behavior is unchanged (ruthless keeps denial bonus + minimal
+noise + tighter trades).
+
+### Verified
+- `npm run build` passes.
+- `npm run simulate` reaches a winner on all 5 configs, run 4×. Chill games are
+  visibly slower/less efficient now (~25–31 rounds vs ~17 for normal) but always
+  finish well within the step cap (~230–303 steps). Softlock guards untouched.
+- spec.md §6 amended to document difficulty-scaled competence.
+
+### Gotchas
+- Only `src/game/ai.ts` (logic) + spec/progress touched — no frozen screen, no
+  shared store/types/CSS. `chill` noise (7) is tuned to the ~0–18 `vertexScore`
+  range; if `vertexScore` is rescaled later, revisit `pickNoise`.
