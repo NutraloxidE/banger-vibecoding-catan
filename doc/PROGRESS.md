@@ -447,6 +447,29 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 
 ---
 
+## 2026-07-23 — Raise Victory Points ceiling (14 → 20)
+
+### What changed
+- Setup screen VP slider max raised from 14 to 20 (`src/ui/SetupScreen.tsx`,
+  one attribute). Min (7), default (10), and the caption thresholds are
+  unchanged — ≥12 still reads "Long march" across the extended range.
+- `spec.md` updated in the same commit: setup §6 and the Victory rule now say
+  the target range is 7–20 (was 7–14).
+
+### Verified
+- `npm run build` + all 5 `npm run simulate` configs pass.
+- Extra check: drove full headless games at `targetVp: 20` on large / medium /
+  small boards with the human-NPC driver — each reaches a real winner with
+  20 VP (large ~535 steps, medium ~610, small ~1880), so a high target is
+  achievable and does not softlock turn progression.
+
+### Notes / scope
+- Frozen setup screen touched on explicit user request; matching `spec.md`
+  update shipped in the same commit. Only the slider `max` and two spec lines
+  changed — no other setup control, caption logic, or store code altered.
+
+---
+
 ## 2026-07-23 — Difficulty actually changes NPC competence (chill = dumber)
 
 ### What changed (user request: 低難易度でもっとバカで非効率な選択に)

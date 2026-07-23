@@ -165,7 +165,7 @@ export function SetupScreen() {
         </div>
 
         <h3 className="cfg-label">{t('setup.victoryPoints', { n: targetVp })}</h3>
-        <input type="range" min={7} max={14} value={targetVp}
+        <input type="range" min={7} max={20} value={targetVp}
           onChange={(e) => setTargetVp(Number(e.target.value))} />
         <div className="vp-caption">{vpCaption}</div>
 
