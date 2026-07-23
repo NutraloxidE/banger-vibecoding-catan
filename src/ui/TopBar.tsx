@@ -24,6 +24,7 @@ export function TopBar() {
               <div className="chip-name">
                 {p.isNpc ? p.name : t('player.you')}
                 {game.longestRoad?.owner === p.id && <span title={t('top.longestRoadTip')}> 🛣️</span>}
+                {game.largestArmy?.owner === p.id && <span title={t('top.largestArmyTip')}> ⚔️</span>}
               </div>
               <div className="chip-sub">
                 {p.civTitle ? <span className="civ-title">{p.civTitle}</span>
@@ -32,6 +33,7 @@ export function TopBar() {
               <div className="chip-stats">
                 <span className="vp">⭐ {p.vp}<span className="dim">/{target}</span></span>
                 <span className="cards">🂠 {cards}</span>
+                {p.devCards.length > 0 && <span className="cards" title={t('top.devCardsTip')}>🎴 {p.devCards.length}</span>}
                 {active && game.phase !== 'gameover' && (
                   <span className="turn-dot">
                     {p.isNpc ? t('top.thinking') : t('top.yourTurn')}

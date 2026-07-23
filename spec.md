@@ -66,8 +66,8 @@ Order, top to bottom:
 8. **Chaos Modifiers** — a 2-column grid of toggle cards (emoji, bold
    name, short description; gold border when active): ⚡ Turbo Economy,
    🌪️ World Events, ✨ Golden Hex, 🥺 Friendly Robber, 🎭 NPC Drama,
-   🐑 Maximum Sheep. Warning box when ≥2 economy-affecting modifiers are
-   active.
+   🐑 Maximum Sheep, 🃏 Crazy Cards. Warning box when ≥2 economy-affecting
+   modifiers are active.
 9. **Rival personality chips** — one pill per joining rival
    (emoji + personality label; deterministic from the seed).
 10. Full-width gold `GENERATE WORLD →` button (build sound, starts
@@ -98,11 +98,22 @@ request AND a matching update to this section. Its defining elements:
   high-value corner); edge spots glow as bars; hover shows a ghost preview;
   invisible enlarged hit targets for touch. No floating arrows (removed by
   user preference). Cancel via button + Esc.
-- HUD: player chips top (portrait, VP, cards, personality/civ title, turn
-  state, threat glow, speech bubbles); resource hand + build cards + roll /
-  trade / end-turn bottom; chronicle log bottom-left; round + seed + settings
-  top-right; toasts center-top; world-event banner; NPC offer popup with
-  countdown.
+- HUD: player chips top (portrait, VP, resource-card count, held dev-card count,
+  🛣️ longest-road / ⚔️ largest-army badges, personality/civ title, turn state,
+  threat glow, speech bubbles); resource hand + build cards + a dev-card row
+  (buy button with deck-remaining count + playable/held held-card buttons) +
+  roll / trade / end-turn bottom; chronicle log bottom-left; round + seed +
+  settings top-right; toasts center-top; world-event banner; NPC offer popup
+  with countdown.
+  (Amendment: development cards — the dev-card row lets the human buy a card and
+  play a held one; playing a card that needs a target opens the robber phase
+  (Knight/Earthquake), a free-road placement (Road Building), or a resource-pick
+  overlay (Monopoly/Year of Plenty/Treasure Haul). While a card is mid-play the
+  UI shows its name + effect description and a **Cancel card** button; canceling
+  before it resolves (robber not yet placed, no resource chosen, no free road
+  placed) returns the card to hand and un-spends the turn's card play. A Knight
+  only counts toward Largest Army once its robber is actually placed. NPCs
+  resolve their own cards atomically. See §5 for the rules.)
 - Dice ritual: two tumbling dice (decided-before-animation results, physics
   only presents), rare giant dice, skippable via fast mode + watchdog.
 
@@ -125,6 +136,25 @@ request AND a matching update to this section. Its defining elements:
 - Settlement distance rule (no adjacent vertex); non-setup settlements must
   touch an own road; roads must connect (opponent buildings block).
 - Longest road: ≥5 segments, +2 VP, holder keeps ties.
+- **Development cards** (classic set, always available): bought for 1🪨 1🌾 1🐑,
+  drawn from a per-match deterministic shuffled deck (seed `+':dev'`). Standard
+  deck = 14 Knight, 5 Victory Point, 2 Road Building, 2 Year of Plenty, 2
+  Monopoly. When the deck is empty, buying is unavailable. A card cannot be
+  played the same turn it is bought, and at most one card is played per turn.
+  - **Knight**: enter the robber phase (move + steal 1). Playing 3+ Knights (and
+    the most) grants **Largest Army** = +2 VP, mirroring Longest Road (holder
+    keeps ties).
+  - **Victory Point**: +1 VP, applied immediately on draw (not a playable card).
+  - **Road Building**: place 2 roads for free.
+  - **Year of Plenty**: take any 2 resources from the bank.
+  - **Monopoly**: name a resource; take all of it from every other player.
+- **Crazy Cards** (chaos modifier `crazyCards`, off by default): when on, extra
+  "unhinged" cards are shuffled into the deck (3 Treasure Haul, 3 Plague, 2
+  Earthquake, 3 Wild Gamble):
+  - **Treasure Haul** 💰: take any 3 resources from the bank.
+  - **Plague** 🦠: every opponent discards 2 random resource cards.
+  - **Earthquake** 🌋: move the robber and steal 1 from EVERY adjacent rival.
+  - **Wild Gamble** 🎰: ~2/3 chance to gain 5 random resources, else lose up to 4.
 - Dice 7 = robber: mover blocks a tile and steals 1 random card from an
   adjacent rival (no discard rule). Friendly Robber chaos: victim draws a
   consolation card.
@@ -179,8 +209,9 @@ request AND a matching update to this section. Its defining elements:
   welcome, match point, robber), the gold/red frame shows that player's color
   as thin bars on its inner left/right edges, so it's clear whose event it is.
 - Near-win: tension vignette + music layer from target−2; match-point toast.
-- Victory: confetti overlay, ranked results, useful + absurd statistics,
-  rematch (same seed) / new world / setup / title — all without refresh.
+- Victory: confetti overlay, ranked results, useful + absurd statistics
+  (including Largest Army and development cards bought), rematch (same seed) /
+  new world / setup / title — all without refresh.
 
 ## 7. Language (EN / 日本語)
 

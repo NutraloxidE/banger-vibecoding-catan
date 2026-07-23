@@ -84,12 +84,25 @@ export type Personality = 'expansionist' | 'hoarder' | 'trader' | 'gambler' | 'b
 export type Difficulty = 'chill' | 'normal' | 'ruthless';
 export type MapSize = 'small' | 'medium' | 'large';
 
+// Development cards. The first five are the classic Catan set (always in the
+// deck). The rest are the optional "crazy" cards, shuffled in only when the
+// chaos.crazyCards modifier is on.
+export type DevKind =
+  | 'knight' | 'victory' | 'roadBuilding' | 'yearOfPlenty' | 'monopoly'
+  | 'bounty' | 'plague' | 'earthquake' | 'windfall';
+
+export interface DevCard {
+  kind: DevKind;
+  boughtOnTurn: number; // turnCount at purchase — cannot be played the same turn
+}
+
 export interface ChaosFlags {
   turbo: boolean;
   friendlyRobber: boolean;
   maximumSheep: boolean;
   drama: boolean;
   goldenHex: boolean;
+  crazyCards: boolean;
 }
 
 export interface MatchConfig {
@@ -115,6 +128,8 @@ export interface PlayerStats {
   robberiesDone: number;
   biggestHarvest: number;
   tradesRejected: number;
+  devCardsBought: number;
+  knightsPlayed: number;
 }
 
 export interface PlayerState {
@@ -131,6 +146,9 @@ export interface PlayerState {
   speechAt: number;
   civTitle: string | null; // gained on mega city
   stats: PlayerStats;
+  devCards: DevCard[]; // held, unplayed development cards
+  devVp: number; // hidden victory points from Victory Point cards
+  knightsPlayed: number; // for Largest Army
 }
 
 export type Phase = 'setup' | 'roll' | 'dice' | 'robber' | 'main' | 'gameover';
@@ -178,6 +196,14 @@ export interface Placement {
   spots: string[];
 }
 
+// A pending resource choice created by playing a development card
+// (Monopoly picks 1, Year of Plenty picks 2, Treasure Haul picks 3).
+export interface DevPrompt {
+  card: DevKind;
+  need: number;
+  picks: Resource[];
+}
+
 export interface MatchState {
   config: MatchConfig;
   board: BoardModel;
@@ -199,8 +225,18 @@ export interface MatchState {
   diceGiant: boolean;
   // robber
   robberTile: number;
+  // when the robber phase was triggered by a played card (else null = dice 7)
+  robberSource: 'knight' | 'earthquake' | null;
   // Golden Hex chaos modifier: id of the wildcard-producing tile (null = off)
   goldenTile: number | null;
+  // development cards
+  devDeck: DevKind[]; // remaining deck (top = index 0), built at match start
+  devCardPlayedThisTurn: boolean; // at most one dev card played per turn
+  freeRoads: number; // free roads still to place (Road Building card)
+  devPrompt: DevPrompt | null; // pending resource choice from a played card
+  // the card currently mid-play (robber / free-road / resource pick) — held so
+  // the human can cancel and get it back before it resolves
+  pendingDevCard: DevCard | null;
   // interaction
   placement: Placement | null;
   hoverSpot: string | null;
@@ -208,6 +244,7 @@ export interface MatchState {
   // world
   worldEvent: WorldEvent | null;
   longestRoad: { owner: number; length: number } | null;
+  largestArmy: { owner: number; count: number } | null;
   // presentation
   log: string[];
   fx: Fx[];

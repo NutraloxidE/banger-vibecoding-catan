@@ -315,6 +315,76 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
 .build-note { font-size: 9px; color: #ffb0a0; font-weight: 700; text-transform: uppercase; }
 .turn-row { display: flex; gap: 8px; }
 
+/* ---------- development cards ---------- */
+.dev-row { display: flex; gap: 7px; flex-wrap: wrap; justify-content: flex-end; align-items: stretch; }
+.dev-buy {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  min-width: 86px; padding: 6px 10px;
+  background: var(--panel); color: var(--ink);
+  border: 2px solid rgba(255,255,255,0.16); border-radius: 12px;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.dev-buy.usable { border-color: var(--ok); }
+.dev-buy.usable:hover { transform: translateY(-4px) scale(1.03); }
+.dev-buy.locked { opacity: 0.55; filter: saturate(0.4); }
+.dev-buy.locked:hover { animation: shake 0.3s; }
+.dev-buy-icon { font-size: 20px; }
+.dev-buy-label { font-weight: 800; font-size: 11px; letter-spacing: 0.04em; }
+.dev-buy-cost { font-size: 11px; opacity: 0.95; }
+.dev-buy-deck { font-size: 9px; opacity: 0.7; font-weight: 700; }
+.dev-hand { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.dev-card {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  min-width: 62px; padding: 6px 6px;
+  background: rgba(140, 110, 210, 0.16); color: var(--ink);
+  border: 2px solid rgba(180, 150, 240, 0.4); border-radius: 10px;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.dev-card.playable { border-color: var(--gold); animation: affordPulse 2s ease-in-out infinite; }
+.dev-card.playable:hover { transform: translateY(-4px) scale(1.05); }
+.dev-card.held { opacity: 0.5; filter: saturate(0.5); cursor: default; }
+.dev-card-icon { font-size: 18px; }
+.dev-card-label { font-weight: 800; font-size: 9.5px; letter-spacing: 0.02em; text-align: center; }
+.dev-card-note { font-size: 8px; color: #cbb8ff; font-weight: 700; text-transform: uppercase; }
+
+.dev-prompt {
+  position: absolute; bottom: 118px; left: 50%; transform: translateX(-50%);
+  background: var(--panel); border: 2px solid var(--gold); border-radius: 14px;
+  padding: 12px 16px; display: flex; flex-direction: column; gap: 10px; align-items: center;
+  z-index: 26; max-width: 92vw;
+}
+.dev-prompt-head { display: flex; align-items: center; gap: 8px; }
+.dev-prompt-head .dev-active-icon { font-size: 22px; }
+.dev-prompt-head .dev-active-name { font-weight: 900; font-size: 15px; letter-spacing: 0.03em; }
+.dev-prompt-hint { font-weight: 800; font-size: 13px; text-align: center; }
+.dev-prompt-chosen { display: flex; gap: 6px; font-size: 20px; }
+.dev-prompt-picks { display: flex; gap: 8px; }
+.dev-prompt .cancel-btn { margin-top: 2px; }
+
+/* the "card in play" hint box shown during the robber phase from a card */
+.dev-active {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+  background: var(--panel); border: 2px solid var(--gold); border-radius: 14px;
+  padding: 10px 16px; max-width: 92vw;
+}
+.dev-active.danger { border-color: var(--danger); }
+.dev-active-head { display: flex; align-items: center; gap: 8px; }
+.dev-active-icon { font-size: 22px; }
+.dev-active-name { font-weight: 900; font-size: 15px; letter-spacing: 0.03em; }
+.dev-active-desc { font-size: 12px; opacity: 0.9; text-align: center; }
+.dev-active-hint { font-size: 12px; font-weight: 800; text-align: center; }
+.dev-active .cancel-btn { margin-top: 2px; }
+.placement-desc { opacity: 0.8; font-weight: 600; font-size: 11px; }
+.dev-pick {
+  display: flex; flex-direction: column; align-items: center; gap: 2px;
+  width: 52px; padding: 8px 4px;
+  background: var(--panel); border: 2px solid rgba(255,255,255,0.2); border-radius: 10px;
+  cursor: pointer; font-family: inherit; transition: all 0.12s;
+}
+.dev-pick:hover { transform: translateY(-4px) scale(1.06); border-color: var(--gold); }
+.dev-pick-emoji { font-size: 24px; }
+.dev-pick-have { font-size: 11px; font-weight: 800; opacity: 0.85; }
+
 .placement-banner {
   position: absolute; bottom: 118px; left: 50%; transform: translateX(-50%);
   background: var(--panel); border: 2px solid var(--gold); border-radius: 12px;
@@ -557,11 +627,13 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   .main-actions { align-items: stretch; }
   .build-row { justify-content: center; }
   .build-card { min-width: 74px; padding: 6px 6px; }
+  .dev-row { justify-content: center; }
   .turn-row { justify-content: center; }
   .turn-row .btn { flex: 1; font-size: 13px; padding: 12px 8px; }
   .btn-huge { font-size: 17px; padding: 14px 20px; }
   .log-feed { display: none; }
   .placement-banner { bottom: 190px; width: 94vw; justify-content: space-between; }
+  .dev-prompt { bottom: 250px; width: 94vw; }
   .npc-offer { top: 70px; right: 8px; width: 220px; }
   .hud-corner { top: auto; bottom: 200px; right: 8px; }
   .stats-grid { grid-template-columns: 1fr; }

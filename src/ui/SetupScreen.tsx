@@ -88,8 +88,9 @@ export function SetupScreen() {
   const [maximumSheep, setMaximumSheep] = useState(false);
   const [drama, setDrama] = useState(true);
   const [goldenHex, setGoldenHex] = useState(false);
+  const [crazyCards, setCrazyCards] = useState(false);
 
-  const chaosCount = [turbo, friendlyRobber, maximumSheep, goldenHex].filter(Boolean).length;
+  const chaosCount = [turbo, friendlyRobber, maximumSheep, goldenHex, crazyCards].filter(Boolean).length;
 
   // Rivals this seed will actually produce (same RNG path as buildMatch)
   const roster = useMemo(() => {
@@ -103,7 +104,7 @@ export function SetupScreen() {
       mapSize, npcCount, difficulty, targetVp,
       seed: seed.trim() || randomSeedString(),
       worldEvents,
-      chaos: { turbo, friendlyRobber, maximumSheep, drama, goldenHex },
+      chaos: { turbo, friendlyRobber, maximumSheep, drama, goldenHex, crazyCards },
     };
     newGame(config);
   };
@@ -117,6 +118,7 @@ export function SetupScreen() {
     { key: 'friendly', emoji: '🥺', name: t('chaos.friendly'), desc: t('chaos.friendlyD'), on: friendlyRobber, toggle: () => setFriendlyRobber(!friendlyRobber) },
     { key: 'drama', emoji: '🎭', name: t('chaos.drama'), desc: t('chaos.dramaD'), on: drama, toggle: () => setDrama(!drama) },
     { key: 'sheep', emoji: '🐑', name: t('chaos.sheep'), desc: t('chaos.sheepD'), on: maximumSheep, toggle: () => setMaximumSheep(!maximumSheep) },
+    { key: 'crazy', emoji: '🃏', name: t('chaos.crazy'), desc: t('chaos.crazyD'), on: crazyCards, toggle: () => setCrazyCards(!crazyCards) },
   ];
 
   return (
