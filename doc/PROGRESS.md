@@ -819,3 +819,55 @@ toggles, applied "traditional-style" across all map sizes (small = exact).
   ports: default view = 9 badges rendered / 0 shown (screenshot matches the
   prior frozen look); after orbiting to top-down = 9/9 badges faded in and
   readable over each harbor; zero page errors.
+
+---
+
+## 2026-07-23 (3) — Harbor→node bridges (which corners a harbor serves)
+
+### What changed (user request: 港がどのノードと繋がってるか橋のモデルで分かりやすく)
+- `src/scene/Ports.tsx`: each harbor now draws **two wooden plank bridges**
+  spanning from its water-side dock up to the two coastal nodes (vertices) it
+  serves — a V-shape that makes it obvious at a glance which corners can use
+  the harbor. New `Bridge` subcomponent: deck (`boxGeometry` sized to the
+  dock→node distance) + two side rails + four corner posts, in the existing
+  dock wood palette (`woodMat`/`postMat`). Oriented in **world space** via a
+  quaternion (`setFromUnitVectors(X_AXIS, dir)`) so the deck both heads toward
+  the node and rises from the low dock (`y≈0.12`) to the higher tile-top node
+  (`y=0.3`).
+- Wiring: `Ports()` now also selects `board.vertices`; for each port it maps
+  `port.vertices` → world positions and renders a `Bridge` per node alongside
+  the existing `PortDock`. Bridges live at the top-level (unrotated) world
+  group, not inside the yaw-rotated dock group. Purely presentational — no
+  trade math / game logic touched.
+- `spec.md` §4 harbor amendment updated in the same commit (frozen gameplay
+  screen changed on explicit user request).
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only change;
+  simulate is headless so unaffected).
+- Playwright (throwaway `--no-save`, pre-installed Chromium, 1280×820):
+  traditional-ports match — bridges render from each dock to both its coastal
+  nodes with visible rails/posts/buoy; low-angle close-up confirms the V-shape
+  reaching the two corners; zero page errors. Playwright NOT added to
+  package.json (verified `git status` shows only Ports.tsx + docs/spec).
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress) touched. The `Bridge` deck/rail
+  geometries are created per-port via inline `<boxGeometry>` (length is stable
+  per port, so no per-frame churn); corner-post geometry is a shared module
+  const. If vertex/dock Y levels change, update `DOCK_Y`/`NODE_Y` in `Ports()`.
+
+### Follow-up same day — fix bridge roll on steep/short spans (user report)
+- The first pass oriented each `Bridge` with `Quaternion.setFromUnitVectors(X,
+  dir)` — the **shortest-arc** rotation. When a span rose from the low dock to
+  the higher node with any sideways component, that shortest arc introduced an
+  unwanted **roll about the deck's long axis**, so short/steep bridges looked
+  twisted. Fixed by building an **explicit orthonormal basis** instead: X =
+  heading (dock→node, incl. slope), Z = `cross(X, worldUp)` normalized (the
+  horizontal width axis, so the deck never rolls), Y = `cross(Z, X)` (deck up);
+  quaternion via `Matrix4.makeBasis(x,y,z)`. Near-vertical guard falls back to
+  a fixed Z if `cross(X,up)` degenerates (our bridges are never that steep).
+  Deck now always lies flat-top regardless of span length/slope.
+- Verified: `npm run build` passes; Playwright close-ups (same seed as before)
+  confirm every bridge deck is flat, fanning in a clean V from dock to both
+  nodes, no twist; zero page errors. Only `Ports.tsx` touched.
