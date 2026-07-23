@@ -22,14 +22,17 @@ interface PresetFlags {
   drama: boolean;
   goldenHex: boolean;
   crazyCards: boolean;
+  // classic board layout — on only for Normal (plain Catan), off elsewhere
+  traditionalNumbers: boolean;
+  traditionalPorts: boolean;
 }
 const PRESET_ORDER: PresetKey[] = ['normal', 'banger', 'core', 'maxxing'];
 const PRESET_EMOJI: Record<PresetKey, string> = { normal: '🌾', banger: '🔥', core: '💥', maxxing: '🌋' };
 const PRESETS: Record<PresetKey, PresetFlags> = {
-  normal:  { worldEvents: false, turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: false },
-  banger:  { worldEvents: true,  turbo: false, friendlyRobber: false, maximumSheep: false, drama: true,  goldenHex: false, crazyCards: false },
-  core:    { worldEvents: true,  turbo: false, friendlyRobber: false, maximumSheep: false, drama: true,  goldenHex: true,  crazyCards: true  },
-  maxxing: { worldEvents: true,  turbo: true,  friendlyRobber: true,  maximumSheep: true,  drama: true,  goldenHex: true,  crazyCards: true  },
+  normal:  { worldEvents: false, turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: false, traditionalNumbers: true,  traditionalPorts: true  },
+  banger:  { worldEvents: true,  turbo: false, friendlyRobber: false, maximumSheep: false, drama: true,  goldenHex: false, crazyCards: false, traditionalNumbers: false, traditionalPorts: false },
+  core:    { worldEvents: true,  turbo: false, friendlyRobber: false, maximumSheep: false, drama: true,  goldenHex: true,  crazyCards: true,  traditionalNumbers: false, traditionalPorts: false },
+  maxxing: { worldEvents: true,  turbo: true,  friendlyRobber: true,  maximumSheep: true,  drama: true,  goldenHex: true,  crazyCards: true,  traditionalNumbers: false, traditionalPorts: false },
 };
 function matchPreset(f: PresetFlags): PresetKey | null {
   return PRESET_ORDER.find((k) => {
@@ -173,7 +176,7 @@ export function SetupScreen() {
   const chaosCount = [turbo, friendlyRobber, maximumSheep, goldenHex, crazyCards].filter(Boolean).length;
 
   // Which preset (if any) the current toggle state exactly matches.
-  const activePreset = matchPreset({ worldEvents, turbo, friendlyRobber, maximumSheep, drama, goldenHex, crazyCards });
+  const activePreset = matchPreset({ worldEvents, turbo, friendlyRobber, maximumSheep, drama, goldenHex, crazyCards, traditionalNumbers, traditionalPorts });
   const applyPreset = (key: PresetKey) => {
     const p = PRESETS[key];
     setWorldEvents(p.worldEvents);
@@ -183,6 +186,8 @@ export function SetupScreen() {
     setDrama(p.drama);
     setGoldenHex(p.goldenHex);
     setCrazyCards(p.crazyCards);
+    setTraditionalNumbers(p.traditionalNumbers);
+    setTraditionalPorts(p.traditionalPorts);
   };
 
   // Rivals this seed will actually produce (same RNG path as buildMatch)

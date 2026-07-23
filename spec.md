@@ -58,7 +58,7 @@ Order, top to bottom:
    dropdown describes the selection); tweaking any individual modifier
    afterward shows a "Custom" label on the trigger. The presets:
    - 🌾 **Normal** — really just plain Catan: every chaos modifier and
-     World Events off.
+     World Events off, and the classic Traditional Numbers + Ports layout on.
    - 🔥 **Banger** (default) — pleasantly weird: World Events + NPC Drama on.
    - 💥 **BANGER CORE** — a bit weirder: Banger + Golden Hex + Crazy Cards.
    - 🌋 **BANGER MAXXING** — every chaos element maxed: all modifiers on.
@@ -69,11 +69,13 @@ Order, top to bottom:
 4. **Map Size** — segmented control, each option label + `N Tiles`
    sublabel; the selected option is a solid gold pill.
 5. **Board Layout** — a 2-column grid of toggle cards (same style as the
-   Chaos Modifiers), independent of the World Preset so they combine with
-   any preset (Normal included): 🔢 Traditional Numbers and ⚓ Traditional
-   Ports. When on, the board uses the classic Catan layout instead of the
-   procedural one (see §5); the live preview reflects Traditional Numbers.
-   Both default off.
+   Chaos Modifiers): 🔢 Traditional Numbers and ⚓ Traditional Ports. When on,
+   the board uses the classic Catan layout instead of the procedural one
+   (see §5); the live preview reflects Traditional Numbers. The World Preset
+   drives these too: **Normal** turns both on (plain Catan is the classic
+   layout); every other preset turns both off. Tweaking either card by hand
+   drops the preset to "Custom" (like the Chaos Modifiers). Default (Banger)
+   is both off.
 6. **Opponents: N** — slider 1–3 with player-color dots below
    (you + N rivals).
 7. **Difficulty** — chill / normal / ruthless in the same segmented style.
@@ -86,7 +88,7 @@ Order, top to bottom:
     🌪️ World Events, ✨ Golden Hex, 🥺 Friendly Robber, 🎭 NPC Drama,
     🐑 Maximum Sheep, 🃏 Crazy Cards. Warning box when ≥2 economy-affecting
     modifiers are active. The **World Preset** selector (item 2) is a
-    shortcut over exactly these toggles (it does not touch Board Layout).
+    shortcut over exactly these toggles plus the Board Layout pair (item 5).
 11. **Rival personality chips** — one pill per joining rival
     (emoji + personality label; deterministic from the seed).
 12. Full-width gold `GENERATE WORLD →` button (build sound, starts

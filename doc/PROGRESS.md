@@ -742,5 +742,19 @@ toggles, applied "traditional-style" across all map sizes (small = exact).
 
 ### Notes / scope
 - Frozen setup screen touched on explicit user request; matching spec update
-  shipped in the same commit. Presets stay chaos-flags-only, so the two Board
-  Layout toggles never affect the "Custom" preset detection.
+  shipped in the same commit.
+
+### Follow-up same day — presets drive Board Layout (user request: 通常プリセットでON、他はOFF)
+- The two Board Layout toggles are now part of the World Preset (they were
+  independent in the first pass). `PresetFlags` gained `traditionalNumbers` /
+  `traditionalPorts`; **Normal** sets both **on** (plain Catan = the classic
+  layout), Banger / CORE / MAXXING set both **off**. `applyPreset` sets the two
+  states and `matchPreset` compares them, so hand-toggling either card drops
+  the preset to "Custom" (same as the Chaos Modifiers). No store/rules/board
+  changes — purely the SetupScreen preset wiring. spec.md §3 items 2/5/10
+  updated in the same commit.
+- Verified: build passes; Playwright (throwaway, headless_shell, 412×915) —
+  default=Banger both off, picking Normal lights both cards + the preview shows
+  the classic spiral (trigger reads 🌾 Normal), MAXXING both off, then toggling
+  a card by hand flips the trigger to 🎛️ Custom; zero page errors. Playwright
+  reverted out of package.json.
