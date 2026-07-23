@@ -50,11 +50,13 @@ Order, top to bottom:
 
 1. Header row: `← Back` button, `Configure Your World` heading, language
    toggle at the right.
-2. **World Preset** — a dropdown that bundles the chaos modifiers into
-   escalating flavors; **Banger** is the default. Picking one applies its
-   full set of toggles below (a caption under the dropdown describes the
-   selection); tweaking any individual modifier afterward drops to a
-   disabled "Custom" entry. The presets:
+2. **World Preset** — a custom dropdown that bundles the chaos modifiers into
+   escalating flavors; **Banger** is the default. The trigger shows the active
+   preset; opening it reveals a styled floating menu where each preset is a row
+   (emoji + name + short description), the active one gold-highlighted with a
+   ✓. Picking one applies its full set of toggles below (a caption under the
+   dropdown describes the selection); tweaking any individual modifier
+   afterward shows a "Custom" label on the trigger. The presets:
    - 🌾 **Normal** — really just plain Catan: every chaos modifier and
      World Events off.
    - 🔥 **Banger** (default) — pleasantly weird: World Events + NPC Drama on.

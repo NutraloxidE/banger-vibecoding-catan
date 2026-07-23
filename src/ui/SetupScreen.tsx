@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGame } from '../game/store';
 import { MatchConfig, MapSize, Difficulty, Terrain } from '../game/types';
 import { generateBoard, pickGoldenTile } from '../game/board';
@@ -36,6 +36,53 @@ function matchPreset(f: PresetFlags): PresetKey | null {
     const p = PRESETS[k];
     return (Object.keys(p) as (keyof PresetFlags)[]).every((key) => p[key] === f[key]);
   }) ?? null;
+}
+
+// Custom dropdown for the world preset — a native <select> can't style the
+// options panel, so we roll our own button + floating menu (closes on outside
+// click / Esc). `value` is the active preset, or null when the toggles below
+// have been hand-tweaked into a "Custom" mix.
+function PresetDropdown({ value, onPick }: { value: PresetKey | null; onPick: (k: PresetKey) => void }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  const label = value ? `${PRESET_EMOJI[value]} ${t(`preset.${value}`)}` : `🎛️ ${t('preset.custom')}`;
+
+  return (
+    <div className={`preset-dd ${open ? 'open' : ''}`} ref={ref}>
+      <button type="button" className="preset-trigger" aria-haspopup="listbox" aria-expanded={open}
+        onClick={() => { sfx.click(); setOpen((o) => !o); }}>
+        <span className="preset-trigger-label">{label}</span>
+        <span className="preset-caret" aria-hidden="true" />
+      </button>
+      {open && (
+        <ul className="preset-menu" role="listbox">
+          {PRESET_ORDER.map((k) => (
+            <li key={k} role="option" aria-selected={value === k}
+              className={`preset-opt ${value === k ? 'on' : ''}`}
+              onClick={() => { sfx.click(); onPick(k); setOpen(false); }}>
+              <span className="preset-opt-emoji">{PRESET_EMOJI[k]}</span>
+              <span className="preset-opt-text">
+                <span className="preset-opt-name">{t(`preset.${k}`)}</span>
+                <span className="preset-opt-desc">{t(`preset.${k}D`)}</span>
+              </span>
+              {value === k && <span className="preset-opt-check" aria-hidden="true">✓</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 // 2D colors for the live preview (matches the 3D board's terrain palette)
@@ -173,13 +220,7 @@ export function SetupScreen() {
         </div>
 
         <h3 className="cfg-label">{t('setup.preset')}</h3>
-        <select className="preset-select" value={activePreset ?? 'custom'}
-          onChange={(e) => { sfx.click(); applyPreset(e.target.value as PresetKey); }}>
-          {PRESET_ORDER.map((k) => (
-            <option key={k} value={k}>{`${PRESET_EMOJI[k]} ${t(`preset.${k}`)}`}</option>
-          ))}
-          {activePreset === null && <option value="custom" disabled>{`🎛️ ${t('preset.custom')}`}</option>}
-        </select>
+        <PresetDropdown value={activePreset} onPick={applyPreset} />
         <div className="preset-desc">{activePreset ? t(`preset.${activePreset}D`) : t('preset.customD')}</div>
 
         <div className="map-preview">

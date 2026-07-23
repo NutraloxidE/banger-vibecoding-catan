@@ -671,3 +671,18 @@ convenience over the same `MatchConfig`; no store/types/rules/simulate changes.
   spec.md §3 item 2 reworded (grid → dropdown). Build + all 6 sims pass;
   Playwright confirms the dropdown defaults to 🔥 Banger, selecting 🌋 BANGER
   MAXXING lights the preview's Golden Hex — zero page errors.
+
+### Follow-up same day — custom dropdown + styled options panel (user request)
+- A native `<select>` can't style its options popup (browsers draw it natively),
+  so replaced it with a self-contained **`PresetDropdown`** component in
+  `SetupScreen.tsx`: a gold-accented trigger button + a floating `.preset-menu`
+  (closes on outside `mousedown` / Esc via a `useRef` + `useEffect`). Each menu
+  row shows emoji + name + short description; the active preset is gold-tinted
+  with a ✓, the caret badge flips 180° when open. Trigger shows "🎛️ Custom"
+  when flags match no preset. No store/logic touched — `applyPreset`/`matchPreset`/
+  `PRESETS` unchanged; the component just drives the same flag setters.
+- CSS: `.preset-select*` rules removed; added `.preset-dd/.preset-trigger/
+  .preset-caret/.preset-menu/.preset-opt*` (+ `presetPop` keyframes). `.preset-desc`
+  kept. spec.md §3 item 2 reworded (native dropdown → custom menu with ✓ rows).
+- Build + all 6 sims pass; Playwright screenshotted the open menu (4 rows,
+  Banger checked), option hover, and post-pick collapsed state — zero page errors.
