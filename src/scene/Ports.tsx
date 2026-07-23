@@ -22,7 +22,10 @@ const buoyGeo = new THREE.SphereGeometry(0.06, 8, 6);
 const woodMat = new THREE.MeshStandardMaterial({ color: '#8a5a33' });
 const postMat = new THREE.MeshStandardMaterial({ color: '#6f4a2b' });
 
-function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null }) {
+// Shared scratch vector for the per-frame camera-angle check (no per-frame alloc).
+const camDir = new THREE.Vector3();
+
+function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: string | null; showRate: boolean }) {
   const ref = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const signTex = useMemo(
@@ -45,6 +48,7 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
 
   // face the sign back toward the island center
   const yaw = port.angle + Math.PI;
+  const rateEmoji = port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind];
 
   return (
     <group position={[port.x, 0, port.z]} rotation={[0, yaw, 0]}>
@@ -73,6 +77,17 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
           </mesh>
         )}
       </group>
+      {/* Dedicated flat readout: when the camera looks from near overhead the
+          vertical sign goes edge-on, so a screen-facing DOM badge fades in with
+          the trade ratio. Anchored over the dock so you know which harbor it is. */}
+      <Html position={[0, 0.7, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[20, 0]}>
+        <div
+          className={`port-rate-badge${showRate ? ' on' : ''}`}
+          style={ownerColor ? { borderColor: ownerColor } : undefined}
+        >
+          {rateEmoji} {port.rate}:1
+        </div>
+      </Html>
       {hover && (
         <Html position={[0, 0.9, 0]} center style={{ pointerEvents: 'none' }} rotation={[0, -yaw, 0]}>
           <div className="name-tag">⚓ {port.name} · {port.rate}:1 {port.kind === 'generic' ? '' : RES_EMOJI[port.kind]}</div>
@@ -86,6 +101,15 @@ export function Ports() {
   const ports = useGame((s) => s.game?.board.ports);
   const buildings = useGame((s) => s.game?.buildings);
   const players = useGame((s) => s.game?.players);
+  // Show the flat rate badges only when the camera is near top-down (where the
+  // 3D signs are edge-on). Hysteresis (on >0.8, off <0.68) avoids flicker.
+  const [topDown, setTopDown] = useState(false);
+  useFrame(({ camera }) => {
+    camera.getWorldDirection(camDir);
+    const elevation = -camDir.y; // 0 = horizontal view, 1 = straight down
+    if (!topDown && elevation > 0.8) setTopDown(true);
+    else if (topDown && elevation < 0.68) setTopDown(false);
+  });
   if (!ports || !buildings || !players) return null;
 
   return (
@@ -93,7 +117,7 @@ export function Ports() {
       {ports.map((port) => {
         const ownerId = port.vertices.map((v) => buildings[v]?.owner).find((o) => o != null);
         const ownerColor = ownerId != null ? players[ownerId].color : null;
-        return <PortDock key={port.id} port={port} ownerColor={ownerColor ?? null} />;
+        return <PortDock key={port.id} port={port} ownerColor={ownerColor ?? null} showRate={topDown} />;
       })}
     </group>
   );

@@ -669,6 +669,19 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   box-shadow: 0 4px 14px rgba(0,0,0,0.6);
 }
 
+/* Flat harbor trade-rate badge — a dedicated screen-facing readout shown when
+   the camera is near top-down (the 3D signs are edge-on there). Fades in/out. */
+.port-rate-badge {
+  background: rgba(10, 20, 32, 0.92); color: var(--ink); font-family: var(--font-display);
+  font-size: 13px; font-weight: 800; padding: 3px 9px; border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.3); white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.6);
+  opacity: 0; transform: scale(0.85);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  pointer-events: none; user-select: none;
+}
+.port-rate-badge.on { opacity: 1; transform: scale(1); }
+
 /* ---------- mobile ---------- */
 
 @media (max-width: 760px) {
