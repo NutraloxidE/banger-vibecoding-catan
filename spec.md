@@ -198,9 +198,11 @@ request AND a matching update to this section. Its defining elements:
   seed, additionally drops 1 random ("wildcard") resource per building hit
   whenever it produces. Announced in the log at match start.
 - **Harbors / ports** (always on, standard Catan): generated on coastal edges
-  (edges touching one tile), spaced around the coast, never sharing a vertex.
-  Per board there is (room permitting) one 2:1 harbor per resource + several
-  generic 3:1 harbors; count scales with the coastline (~4–9). A player
+  (edges touching one tile), placed **evenly around the entire coast** (so
+  harbors ring the whole island — no bare side), never sharing a vertex. The
+  ring is rotated by a per-seed anchor. Per board there is (room permitting)
+  one 2:1 harbor per resource + several generic 3:1 harbors (kinds randomized);
+  count scales with the coastline (~4–9). A player
   controls a harbor while owning a building (settlement/city/megacity) on
   either of its two vertices, and then trades at that harbor's rate:
   generic = 3 identical → 1 any; resource = 2 of that resource → 1 any.
@@ -216,8 +218,8 @@ request AND a matching update to this section. Its defining elements:
   orientation). Kinds run in the printed clockwise sequence — 3:1, wheat 2:1,
   ore 2:1, 3:1, sheep 2:1, 3:1, brick 2:1, wood 2:1, 3:1 (on the 19-tile board
   exactly the standard 9 harbors: 4 generic + one of each resource); longer
-  coasts cycle the same sequence. Off = the default procedural harbors (kinds
-  randomized, greedy angular spacing) as before.
+  coasts cycle the same sequence. Off = the default procedural harbors (same
+  even ring, but per-seed rotation + randomized kinds).
   Flavor: each harbor gets a themed generated name; **claiming a harbor**
   (first settlement on a harbor vertex) fires a HARBOR WELCOME toast + a
   one-time +1 welcome card. Harbor vertices are worth extra in the AI/

@@ -245,19 +245,18 @@ export function generateBoard(mapSize: MapSize, seed: string, layout?: BoardLayo
   return base;
 }
 
-// Traditional harbor placement: pick coastal edges evenly around the WHOLE
-// coast (so harbors ring the entire island like the real board, not crammed
-// into one arc), anchored to the number-token frame — harbor #0 sits nearest
-// tile "A" and the walk follows the token spiral's winding `dir`. Kinds run in
-// the printed clockwise sequence (TRADITIONAL_PORT_ORDER). Returns edges +
-// kinds paired in walk order; never lets two harbors share a vertex.
-function pickTraditionalPorts(
+// Pick coastal edges evenly around the WHOLE coast (so harbors ring the entire
+// island instead of being crammed into one arc, leaving a bare side), anchored
+// to a reference frame — slot #0 sits nearest `frame.startAng` and the walk
+// follows `frame.dir`. Returns edges in walk order; never lets two harbors
+// share a vertex. Used by BOTH the traditional and procedural layouts.
+function pickEvenPortEdges(
   ordered: { e: EdgeNode; ang: number }[],
   target: number,
   frame: PortFrame,
-): { picked: EdgeNode[]; kinds: PortKind[] } {
+): EdgeNode[] {
   const n = ordered.length;
-  // Start at the coastal edge whose outward angle is closest to tile A.
+  // Start at the coastal edge whose outward angle is closest to the anchor.
   let startIdx = 0;
   let bestDelta = Infinity;
   for (let i = 0; i < n; i++) {
@@ -268,10 +267,9 @@ function pickTraditionalPorts(
   const dir = frame.dir >= 0 ? 1 : -1;
 
   const picked: EdgeNode[] = [];
-  const kinds: PortKind[] = [];
   const usedV = new Set<string>();
   for (let k = 0; k < target; k++) {
-    // Evenly spaced slot, walked from A in the token winding direction.
+    // Evenly spaced slot, walked from the anchor in the winding direction.
     let idx = (((startIdx + dir * Math.round((k * n) / target)) % n) + n) % n;
     // Guard: if this edge shares a vertex with an already-picked harbor, step
     // along until it doesn't (even spacing normally leaves ≥2 edges between).
@@ -283,18 +281,17 @@ function pickTraditionalPorts(
     const e = ordered[idx].e;
     if (usedV.has(e.a) || usedV.has(e.b)) continue; // coast too small — skip
     picked.push(e);
-    kinds.push(TRADITIONAL_PORT_ORDER[k % TRADITIONAL_PORT_ORDER.length]);
     usedV.add(e.a); usedV.add(e.b);
   }
-  return { picked, kinds };
+  return picked;
 }
 
-// Ports sit on coastal edges (edges touching exactly one tile). Catan-style:
-// 4-ish generic 3:1 harbors + one 2:1 harbor per resource, spaced around the
-// coast and never sharing a vertex (so each harbor's two vertices are its own).
-// `frame` (present only in the Traditional layout) anchors the harbors to the
-// number-token spiral so the harbor↔numbered-tile relationship matches the
-// real board instead of rotating on its own.
+// Ports sit on coastal edges (edges touching exactly one tile). Both layouts
+// ring the whole coast evenly (never leaving a bare side); they differ only in
+// the anchor frame + how kinds are assigned. Catan-style kinds: 4-ish generic
+// 3:1 harbors + one 2:1 harbor per resource. `frame` (present only in the
+// Traditional layout) anchors the harbors to the number-token spiral so the
+// harbor↔numbered-tile relationship matches the real board.
 export function generatePorts(board: BoardModel, seed: string, traditional = false, frame?: PortFrame): Port[] {
   const rng = new RNG(seed + ':ports');
   const coastal = Object.values(board.edges).filter((e) => e.tiles.length === 1);
@@ -310,34 +307,18 @@ export function generatePorts(board: BoardModel, seed: string, traditional = fal
   let picked: EdgeNode[];
   let finalKinds: PortKind[];
   if (traditional) {
-    // Traditional: harbors ring the WHOLE coast evenly, anchored to tile A and
-    // the token winding direction, kinds in the printed clockwise sequence.
-    // When Traditional Numbers is off there is no token frame → derive a
-    // deterministic per-seed one so the ring still has a stable orientation.
+    // Traditional: anchor to tile A + the token winding direction, kinds in the
+    // printed clockwise sequence. When Traditional Numbers is off there is no
+    // token frame → derive a deterministic per-seed one for a stable ring.
     const f: PortFrame = frame ?? { startAng: new RNG(seed + ':portframe').next() * 2 * Math.PI - Math.PI, dir: 1 };
-    const trad = pickTraditionalPorts(ordered, target, f);
-    picked = trad.picked;
-    finalKinds = trad.kinds;
+    picked = pickEvenPortEdges(ordered, target, f);
+    finalKinds = picked.map((_, k) => TRADITIONAL_PORT_ORDER[k % TRADITIONAL_PORT_ORDER.length]);
   } else {
-    // Procedural (default board): greedy angular walk with a spacing gap.
-    const usedV = new Set<string>();
-    picked = [];
-    const minGap = ((2 * Math.PI) / target) * 0.6;
-    let lastAng = -Infinity;
-    for (const { e, ang } of ordered) {
-      if (picked.length >= target) break;
-      if (usedV.has(e.a) || usedV.has(e.b)) continue;
-      if (ang - lastAng < minGap) continue;
-      picked.push(e); usedV.add(e.a); usedV.add(e.b); lastAng = ang;
-    }
-    // top up (ignoring the spacing gap, still no shared vertices) if short
-    if (picked.length < target) {
-      for (const { e } of ordered) {
-        if (picked.length >= target) break;
-        if (usedV.has(e.a) || usedV.has(e.b)) continue;
-        picked.push(e); usedV.add(e.a); usedV.add(e.b);
-      }
-    }
+    // Procedural (default board): same even ring, but rotated by a per-seed
+    // anchor and with randomized kinds (one 2:1 per resource + generic 3:1).
+    const fr = new RNG(seed + ':portframe');
+    const f: PortFrame = { startAng: fr.next() * 2 * Math.PI - Math.PI, dir: fr.next() < 0.5 ? 1 : -1 };
+    picked = pickEvenPortEdges(ordered, target, f);
     const kinds: PortKind[] = [];
     const resPool = rng.shuffle([...RESOURCES]);
     for (let i = 0; i < picked.length; i++) kinds.push(i < resPool.length ? resPool[i] : 'generic');
