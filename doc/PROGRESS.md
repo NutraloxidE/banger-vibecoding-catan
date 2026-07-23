@@ -1038,3 +1038,49 @@ across both layouts (`src/game/board.ts` only):
   touched. `boatDistance` is additive/optional so the shared `Ambient` stays
   safe for the title screen. If boats ever look too far on huge boards, tune the
   `boardRadius * 2.5 + 5` in GameScene (title is independent).
+
+---
+
+## 2026-07-24 — Harbor rework: moored boat + consistent dock frame + bridge fix
+
+### What changed (user screenshot: まだボートとドックが一体化 → ボートとドックっぽくして)
+The user's close-up showed the REAL problem: the dock itself read as a
+boat/dock hybrid — the big square sign looked like a sail on a hull, and a
+bridge deck sliced right through the sign. Two root causes found and fixed,
+all in `src/scene/Ports.tsx`:
+
+1. **Dock yaw was inconsistent per coast side (latent bug).** The old
+   `yaw = port.angle + π` does NOT face a chosen local axis inward — the
+   mapping flips with the port's angular position, so asymmetric dock parts
+   (bollards, buoy) landed on random sides. Invisible while the dock was
+   symmetric; fatal once it wasn't. New `yaw = 3π/2 − port.angle` maps the
+   dock-local frame consistently: **+z = toward island, −z = open water,
+   ±x = along the coast**. Sign faces the island everywhere.
+2. **Bridges started at the platform CENTER**, so their decks cut across the
+   landing and through the sign. Each bridge `from` is now offset 0.2 from
+   the port center toward its node — decks land on the platform's island-side
+   edge, never crossing the middle.
+3. **A real moored boat** (`MooredBoat`): open rowboat hull (flat base + low
+   walls + two benches) with a short mast and a furled beige sail, floating
+   just off the seaward edge, tied to the two edge bollards by taut ropes.
+   Gently bobs and rocks (`useFrame` on its own group). This makes "boat" and
+   "dock" two clearly separate silhouettes.
+4. **Flavor**: hanging sign sways softly (rotation.z sine); a barrel + crate
+   of dockside cargo on the deck; bollards moved to the seaward edge (where
+   the boat ties up); buoy repositioned beside the boat.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass.
+- Playwright (throwaway `--no-save`, reverted): traditional small board —
+  default view + low-angle + deep-zoom + 3/4 orbit: every harbor shows
+  sign-on-mast at one end facing the island, V-bridges landing on the deck
+  edge (no sign clipping), moored boat with furled sail + ropes on the sea
+  side, buoy beside it; orientation consistent around the whole coast. Zero
+  page errors on every shot.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress) touched. Render-only.
+- The dock-local frame contract is now: **+z island / −z sea / ±x coast**
+  (see the yaw comment in `PortDock`). Anything added to the dock must use it.
+- If `vertexScore`/board Y levels change, bridge `from` offset (0.2) assumes
+  the platform half-depth 0.21.

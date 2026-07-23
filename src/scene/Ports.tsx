@@ -36,6 +36,56 @@ const PILING_OFFSETS: [number, number][] = [
 ];
 const PLANK_SEAMS = [-0.13, 0, 0.13];
 
+// Moored rowboat tied up on the harbor's seaward side — a clearly separate
+// vessel so the dock reads as "boat AND dock", not one merged silhouette.
+const boatBaseGeo = new THREE.BoxGeometry(0.34, 0.05, 0.16);
+const boatWallLongGeo = new THREE.BoxGeometry(0.34, 0.07, 0.03);
+const boatWallEndGeo = new THREE.BoxGeometry(0.03, 0.07, 0.13);
+const boatBenchGeo = new THREE.BoxGeometry(0.05, 0.02, 0.12);
+const boatMastGeo = new THREE.CylinderGeometry(0.014, 0.018, 0.34, 6);
+const furledSailGeo = new THREE.BoxGeometry(0.036, 0.24, 0.036);
+const ropeGeo = new THREE.BoxGeometry(0.016, 0.016, 0.31);
+// Dockside cargo clutter (a barrel + a crate) on the landing deck.
+const barrelGeo = new THREE.CylinderGeometry(0.05, 0.055, 0.11, 8);
+const crateGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
+
+const hullMat = new THREE.MeshStandardMaterial({ color: '#7d4526' });
+const sailclothMat = new THREE.MeshStandardMaterial({ color: '#f0e6d0' });
+const ropeMat = new THREE.MeshStandardMaterial({ color: '#d3bc90' });
+const crateMat = new THREE.MeshStandardMaterial({ color: '#bd9455' });
+const barrelMat = new THREE.MeshStandardMaterial({ color: '#96622f' });
+
+// In dock-local space (see the yaw note in PortDock): +z = toward the island,
+// -z = open water. The boat floats just off the seaward edge, gently bobbing,
+// tied to the two edge bollards by taut ropes.
+function MooredBoat({ phase }: { phase: number }) {
+  const ref = useRef<THREE.Group>(null);
+  useFrame(({ clock }) => {
+    const g = ref.current;
+    if (!g) return;
+    g.position.y = 0.02 + Math.sin(clock.elapsedTime * 1.3 + phase) * 0.015;
+    g.rotation.x = Math.sin(clock.elapsedTime * 0.9 + phase) * 0.03;
+  });
+  return (
+    <group ref={ref} position={[0, 0.02, -0.52]}>
+      {/* hull: flat bottom + low walls (open rowboat) */}
+      <mesh geometry={boatBaseGeo} material={hullMat} position={[0, 0.05, 0]} castShadow />
+      <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, 0.065]} />
+      <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, -0.065]} />
+      <mesh geometry={boatWallEndGeo} material={hullMat} position={[0.155, 0.095, 0]} />
+      <mesh geometry={boatWallEndGeo} material={hullMat} position={[-0.155, 0.095, 0]} />
+      <mesh geometry={boatBenchGeo} material={postMat} position={[0.08, 0.1, 0]} />
+      <mesh geometry={boatBenchGeo} material={postMat} position={[-0.08, 0.1, 0]} />
+      {/* short mast with the sail furled — in port, sail down */}
+      <mesh geometry={boatMastGeo} material={postMat} position={[-0.06, 0.27, 0]} />
+      <mesh geometry={furledSailGeo} material={sailclothMat} position={[-0.025, 0.26, 0]} rotation={[0, 0, 0.06]} />
+      {/* mooring ropes up to the dock's edge bollards */}
+      <mesh geometry={ropeGeo} material={ropeMat} position={[0.1, 0.185, 0.215]} rotation={[-0.36, 0, 0]} />
+      <mesh geometry={ropeGeo} material={ropeMat} position={[-0.1, 0.185, 0.215]} rotation={[-0.36, 0, 0]} />
+    </group>
+  );
+}
+
 const woodMat = new THREE.MeshStandardMaterial({ color: '#8a5a33' });
 const postMat = new THREE.MeshStandardMaterial({ color: '#6f4a2b' });
 
@@ -91,6 +141,7 @@ function Bridge({ from, to }: { from: [number, number, number]; to: [number, num
 
 function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: string | null; showRate: boolean }) {
   const buoyRef = useRef<THREE.Group>(null);
+  const signRef = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const signTex = useMemo(
     () => portSignTexture(port.rate, port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind]),
@@ -106,13 +157,17 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
   );
   const phase = useMemo(() => port.x + port.z, [port.x, port.z]);
 
-  // Only the buoy bobs on the water; the pier/landing is a solid structure.
+  // The pier/landing is a solid structure; only the buoy bobs and the hanging
+  // sign sways gently in the breeze.
   useFrame(({ clock }) => {
     if (buoyRef.current) buoyRef.current.position.y = 0.05 + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
+    if (signRef.current) signRef.current.rotation.z = Math.sin(clock.elapsedTime * 1.1 + phase) * 0.05;
   });
 
-  // face the sign back toward the island center
-  const yaw = port.angle + Math.PI;
+  // Dock-local frame: +z points toward the island center, so -z is open water.
+  // (yaw = 3π/2 − angle maps local +z onto the inward direction; the previous
+  // `angle + π` was inconsistent per coast side, which scattered dock parts.)
+  const yaw = Math.PI * 1.5 - port.angle;
   const rateEmoji = port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind];
 
   return (
@@ -131,15 +186,18 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
         {PILING_OFFSETS.map(([px, pz]) => (
           <mesh key={`${px},${pz}`} geometry={pilingGeo} material={postMat} position={[px, PLATFORM_TOP - PLATFORM_THICK - 0.19, pz]} />
         ))}
-        {/* mooring bollards on the water-facing edge, where a ship ties up */}
-        <mesh geometry={bollardGeo} material={postMat} position={[0.2, PLATFORM_TOP + 0.07, 0.11]} />
-        <mesh geometry={bollardGeo} material={postMat} position={[0.2, PLATFORM_TOP + 0.07, -0.11]} />
-        {/* mast + hanging sign, standing on the landing */}
+        {/* mooring bollards on the seaward edge, where the boat ties up */}
+        <mesh geometry={bollardGeo} material={postMat} position={[0.1, PLATFORM_TOP + 0.07, -0.16]} />
+        <mesh geometry={bollardGeo} material={postMat} position={[-0.1, PLATFORM_TOP + 0.07, -0.16]} />
+        {/* dockside cargo: a barrel + a crate waiting by the walkways */}
+        <mesh geometry={crateGeo} material={crateMat} position={[0.17, PLATFORM_TOP + 0.05, 0.06]} rotation={[0, 0.5, 0]} castShadow />
+        <mesh geometry={barrelGeo} material={barrelMat} position={[0.15, PLATFORM_TOP + 0.055, -0.09]} castShadow />
+        {/* mast at one end of the deck + the hanging sign, facing the island */}
         <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.36, 0.04]} />
         <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
         {/* two back-to-back front-facing planes so the text reads correctly
             from either side (a single DoubleSide plane mirrors the back) */}
-        <group position={[0.04, 0.4, 0.05]}>
+        <group ref={signRef} position={[0.04, 0.4, 0.05]}>
           <mesh geometry={signGeo} rotation={[0, Math.PI, 0]}>
             <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
           </mesh>
@@ -153,9 +211,11 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
             <meshBasicMaterial color={ownerColor} transparent opacity={0.7} depthWrite={false} />
           </mesh>
         )}
+        {/* the harbor's boat, moored just off the seaward edge */}
+        <MooredBoat phase={phase} />
       </group>
-      {/* buoy floating on the water just off the landing */}
-      <group ref={buoyRef} position={[0.28, 0.05, -0.08]}>
+      {/* buoy floating on the open water beside the moored boat */}
+      <group ref={buoyRef} position={[0.34, 0.05, -0.34]}>
         <mesh geometry={buoyGeo} material={buoyMat} />
       </group>
       {/* Dedicated flat readout: when the camera looks from near overhead the
@@ -203,12 +263,17 @@ export function Ports() {
       {ports.map((port) => {
         const ownerId = port.vertices.map((v) => buildings[v]?.owner).find((o) => o != null);
         const ownerColor = ownerId != null ? players[ownerId].color : null;
-        const from: [number, number, number] = [port.x, DOCK_Y, port.z];
         return (
           <group key={port.id}>
             {port.vertices.map((vid) => {
               const v: VertexNode | undefined = vertices[vid];
               if (!v) return null;
+              // Start each bridge at the platform's edge (offset toward its
+              // node), not the platform center — otherwise the deck cuts
+              // across the middle of the landing and through the sign.
+              const dx = v.x - port.x, dz = v.z - port.z;
+              const dl = Math.hypot(dx, dz) || 1;
+              const from: [number, number, number] = [port.x + (dx / dl) * 0.2, DOCK_Y, port.z + (dz / dl) * 0.2];
               return <Bridge key={vid} from={from} to={[v.x, NODE_Y, v.z]} />;
             })}
             <PortDock port={port} ownerColor={ownerColor ?? null} showRate={topDown} />

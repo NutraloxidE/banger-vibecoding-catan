@@ -113,17 +113,21 @@ request AND a matching update to this section. Its defining elements:
   static gold ring so the wildcard tile is identifiable.)
   (Amendment: coastal harbors render as small docks with a hanging "N:1"
   sign out on the water. Each dock is a solid wooden landing platform (乗り場)
-  standing on four support pilings (足場) that sink into the water, with a
-  couple of mooring bollards on its water-facing edge where a ship would
-  berth; the platform is where the bridges land. The sign hangs from a raised
-  mast that stands on the platform and is large
-  enough to read the rate + resource from the default camera, and reads
+  standing on four support pilings (足場) that sink into the water. All docks
+  share a consistent local frame (island side vs. open-water side): two
+  mooring bollards sit on the seaward edge, and a small **moored rowboat**
+  (open hull, benches, short mast with a furled beige sail) floats just off
+  that edge, tied to the bollards by two taut ropes — so every harbor reads
+  as a distinct boat AND dock, never one merged silhouette. A barrel + crate
+  of dockside cargo sit on the deck. The sign hangs from a raised mast at one
+  end of the platform, faces the island, sways gently in the breeze, and is
+  large enough to read the rate + resource from the default camera, reading
   correctly (non-mirrored) from either side. Two wooden plank bridges (with
-  side rails + corner posts) span from each landing platform up to the two
-  coastal nodes it serves, so it reads at a glance which corners the harbor
-  connects to; a claimed
-  harbor shows a ring + buoy in the owner's color (the buoy bobs on the water
-  while the pier structure stays fixed). Hovering a dock shows
+  side rails + corner posts) span from the platform's island-side edge (not
+  its center, so they never cut through the sign) up to the two coastal nodes
+  the harbor serves, so it reads at a glance which corners connect; a claimed
+  harbor shows a ring + buoy in the owner's color (the buoy floats beside the
+  moored boat; buoy bobs and boat rocks gently while the pier stays fixed). Hovering a dock shows
   its name and rate. As the camera orbits toward a near top-down view — where
   the vertical signs go edge-on — a dedicated flat, screen-facing DOM badge
   fades in over each harbor showing its trade ratio ("🪵 2:1" / "⚓ 3:1",
