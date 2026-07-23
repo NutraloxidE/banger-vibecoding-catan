@@ -13,14 +13,25 @@ export type AiAction =
 
 const rand = () => Math.random();
 
-function pickBest<T>(items: T[], score: (t: T) => number): T | null {
+function pickBest<T>(items: T[], score: (t: T) => number, noise = 0.3): T | null {
   let best: T | null = null;
   let bestS = -Infinity;
   for (const it of items) {
-    const s = score(it) + rand() * 0.3; // tiny jitter so NPCs differ
+    const s = score(it) + rand() * noise; // jitter so NPCs differ; large on 'chill' = sloppy picks
     if (s > bestS) { bestS = s; best = it; }
   }
   return best;
+}
+
+// How much random noise to add to positional scoring. On 'chill' the jitter is
+// big enough to routinely drown out the real value of a corner/road, so the NPC
+// settles for clearly worse spots; 'ruthless' plays near-optimally; 'normal'
+// keeps a light jitter so rivals still differ.
+function pickNoise(state: MatchState): number {
+  const d = state.config.difficulty;
+  if (d === 'chill') return 7;
+  if (d === 'ruthless') return 0.12;
+  return 0.3;
 }
 
 export function aiSetupVertex(state: MatchState, pid: number): string {
@@ -30,7 +41,7 @@ export function aiSetupVertex(state: MatchState, pid: number): string {
     let s = vertexScore(state.board, v);
     if (p.personality === 'gambler') s += rand() * 4;
     return s;
-  });
+  }, pickNoise(state));
   return best ?? spots[0];
 }
 
@@ -40,7 +51,7 @@ export function aiSetupRoad(state: MatchState, pid: number, anchor: string): str
     const e = state.board.edges[eid];
     const far = e.a === anchor ? e.b : e.a;
     return vertexScore(state.board, far);
-  });
+  }, pickNoise(state));
   return best ?? spots[0];
 }
 
@@ -84,20 +95,27 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
   const lazy = diff === 'chill';
   const sharp = diff === 'ruthless';
 
+  const noise = pickNoise(state);
+
   // sleeper personality: often does nothing... then strikes
   if (p.personality === 'sleeper' && rand() < (lazy ? 0.35 : 0.15)) return { type: 'end' };
+
+  // chill rivals are lazy and easily distracted — they often just faff about a
+  // turn and sit on their cards instead of pressing an advantage they could
+  // clearly build on
+  if (lazy && rand() < 0.28) return { type: 'end' };
 
   // 1) Mega city
   const megaSpots = validMegaSpots(state, pid);
   if (megaSpots.length > 0 && canAfford(p, 'megacity')) {
-    const spot = pickBest(megaSpots, (v) => vertexScore(state.board, v));
+    const spot = pickBest(megaSpots, (v) => vertexScore(state.board, v), noise);
     if (spot) return { type: 'build', kind: 'megacity', spot };
   }
 
   // 2) City
   const citySpots = validCitySpots(state, pid);
   if (citySpots.length > 0 && canAfford(p, 'city')) {
-    const spot = pickBest(citySpots, (v) => vertexScore(state.board, v));
+    const spot = pickBest(citySpots, (v) => vertexScore(state.board, v), noise);
     if (spot) return { type: 'build', kind: 'city', spot };
   }
 
@@ -116,7 +134,7 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
         if (nearOpp) s += 3;
       }
       return s;
-    });
+    }, noise);
     if (spot) return { type: 'build', kind: 'settlement', spot };
   }
 
@@ -136,7 +154,7 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
             if (!state.buildings[vid]) s = Math.max(s, vertexScore(state.board, vid));
           }
           return s;
-        });
+        }, noise);
         if (spot) return { type: 'build', kind: 'road', spot };
       }
     }
@@ -145,6 +163,21 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
   // 5) Bank trade toward goal
   const goal = currentGoal(state, pid);
   const missing = missingFor(p, goal);
+
+  // chill rivals sometimes fritter a fat surplus away on a random resource they
+  // don't even need — a purely wasteful trade a sharper player would never make
+  if (lazy && rand() < 0.25) {
+    let dump: Resource | null = null;
+    for (const r of RESOURCES) {
+      if (p.resources[r] >= bankRate(state, r) + 2 && (dump === null || p.resources[r] > p.resources[dump])) dump = r;
+    }
+    if (dump) {
+      const options = RESOURCES.filter((r) => r !== dump);
+      const get = options[Math.floor(rand() * options.length)];
+      return { type: 'bank', give: dump, get };
+    }
+  }
+
   if (missing.length > 0 && missing.length <= 2 && p.personality !== 'hoarder') {
     const give = surplus(p, goal);
     const want = missing[0];
@@ -177,6 +210,9 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
 // Robber: place on highest-value tile adjacent to the strongest opponent, never adjacent to self
 export function aiRobberChoice(state: MatchState, pid: number): { tile: number; victim: number | null } {
   const { board } = state;
+  // chill rivals block a fairly random tile and don't bother hunting the leader
+  const lazy = state.config.difficulty === 'chill';
+  const noise = lazy ? 8 : 0;
   const leaderId = state.players
     .filter((pl) => pl.id !== pid)
     .sort((a, b) => b.vp - a.vp)[0]?.id ?? (pid === 0 ? 1 : 0);
@@ -203,7 +239,8 @@ export function aiRobberChoice(state: MatchState, pid: number): { tile: number; 
     }
     if (touchesSelf) continue;
     if (victim === null) score -= 4;
-    if (touchesLeader) score += 5;
+    if (touchesLeader && !lazy) score += 5;
+    score += rand() * noise;
     if (score > bestScore) { bestScore = score; bestTile = tile.id; bestVictim = victim; }
   }
 
@@ -236,7 +273,7 @@ export function aiEvaluateTrade(
 
   if (p.personality === 'trader') value += 0.6;
   if (p.personality === 'hoarder') value -= 1.0;
-  if (state.config.difficulty === 'chill') value += 0.4;
+  if (state.config.difficulty === 'chill') value += 1.2; // easily talked into bad deals
   if (state.config.difficulty === 'ruthless') value -= 0.3;
   // never help someone at match point
   const proposer = state.players[state.current];

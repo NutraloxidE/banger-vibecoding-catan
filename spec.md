@@ -160,6 +160,14 @@ request AND a matching update to this section. Its defining elements:
 
 - 6-NPC pool, personalities: expansionist / hoarder / trader / gambler /
   builder / sleeper. Heuristic AI (no search), personality-shifted.
+- Difficulty scales NPC competence, not just their pool. **chill** rivals play
+  deliberately badly: heavy positional noise makes them settle for clearly worse
+  corners/roads, they frequently loaf a turn instead of building, they sometimes
+  fritter a surplus away on a random bank trade, they block a near-random robber
+  tile without hunting the leader, and they are easily talked into lopsided
+  trades. **normal** keeps a light jitter; **ruthless** plays near-optimally
+  (denial bonuses, minimal noise, tighter trades). Games stay completable at
+  every level (softlock guards unchanged).
 - Softlock guards: ≤14 AI actions per turn, dice-animation watchdog (4 s),
   setup fallbacks, auto turn advance. The game must never stall.
 - World events (toggled via the 🌪️ World Events chaos card): resource boom,
