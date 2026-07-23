@@ -469,7 +469,10 @@ function maybeWorldEvent(g: MatchState, toasts: Toast[]) {
 }
 
 function buildMatch(config: MatchConfig): MatchState {
-  const board = generateBoard(config.mapSize, config.seed);
+  const board = generateBoard(config.mapSize, config.seed, {
+    traditionalNumbers: config.traditionalNumbers,
+    traditionalPorts: config.traditionalPorts,
+  });
   const goldenTile = config.chaos.goldenHex ? pickGoldenTile(board, config.seed) : null;
   const rng = new RNG(config.seed + ':players');
   const npcs = pickNpcs(rng, config.npcCount, config.difficulty);
@@ -570,6 +573,9 @@ function loadMatch(): MatchState | null {
     g.goldenTile ??= null;
     g.config.chaos.goldenHex ??= false;
     g.board.ports ??= [];
+    // board-layout options (added later; old saves keep their generated board)
+    g.config.traditionalNumbers ??= false;
+    g.config.traditionalPorts ??= false;
     // development-card fields (added later still)
     g.config.chaos.crazyCards ??= false;
     g.devDeck ??= buildDevDeck(g.config.chaos.crazyCards, new RNG(g.config.seed + ':dev'));

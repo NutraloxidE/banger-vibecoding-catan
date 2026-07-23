@@ -68,22 +68,28 @@ Order, top to bottom:
    When Golden Hex is enabled the chosen tile is outlined gold with a ✨.
 4. **Map Size** — segmented control, each option label + `N Tiles`
    sublabel; the selected option is a solid gold pill.
-5. **Opponents: N** — slider 1–3 with player-color dots below
+5. **Board Layout** — a 2-column grid of toggle cards (same style as the
+   Chaos Modifiers), independent of the World Preset so they combine with
+   any preset (Normal included): 🔢 Traditional Numbers and ⚓ Traditional
+   Ports. When on, the board uses the classic Catan layout instead of the
+   procedural one (see §5); the live preview reflects Traditional Numbers.
+   Both default off.
+6. **Opponents: N** — slider 1–3 with player-color dots below
    (you + N rivals).
-6. **Difficulty** — chill / normal / ruthless in the same segmented style.
-7. **Victory Points: N** — slider 7–20 with a caption: ≤8 "Quick
+7. **Difficulty** — chill / normal / ruthless in the same segmented style.
+8. **Victory Points: N** — slider 7–20 with a caption: ≤8 "Quick
    skirmish", 9–11 "Standard game", ≥12 "Long march".
-8. **Seed** — text input + 🎲 randomize. Same seed ⇒ same world, same
+9. **Seed** — text input + 🎲 randomize. Same seed ⇒ same world, same
    rivals, same golden tile.
-9. **Chaos Modifiers** — a 2-column grid of toggle cards (emoji, bold
-   name, short description; gold border when active): ⚡ Turbo Economy,
-   🌪️ World Events, ✨ Golden Hex, 🥺 Friendly Robber, 🎭 NPC Drama,
-   🐑 Maximum Sheep, 🃏 Crazy Cards. Warning box when ≥2 economy-affecting
-   modifiers are active. The **World Preset** selector (item 2) is a
-   shortcut over exactly these toggles.
-10. **Rival personality chips** — one pill per joining rival
+10. **Chaos Modifiers** — a 2-column grid of toggle cards (emoji, bold
+    name, short description; gold border when active): ⚡ Turbo Economy,
+    🌪️ World Events, ✨ Golden Hex, 🥺 Friendly Robber, 🎭 NPC Drama,
+    🐑 Maximum Sheep, 🃏 Crazy Cards. Warning box when ≥2 economy-affecting
+    modifiers are active. The **World Preset** selector (item 2) is a
+    shortcut over exactly these toggles (it does not touch Board Layout).
+11. **Rival personality chips** — one pill per joining rival
     (emoji + personality label; deterministic from the seed).
-11. Full-width gold `GENERATE WORLD →` button (build sound, starts
+12. Full-width gold `GENERATE WORLD →` button (build sound, starts
     immediately).
 
 ## 4. Gameplay screen — FROZEN ✅
@@ -135,6 +141,14 @@ request AND a matching update to this section. Its defining elements:
 - Resources: wood, brick, wheat, sheep, ore. Terrain maps 1:1 (desert none).
 - Tokens 2–12 (no 7) with classic pip weights; 6/8 adjacency avoided
   (50 attempts, then accept).
+- **Traditional Numbers** (Board Layout toggle, default off): instead of the
+  random token layout, lay the classic Catan number sequence
+  (5,2,6,3,8,10,9,12,11,4,8,10,9,4,5,6,3,11) over the land tiles in an
+  outer→inner spiral, skipping the desert. On the 19-tile (small) board this
+  reproduces the standard layout exactly; larger boards cycle the same
+  sequence for the same feel. The seed rotates/reflects the classic board
+  (picking among spiral starts/directions that keep 6/8 apart) rather than
+  randomizing the numbers.
 - Setup phase: snake order, 2 settlements + 2 roads each; the 2nd settlement
   grants 1 resource per adjacent tile.
 - Costs / VP:
@@ -183,6 +197,12 @@ request AND a matching update to this section. Its defining elements:
   generic = 3 identical → 1 any; resource = 2 of that resource → 1 any.
   `bankRate` returns the best rate available to the current trader (harbor
   vs. festival vs. Maximum Sheep vs. the 4:1 base).
+  **Traditional Ports** (Board Layout toggle, default off): the harbor
+  *positions* are still the evenly-spaced coastal edges, but the kinds are
+  the classic set — exactly one 2:1 per resource, spread evenly around the
+  coast, with generic 3:1 filling the rest (on the 19-tile board this is the
+  standard 9 harbors: 4 generic + one of each resource). Off = the kinds are
+  randomized as before.
   Flavor: each harbor gets a themed generated name; **claiming a harbor**
   (first settlement on a harbor vertex) fires a HARBOR WELCOME toast + a
   one-time +1 welcome card. Harbor vertices are worth extra in the AI/

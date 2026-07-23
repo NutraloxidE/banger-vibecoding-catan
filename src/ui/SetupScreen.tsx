@@ -96,8 +96,11 @@ const PREVIEW_COLOR: Record<Terrain, string> = {
 };
 
 // Live SVG preview of the exact board this seed + size will generate.
-function MapPreview({ mapSize, seed, goldenHex }: { mapSize: MapSize; seed: string; goldenHex: boolean }) {
-  const board = useMemo(() => generateBoard(mapSize, seed.trim() || 'x'), [mapSize, seed]);
+function MapPreview({ mapSize, seed, goldenHex, traditionalNumbers, traditionalPorts }: { mapSize: MapSize; seed: string; goldenHex: boolean; traditionalNumbers: boolean; traditionalPorts: boolean }) {
+  const board = useMemo(
+    () => generateBoard(mapSize, seed.trim() || 'x', { traditionalNumbers, traditionalPorts }),
+    [mapSize, seed, traditionalNumbers, traditionalPorts],
+  );
   const golden = useMemo(
     () => (goldenHex ? pickGoldenTile(board, seed.trim() || 'x') : null),
     [board, seed, goldenHex],
@@ -164,6 +167,8 @@ export function SetupScreen() {
   const [drama, setDrama] = useState(true);
   const [goldenHex, setGoldenHex] = useState(false);
   const [crazyCards, setCrazyCards] = useState(false);
+  const [traditionalNumbers, setTraditionalNumbers] = useState(lastConfig?.traditionalNumbers ?? false);
+  const [traditionalPorts, setTraditionalPorts] = useState(lastConfig?.traditionalPorts ?? false);
 
   const chaosCount = [turbo, friendlyRobber, maximumSheep, goldenHex, crazyCards].filter(Boolean).length;
 
@@ -193,6 +198,7 @@ export function SetupScreen() {
       seed: seed.trim() || randomSeedString(),
       worldEvents,
       chaos: { turbo, friendlyRobber, maximumSheep, drama, goldenHex, crazyCards },
+      traditionalNumbers, traditionalPorts,
     };
     newGame(config);
   };
@@ -224,7 +230,8 @@ export function SetupScreen() {
         <div className="preset-desc">{activePreset ? t(`preset.${activePreset}D`) : t('preset.customD')}</div>
 
         <div className="map-preview">
-          <MapPreview mapSize={mapSize} seed={seed} goldenHex={goldenHex} />
+          <MapPreview mapSize={mapSize} seed={seed} goldenHex={goldenHex}
+            traditionalNumbers={traditionalNumbers} traditionalPorts={traditionalPorts} />
           <div className="map-caption">{t('setup.livePreview', { seed: seed.trim() || '—' })}</div>
         </div>
 
@@ -235,6 +242,21 @@ export function SetupScreen() {
               onClick={() => { sfx.click(); setMapSize(m); }}>
               <span className="size-name">{t(`setup.${m}`)}</span>
               <span className="size-sub">{t('setup.tiles', { n: MAP_TILES[m] })}</span>
+            </button>
+          ))}
+        </div>
+
+        <h3 className="cfg-label">{t('setup.layout')}</h3>
+        <div className="chaos-grid">
+          {([
+            { key: 'numbers', emoji: '🔢', name: t('layout.numbers'), desc: t('layout.numbersD'), on: traditionalNumbers, toggle: () => setTraditionalNumbers(!traditionalNumbers) },
+            { key: 'ports', emoji: '⚓', name: t('layout.ports'), desc: t('layout.portsD'), on: traditionalPorts, toggle: () => setTraditionalPorts(!traditionalPorts) },
+          ]).map((c) => (
+            <button key={c.key} className={`chaos-card ${c.on ? 'on' : ''}`}
+              onClick={() => { sfx.click(); c.toggle(); }}>
+              <span className="chaos-emoji">{c.emoji}</span>
+              <span className="chaos-name">{c.name}</span>
+              <span className="chaos-desc">{c.desc}</span>
             </button>
           ))}
         </div>

@@ -1,4 +1,4 @@
-import { BoardModel, EdgeNode, MapSize, Port, PortKind, RESOURCES, Terrain, Tile, VertexNode } from './types';
+import { BoardLayout, BoardModel, EdgeNode, MapSize, Port, PortKind, RESOURCES, Terrain, Tile, VertexNode } from './types';
 import { RNG } from './rng';
 import { portName } from './names';
 
@@ -29,7 +29,91 @@ export const TOKEN_WEIGHT: Record<number, number> = {
 const TOKEN_CYCLE = [6, 8, 5, 9, 4, 10, 3, 11, 2, 12];
 const TERRAIN_CYCLE: Terrain[] = ['forest', 'fields', 'pasture', 'hills', 'mountains', 'forest', 'fields', 'pasture', 'hills', 'mountains', 'forest', 'fields', 'pasture'];
 
-export function generateBoard(mapSize: MapSize, seed: string): BoardModel {
+// Classic Catan number tokens (the printed "A–R" sequence) placed in spiral
+// order over the land tiles — reproduces the standard 19-tile layout exactly
+// and (cycling) extends the same feel to larger boards.
+const CLASSIC_TOKENS = [5, 2, 6, 3, 8, 10, 9, 12, 11, 4, 8, 10, 9, 4, 5, 6, 3, 11];
+
+function hexDist(q: number, r: number): number {
+  return (Math.abs(q) + Math.abs(r) + Math.abs(q + r)) / 2;
+}
+
+// Do any two 6/8 "hot" tiles touch? (shared by the procedural + traditional paths)
+function noAdjacentHotspots(coords: [number, number][], tokens: (number | null)[]): boolean {
+  const idx = new Map<string, number>();
+  coords.forEach(([q, r], i) => idx.set(`${q},${r}`, i));
+  for (let i = 0; i < coords.length; i++) {
+    const t = tokens[i];
+    if (t !== 6 && t !== 8) continue;
+    const [q, r] = coords[i];
+    for (const [dq, dr] of AXIAL_DIRS) {
+      const ni = idx.get(`${q + dq},${r + dr}`);
+      if (ni !== undefined && (tokens[ni] === 6 || tokens[ni] === 8)) return false;
+    }
+  }
+  return true;
+}
+
+// Traditional layout: walk the tiles in an outer→inner spiral and lay the
+// classic token sequence over the land tiles (desert is skipped, not counted),
+// exactly as in the physical game's variable setup. The spiral's starting
+// corner + direction are seed-picked among the variants that keep 6/8 apart,
+// so a seed rotates/reflects the classic board rather than randomizing it.
+function traditionalTokens(coords: [number, number][], terrains: Terrain[], rng: RNG): (number | null)[] {
+  const n = coords.length;
+  const rings = new Map<number, number[]>();
+  coords.forEach(([q, r], i) => {
+    const d = hexDist(q, r);
+    if (!rings.has(d)) rings.set(d, []);
+    rings.get(d)!.push(i);
+  });
+  const ringLevels = [...rings.keys()].sort((a, b) => b - a); // outer → inner
+
+  const angleOf = (i: number) => {
+    const { x, z } = tileCenter(coords[i][0], coords[i][1]);
+    return Math.atan2(z, x);
+  };
+
+  const buildOrder = (startAng: number, dir: number): number[] => {
+    const order: number[] = [];
+    for (const lvl of ringLevels) {
+      const idxs = rings.get(lvl)!.slice();
+      idxs.sort((a, b) => {
+        const ka = (((angleOf(a) - startAng) * dir) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+        const kb = (((angleOf(b) - startAng) * dir) % (2 * Math.PI) + 2 * Math.PI) % (2 * Math.PI);
+        return ka - kb;
+      });
+      order.push(...idxs);
+    }
+    return order;
+  };
+
+  const place = (order: number[]): (number | null)[] => {
+    const tokens: (number | null)[] = new Array(n).fill(null);
+    let ti = 0;
+    for (const i of order) {
+      if (terrains[i] === 'desert') continue;
+      tokens[i] = CLASSIC_TOKENS[ti % CLASSIC_TOKENS.length];
+      ti++;
+    }
+    return tokens;
+  };
+
+  // candidate spiral starts: every outer-ring tile × both directions
+  const outer = rings.get(ringLevels[0])!;
+  const starts: { ang: number; dir: number }[] = [];
+  for (const i of outer) for (const dir of [1, -1]) starts.push({ ang: angleOf(i), dir });
+
+  let best: (number | null)[] | null = null;
+  for (const st of rng.shuffle(starts)) {
+    const tokens = place(buildOrder(st.ang, st.dir));
+    if (best === null) best = tokens;
+    if (noAdjacentHotspots(coords, tokens)) return tokens;
+  }
+  return best!;
+}
+
+export function generateBoard(mapSize: MapSize, seed: string, layout?: BoardLayout): BoardModel {
   const rng = new RNG(seed + ':board');
   const radius = MAP_RADIUS[mapSize];
 
@@ -59,29 +143,35 @@ export function generateBoard(mapSize: MapSize, seed: string): BoardModel {
   coords.forEach(([q, r], i) => coordIndex.set(`${q},${r}`, i));
 
   let bestTokens: (number | null)[] = [];
-  for (let attempt = 0; attempt < 50; attempt++) {
-    const shuffled = rng.shuffle(tokenPool);
-    const tokens: (number | null)[] = [];
-    let ti = 0;
-    for (let i = 0; i < tileCount; i++) {
-      tokens.push(shuffledTerrain[i] === 'desert' ? null : shuffled[ti++]);
-    }
-    // check hot-spot adjacency
-    let ok = true;
-    outer: for (let i = 0; i < tileCount; i++) {
-      const t = tokens[i];
-      if (t !== 6 && t !== 8) continue;
-      const [q, r] = coords[i];
-      for (const [dq, dr] of AXIAL_DIRS) {
-        const ni = coordIndex.get(`${q + dq},${r + dr}`);
-        if (ni !== undefined) {
-          const nt = tokens[ni];
-          if (nt === 6 || nt === 8) { ok = false; break outer; }
+  if (layout?.traditionalNumbers) {
+    // classic spiral sequence (see traditionalTokens); coordIndex unused here
+    void coordIndex;
+    bestTokens = traditionalTokens(coords, shuffledTerrain, new RNG(seed + ':tradnum'));
+  } else {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      const shuffled = rng.shuffle(tokenPool);
+      const tokens: (number | null)[] = [];
+      let ti = 0;
+      for (let i = 0; i < tileCount; i++) {
+        tokens.push(shuffledTerrain[i] === 'desert' ? null : shuffled[ti++]);
+      }
+      // check hot-spot adjacency
+      let ok = true;
+      outer: for (let i = 0; i < tileCount; i++) {
+        const t = tokens[i];
+        if (t !== 6 && t !== 8) continue;
+        const [q, r] = coords[i];
+        for (const [dq, dr] of AXIAL_DIRS) {
+          const ni = coordIndex.get(`${q + dq},${r + dr}`);
+          if (ni !== undefined) {
+            const nt = tokens[ni];
+            if (nt === 6 || nt === 8) { ok = false; break outer; }
+          }
         }
       }
+      bestTokens = tokens;
+      if (ok) break;
     }
-    bestTokens = tokens;
-    if (ok) break;
   }
 
   const tiles: Tile[] = coords.map(([q, r], i) => {
@@ -126,14 +216,30 @@ export function generateBoard(mapSize: MapSize, seed: string): BoardModel {
   }
 
   const base: BoardModel = { radius, tiles, vertices, edges, ports: [] };
-  base.ports = generatePorts(base, seed);
+  base.ports = generatePorts(base, seed, layout?.traditionalPorts);
   return base;
+}
+
+// Traditional harbor kinds: exactly one 2:1 harbor per resource, spread evenly
+// around the ordered coast, generic 3:1 filling the rest. On the 19-tile board
+// this is the classic 9-port set (4 generic + one of each resource).
+function traditionalPortKinds(count: number): PortKind[] {
+  const kinds: PortKind[] = new Array(count).fill('generic');
+  const resCount = Math.min(count, RESOURCES.length);
+  const taken = new Set<number>();
+  for (let r = 0; r < resCount; r++) {
+    let pos = Math.round((r * count) / resCount) % count;
+    while (taken.has(pos)) pos = (pos + 1) % count;
+    taken.add(pos);
+    kinds[pos] = RESOURCES[r];
+  }
+  return kinds;
 }
 
 // Ports sit on coastal edges (edges touching exactly one tile). Catan-style:
 // 4-ish generic 3:1 harbors + one 2:1 harbor per resource, spaced around the
 // coast and never sharing a vertex (so each harbor's two vertices are its own).
-export function generatePorts(board: BoardModel, seed: string): Port[] {
+export function generatePorts(board: BoardModel, seed: string, traditional = false): Port[] {
   const rng = new RNG(seed + ':ports');
   const coastal = Object.values(board.edges).filter((e) => e.tiles.length === 1);
   if (coastal.length === 0) return [];
@@ -164,11 +270,17 @@ export function generatePorts(board: BoardModel, seed: string): Port[] {
     }
   }
 
-  // kinds: one 2:1 per resource first (if room), then generic 3:1, shuffled
-  const kinds: PortKind[] = [];
-  const resPool = rng.shuffle([...RESOURCES]);
-  for (let i = 0; i < picked.length; i++) kinds.push(i < resPool.length ? resPool[i] : 'generic');
-  const finalKinds = rng.shuffle(kinds);
+  // kinds: traditional = one 2:1 per resource spread evenly around the coast;
+  // otherwise one 2:1 per resource (if room) + generic 3:1, shuffled.
+  let finalKinds: PortKind[];
+  if (traditional) {
+    finalKinds = traditionalPortKinds(picked.length);
+  } else {
+    const kinds: PortKind[] = [];
+    const resPool = rng.shuffle([...RESOURCES]);
+    for (let i = 0; i < picked.length; i++) kinds.push(i < resPool.length ? resPool[i] : 'generic');
+    finalKinds = rng.shuffle(kinds);
+  }
 
   return picked.map((e, i) => {
     const kind = finalKinds[i];
