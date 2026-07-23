@@ -371,3 +371,76 @@ Complete game from an empty repo (`HEXTOPIA`), per `PLAN.md`:
 - `npm run build` passes; `npm run simulate` reaches a winner on all 5 configs
   (camera-only change; simulate is headless so unaffected). Manual key mapping
   and vector math validated by inspection; no Playwright this session.
+
+---
+
+## 2026-07-22 — Trade modal UX (mobile fit + own-inventory) + emoji fallback
+
+### What changed (all UI-layer, per explicit user request)
+- **Mobile trade modal no longer overflows / feels cramped**
+  (`src/styles.css` mobile `@media (max-width:760px)` block): modal widened to
+  `96vw` with reduced padding; the NPC tab's `.trade-cols` give/receive grid
+  (previously two 5-emoji pickers side-by-side → horizontal overflow on phones)
+  now **stacks vertically**, the middle arrow rotates 90° (↕), and rival-target
+  buttons wrap 2-up with `white-space: normal`.
+- **You can now see what you own while trading** (`src/ui/TradeModal.tsx`):
+  - New "Your resources" strip (`.trade-inventory`) under the modal head, shown
+    on **both** tabs — all five resources with live counts (empty ones dimmed).
+  - Each give/receive picker button (`ResPicker`) now shows an **owned-count
+    badge** (`.res-pick-have`) under the emoji, so you never over-commit a
+    resource you don't have. New i18n key `trade.yourResources` (en/ja).
+- **🪵 wood / 🪨 ore emoji sometimes blank on desktop** — fixed by appending a
+  color-emoji font stack to `--font-display` in `:root` (`--font-emoji` =
+  Segoe UI Emoji / Apple Color Emoji / Noto Color Emoji / Segoe UI Symbol /
+  Noto Emoji). These are Unicode-13 glyphs; the old stack (Trebuchet/Verdana,
+  system-ui, sans-serif) gave no emoji fallback, so Windows browsers could
+  render tofu. Latin text still uses Trebuchet/Verdana (emoji only fill
+  per-glyph gaps). Covers every DOM emoji (hand, cost chips, trade, etc.).
+
+### Verified
+- `npm run build` + all 5 `npm run simulate` configs pass.
+- Playwright (pre-installed Chromium via `executablePath`): trade modal
+  screenshotted at 390×844 (JA) and 1280×800 (EN), bank + NPC tabs, with a
+  forced main-phase human hand (4🪵 1🧱 3🌾 0🐑 2🪨). Mobile fits the viewport
+  on both tabs, "Your resources" strip + per-button owned badges render, NPC
+  columns stacked; desktop unbroken; zero page errors. (Emoji all render on
+  Linux Chromium via Noto; the font fix targets Windows desktops specifically.)
+
+### Notes / scope
+- Only `src/ui/TradeModal.tsx`, `src/styles.css`, `src/i18n.ts` (+ spec/
+  progress) touched. The trade-modal internals aren't part of the frozen
+  §4 gameplay layout; spec §5 (trade UX) and §9 (emoji fallback) updated in
+  the same commit.
+- Playwright was installed as a throwaway to screenshot, then reverted out of
+  `package.json`/`package-lock.json` — it is NOT a committed dependency.
+
+---
+
+## 2026-07-22 — Player-color edge bars on event toasts
+
+### What changed (explicit user request)
+- Dopamine event toasts (gold combo / red warn frames) were ambiguous about
+  **whose** event they announced. Now, when a toast belongs to a specific
+  player, its frame shows that player's color as thin glowing bars on the
+  inner left + right edges (matches the player-chip colors at the top).
+- `Toast` gained an optional `color?: string` (`src/game/types.ts`);
+  `addToastTo(..., ttl, color?)` threads it through (`src/game/store.ts`).
+  Wired at the player-specific sites: production combos (3+/5+/7+ and
+  single-resource jackpots), mega-city rise, road dominance, harbor welcome,
+  match point (warn), and the human's robber-awakens (warn). Toasts with no
+  owning player (world-generated, world events, generic warnings) stay
+  bar-less.
+- Render: `src/ui/Overlays.tsx` adds class `toast-owned` + inline `--pc` when
+  `color` is set; `src/styles.css` `.toast` is now `position: relative` with
+  `.toast-owned::before/::after` color bars (extra horizontal padding to make
+  room). No change to bar-less toasts.
+
+### Verified
+- `npm run build` + all 5 `npm run simulate` configs pass.
+- Playwright (900×700): forced a gold combo (human = pink), a red MATCH POINT
+  (Dave = blue), and a plain WORLD EVENT (no color). Bars render in the exact
+  chip colors on combo/warn; the event toast has none. Zero page errors.
+
+### Notes / scope
+- Frozen §4 gameplay HUD touched on explicit request; spec §6 (presentation)
+  updated in the same commit. Only types/store/Overlays/styles changed.

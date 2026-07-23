@@ -148,6 +148,11 @@ request AND a matching update to this section. Its defining elements:
   NPC trades evaluated deterministically (needs/surplus/personality); the UI
   shows an honest interested/unimpressed hint. NPCs may counter-offer the
   human (9 s expiry).
+  Trade modal UX: a "Your resources" strip shows the human's current holdings
+  of all five resources at the top (both tabs), and each give/receive picker
+  button carries an owned-count badge so the player always sees what they hold
+  while trading. On phones the modal fits the viewport and the NPC give/receive
+  columns stack vertically instead of overflowing.
 - Victory: first to the configured VP target (7–14, default 10), checked
   after every VP change. Match point is announced.
 
@@ -161,7 +166,10 @@ request AND a matching update to this section. Its defining elements:
   localized storm, trade festival, suspiciously productive sheep — announced
   with label/desc/duration, ≤2 rounds each.
 - Combo toasts at 3+/5+/7+ resources in one roll and single-resource jackpot
-  variants. Presentation only; gains are always logged.
+  variants. Presentation only; gains are always logged. When a toast belongs to
+  a specific player (production combos, mega city, road dominance, harbor
+  welcome, match point, robber), the gold/red frame shows that player's color
+  as thin bars on its inner left/right edges, so it's clear whose event it is.
 - Near-win: tension vignette + music layer from target−2; match-point toast.
 - Victory: confetti overlay, ranked results, useful + absurd statistics,
   rematch (same seed) / new world / setup / title — all without refresh.
@@ -194,3 +202,6 @@ Install / dev / build / Vercel deploy succeed with zero config; all map
 sizes generate; full games reach a winner (human or all-NPC); invalid
 placement rejected; turn progression can never permanently stall; restart
 and refresh never corrupt state; mobile (≥390 px) layout stays usable.
+The UI font stack appends color-emoji fonts (Segoe UI Emoji / Apple Color
+Emoji / Noto) so newer glyphs — notably 🪵 wood and 🪨 ore (Unicode 13) —
+resolve to an emoji font on desktop instead of rendering as tofu boxes.

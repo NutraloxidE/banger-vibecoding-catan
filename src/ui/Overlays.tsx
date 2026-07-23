@@ -11,7 +11,8 @@ export function Toasts() {
   return (
     <div className="toast-stack">
       {toasts.map((t) => (
-        <div key={t.id} className={`toast toast-${t.kind}`}>
+        <div key={t.id} className={`toast toast-${t.kind} ${t.color ? 'toast-owned' : ''}`}
+          style={t.color ? ({ ['--pc' as any]: t.color }) : undefined}>
           <div className="toast-title">{t.text}</div>
           {t.sub && <div className="toast-sub">{t.sub}</div>}
         </div>

@@ -106,8 +106,8 @@ function focus(g: MatchState, x: number, z: number) {
   g.focus = { x, z, at: Date.now() };
 }
 
-function addToastTo(list: Toast[], text: string, kind: Toast['kind'], sub?: string, ttl = 3200) {
-  list.push({ id: toastId++, text, sub, kind, born: Date.now(), ttl });
+function addToastTo(list: Toast[], text: string, kind: Toast['kind'], sub?: string, ttl = 3200, color?: string) {
+  list.push({ id: toastId++, text, sub, kind, born: Date.now(), ttl, color });
   if (list.length > 5) list.splice(0, list.length - 5);
 }
 
@@ -137,7 +137,7 @@ function updateLongestRoad(g: MatchState, toasts: Toast[]) {
     if (newHolder) {
       const name = g.players[newHolder.owner].name;
       pushLog(g, t('g.longestRoad', { name }));
-      addToastTo(toasts, t('g.roadDominance'), 'combo', t('g.roadDominanceSub', { name }));
+      addToastTo(toasts, t('g.roadDominance'), 'combo', t('g.roadDominanceSub', { name }), 3200, g.players[newHolder.owner].color);
     }
   } else if (newHolder) {
     g.longestRoad = newHolder;
@@ -164,7 +164,7 @@ function checkWinner(g: MatchState, toasts: Toast[]) {
   const threat = g.players.find((p) => p.vp === g.config.targetVp - 1);
   if (threat && !g.matchPointAnnounced) {
     g.matchPointAnnounced = true;
-    addToastTo(toasts, t('g.matchPoint'), 'warn', t('g.matchPointSub', { name: threat.name }), 4200);
+    addToastTo(toasts, t('g.matchPoint'), 'warn', t('g.matchPointSub', { name: threat.name }), 4200, threat.color);
     sfx.matchPoint();
     for (const q of g.players) {
       if (q.isNpc && q.id !== threat.id) say(g, q.id, npcLine(new RNG(Math.random() * 1e9), 'threatened'));
@@ -213,7 +213,7 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     focus(g, v.x, v.z);
     sfx.buildBig();
     pushLog(g, t('g.upgradeCity', { emoji: p.emoji, name: p.name, place: b.name }));
-    addToastTo(toasts, t('g.urbanization'), 'info', t('g.urbanizationSub', { place: b.name }));
+    addToastTo(toasts, t('g.urbanization'), 'info', t('g.urbanizationSub', { place: b.name }), 3200, p.color);
     if (p.isNpc) say(g, pid, npcLine(rng, 'buildCity'));
   } else if (kind === 'megacity') {
     const b = g.buildings[spot];
@@ -225,7 +225,7 @@ function applyBuild(g: MatchState, toasts: Toast[], pid: number, kind: BuildKind
     focus(g, v.x, v.z);
     sfx.mega();
     pushLog(g, t('g.raiseMega', { emoji: p.emoji, name: p.name, place: b.name, civ: p.civTitle }));
-    addToastTo(toasts, t('g.megaRises'), 'combo', t('g.megaRisesSub', { place: b.name }), 5000);
+    addToastTo(toasts, t('g.megaRises'), 'combo', t('g.megaRisesSub', { place: b.name }), 5000, p.color);
     if (p.isNpc) say(g, pid, npcLine(rng, 'buildMega'));
     g.spectacle = Math.min(10, g.spectacle + 5);
   }
@@ -247,7 +247,7 @@ function claimPorts(g: MatchState, toasts: Toast[], pid: number, vertexId: strin
     p.resources[gift] += 1; // welcome card (not counted as production)
     const what = port.kind === 'generic' ? t('port.any') : resName(port.kind);
     pushLog(g, t('g.portClaim', { name: port.name, rate: port.rate, what }));
-    addToastTo(toasts, t('g.portWelcome'), 'combo', t('g.portWelcomeSub', { name: port.name, rate: port.rate, what }));
+    addToastTo(toasts, t('g.portWelcome'), 'combo', t('g.portWelcomeSub', { name: port.name, rate: port.rate, what }), 3200, p.color);
     sfx.tradeDone();
     if (p.isNpc) say(g, pid, t('g.portSpeech'));
     g.spectacle = Math.min(10, g.spectacle + 1);
@@ -305,18 +305,18 @@ function applyProduction(g: MatchState, toasts: Toast[], total: number) {
         wheat: 'g.comboWheat', sheep: 'g.comboSheep', wood: 'g.comboWood',
         brick: 'g.comboBrick', ore: 'g.comboOre',
       };
-      addToastTo(toasts, t(comboKeys[soleRes]), 'combo', t('g.comboSub', { name: p.name, n: totalN, res: resName(soleRes) }));
+      addToastTo(toasts, t(comboKeys[soleRes]), 'combo', t('g.comboSub', { name: p.name, n: totalN, res: resName(soleRes) }), 3200, p.color);
       sfx.combo();
       g.spectacle = Math.min(10, g.spectacle + 2);
     } else if (totalN >= 7) {
-      addToastTo(toasts, t('g.economyAscends'), 'combo', t('g.economyAscendsSub', { name: p.name, n: totalN }));
+      addToastTo(toasts, t('g.economyAscends'), 'combo', t('g.economyAscendsSub', { name: p.name, n: totalN }), 3200, p.color);
       sfx.combo();
       g.spectacle = Math.min(10, g.spectacle + 3);
     } else if (totalN >= 5) {
-      addToastTo(toasts, t('g.supplyChain'), 'combo', t('g.comboGenericSub', { name: p.name, n: totalN }));
+      addToastTo(toasts, t('g.supplyChain'), 'combo', t('g.comboGenericSub', { name: p.name, n: totalN }), 3200, p.color);
       sfx.combo();
     } else if (totalN >= 3) {
-      addToastTo(toasts, t('g.doubleHarvest'), 'combo', t('g.comboGenericSub', { name: p.name, n: totalN }));
+      addToastTo(toasts, t('g.doubleHarvest'), 'combo', t('g.comboGenericSub', { name: p.name, n: totalN }), 3200, p.color);
     }
     if (p.isNpc && totalN >= 3) say(g, pid, npcLine(new RNG(Math.random() * 1e9), 'goodRoll'));
   }
@@ -635,7 +635,7 @@ export const useGame = create<Store>()(immer((set, get) => {
         sfx.robber();
         const p = g.players[g.current];
         if (!p.isNpc) {
-          addToastTo(s.toasts, t('g.robberAwakens'), 'warn', t('g.robberAwakensSub'), 4000);
+          addToastTo(s.toasts, t('g.robberAwakens'), 'warn', t('g.robberAwakensSub'), 4000, p.color);
         } else {
           pushLog(g, t('g.commandsRobber', { name: p.name }));
         }

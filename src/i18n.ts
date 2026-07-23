@@ -127,6 +127,7 @@ const M: Record<string, [string, string]> = {
 
   // ================= Trade modal =================
   'trade.market': ['🔁 THE MARKET', '🔁 マーケット'],
+  'trade.yourResources': ['Your resources', '手持ちの資源'],
   'trade.bank': ['🏦 World Bank', '🏦 世界銀行'],
   'trade.rivals': ['🎭 Rivals', '🎭 対戦相手'],
   'trade.youGiveRate': ['You give ({rate}:1{festival})', '差し出す ({rate}:1{festival})'],
