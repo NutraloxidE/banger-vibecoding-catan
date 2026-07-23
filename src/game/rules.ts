@@ -206,5 +206,7 @@ export function computeVp(state: MatchState, pid: number): number {
     if (b.owner === pid) vp += VP[b.kind];
   }
   if (state.longestRoad?.owner === pid) vp += 2;
+  if (state.largestArmy?.owner === pid) vp += 2;
+  vp += state.players[pid].devVp; // Victory Point cards
   return vp;
 }

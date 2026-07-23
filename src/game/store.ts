@@ -1,16 +1,22 @@
 import { create } from 'zustand';
 import { immer } from 'zustand/middleware/immer';
 import {
-  BuildKind, MatchConfig, MatchState, PlayerState, Resource, RESOURCES,
+  BuildKind, DevKind, MatchConfig, MatchState, PlayerState, Resource, RESOURCES,
   TERRAIN_RESOURCE, Toast, PlayerStats,
 } from './types';
 import { generateBoard, desertTileId, pickGoldenTile, vertexScore } from './board';
 import {
   COSTS, VP, canAfford, payCost, validSettlementSpots, validRoadSpots, validSpots,
-  computeProduction, bankRate, longestRoadLength, computeVp, handSize,
+  computeProduction, bankRate, longestRoadLength, computeVp, handSize, roadCount,
   LONGEST_ROAD_MIN, MEGA_ROAD_REQ,
 } from './rules';
-import { aiSetupVertex, aiSetupRoad, aiMainAction, aiRobberChoice, aiEvaluateTrade } from './ai';
+import {
+  buildDevDeck, DEV_CARD_COST, DEV_PICKS, LARGEST_ARMY_MIN,
+} from './dev';
+import {
+  aiSetupVertex, aiSetupRoad, aiMainAction, aiRobberChoice, aiEvaluateTrade,
+  aiDevMonopolyResource, aiDevGainResources, aiFreeRoadSpot,
+} from './ai';
 import { RNG, randomSeedString } from './rng';
 import { pickNpcs, settlementName, civTitle, npcLine, PLAYER_COLORS } from './names';
 import { sfx } from '../audio/sfx';
@@ -66,6 +72,10 @@ interface Store {
   acceptNpcOffer: () => void;
   declineNpcOffer: () => void;
 
+  buyDevCard: () => void;
+  playDevCard: (index: number) => void;
+  resolveDevPrompt: (res: Resource) => void;
+
   endTurn: () => void;
   aiTick: () => void;
 
@@ -82,6 +92,7 @@ function emptyStats(): PlayerStats {
     tradesBank: 0, tradesNpc: 0,
     roadsBuilt: 0, settlementsBuilt: 0, citiesBuilt: 0, megasBuilt: 0,
     timesRobbed: 0, robberiesDone: 0, biggestHarvest: 0, tradesRejected: 0,
+    devCardsBought: 0, knightsPlayed: 0,
   };
 }
 
@@ -141,6 +152,109 @@ function updateLongestRoad(g: MatchState, toasts: Toast[]) {
     }
   } else if (newHolder) {
     g.longestRoad = newHolder;
+  }
+}
+
+// Largest Army — the dev-card sibling of Longest Road. First to LARGEST_ARMY_MIN
+// played Knights (and holding the most) keeps a +2 VP bonus; ties stay put.
+function updateLargestArmy(g: MatchState, toasts: Toast[]) {
+  const counts = g.players.map((p) => p.knightsPlayed);
+  const holder = g.largestArmy;
+  if (holder) {
+    const hC = counts[holder.owner];
+    const maxC = Math.max(...counts);
+    if (hC >= LARGEST_ARMY_MIN && hC >= maxC) { g.largestArmy = { owner: holder.owner, count: hC }; return; }
+  }
+  let best = -1;
+  let bestC = LARGEST_ARMY_MIN - 1;
+  counts.forEach((c, pid) => { if (c > bestC) { bestC = c; best = pid; } });
+  const newHolder = best >= 0 ? { owner: best, count: bestC } : null;
+  if (newHolder?.owner !== holder?.owner) {
+    g.largestArmy = newHolder;
+    if (newHolder) {
+      const name = g.players[newHolder.owner].name;
+      pushLog(g, t('g.largestArmy', { name, n: newHolder.count }));
+      addToastTo(toasts, t('g.largestArmyToast'), 'combo', t('g.largestArmySub', { name }), 3400, g.players[newHolder.owner].color);
+    }
+  } else if (newHolder) {
+    g.largestArmy = newHolder;
+  }
+}
+
+// ----- development-card effects (shared by the human flow and the AI) -------
+
+function creditKnight(g: MatchState, toasts: Toast[], pid: number) {
+  const p = g.players[pid];
+  p.knightsPlayed++;
+  p.stats.knightsPlayed++;
+  updateLargestArmy(g, toasts);
+  recomputeVpAll(g);
+  checkWinner(g, toasts);
+}
+
+function applyMonopoly(g: MatchState, toasts: Toast[], pid: number, res: Resource) {
+  const p = g.players[pid];
+  let taken = 0;
+  for (const q of g.players) {
+    if (q.id === pid) continue;
+    taken += q.resources[res];
+    q.resources[res] = 0;
+  }
+  p.resources[res] += taken;
+  pushLog(g, t('g.devMonopoly', { name: p.name, n: taken, res: resName(res) }));
+  addToastTo(toasts, t('g.devMonopolyToast'), 'combo', t('g.devMonopolySub', { name: p.name, n: taken, res: resName(res) }), 3400, p.color);
+  sfx.combo();
+}
+
+// Year of Plenty / Treasure Haul: take chosen resources from the bank.
+function grantChosen(g: MatchState, toasts: Toast[], pid: number, picks: Resource[]) {
+  const p = g.players[pid];
+  for (const r of picks) p.resources[r] += 1;
+  pushLog(g, t('g.devGain', { name: p.name, n: picks.length }));
+  if (picks.length >= 3) {
+    addToastTo(toasts, t('g.devBountyToast'), 'combo', t('g.devBountySub', { name: p.name, n: picks.length }), 3200, p.color);
+    sfx.combo();
+  } else {
+    sfx.tradeDone();
+  }
+}
+
+function applyPlague(g: MatchState, toasts: Toast[], pid: number) {
+  for (const q of g.players) {
+    if (q.id === pid) continue;
+    for (let k = 0; k < 2; k++) {
+      const pool: Resource[] = [];
+      for (const r of RESOURCES) for (let i = 0; i < q.resources[r]; i++) pool.push(r);
+      if (pool.length === 0) break;
+      const r = pool[Math.floor(Math.random() * pool.length)];
+      q.resources[r] -= 1;
+    }
+  }
+  pushLog(g, t('g.devPlague', { name: g.players[pid].name }));
+  addToastTo(toasts, t('g.devPlagueToast'), 'warn', t('g.devPlagueSub'), 3400, g.players[pid].color);
+  sfx.robber();
+}
+
+function applyWindfall(g: MatchState, toasts: Toast[], pid: number) {
+  const p = g.players[pid];
+  if (Math.random() < 0.66) {
+    const n = 5;
+    for (let k = 0; k < n; k++) p.resources[RESOURCES[Math.floor(Math.random() * RESOURCES.length)]] += 1;
+    pushLog(g, t('g.devWindfallWin', { name: p.name, n }));
+    addToastTo(toasts, t('g.devWindfallWinToast'), 'combo', t('g.devWindfallWinSub', { name: p.name, n }), 3400, p.color);
+    sfx.combo();
+  } else {
+    let lost = 0;
+    for (let k = 0; k < 4; k++) {
+      const pool: Resource[] = [];
+      for (const r of RESOURCES) for (let i = 0; i < p.resources[r]; i++) pool.push(r);
+      if (pool.length === 0) break;
+      p.resources[pool[Math.floor(Math.random() * pool.length)]] -= 1;
+      lost++;
+    }
+    pushLog(g, t('g.devWindfallLose', { name: p.name, n: lost }));
+    addToastTo(toasts, t('g.devWindfallLoseToast'), 'warn', t('g.devWindfallLoseSub', { name: p.name, n: lost }), 3400, p.color);
+    sfx.invalid();
   }
 }
 
@@ -364,6 +478,7 @@ function buildMatch(config: MatchConfig): MatchState {
     personality: 'builder',
     resources: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
     vp: 0, mood: 'ready', speech: null, speechAt: 0, civTitle: null, stats: emptyStats(),
+    devCards: [], devVp: 0, knightsPlayed: 0,
   });
   npcs.forEach((npc, i) => {
     players.push({
@@ -371,6 +486,7 @@ function buildMatch(config: MatchConfig): MatchState {
       personality: npc.personality,
       resources: { wood: 0, brick: 0, wheat: 0, sheep: 0, ore: 0 },
       vp: 0, mood: 'scheming', speech: null, speechAt: 0, civTitle: null, stats: emptyStats(),
+      devCards: [], devVp: 0, knightsPlayed: 0,
     });
   });
 
@@ -386,9 +502,12 @@ function buildMatch(config: MatchConfig): MatchState {
     setupQueue, setupIdx: 0, setupStage: 'settlement', setupLastVertex: null,
     dice: null, diceStartedAt: 0, diceGiant: false,
     robberTile: desertTileId(board),
+    robberSource: null,
     goldenTile,
+    devDeck: buildDevDeck(config.chaos.crazyCards, new RNG(config.seed + ':dev')),
+    devCardPlayedThisTurn: false, freeRoads: 0, devPrompt: null,
     placement: null, hoverSpot: null, npcOffer: null,
-    worldEvent: null, longestRoad: null,
+    worldEvent: null, longestRoad: null, largestArmy: null,
     log: goldenTile !== null ? [t('g.newWorld'), t('g.goldenHex')] : [t('g.newWorld')],
     fx: [], focus: null, spectacle: 0,
     aiActionsThisTurn: 0,
@@ -450,6 +569,21 @@ function loadMatch(): MatchState | null {
     g.goldenTile ??= null;
     g.config.chaos.goldenHex ??= false;
     g.board.ports ??= [];
+    // development-card fields (added later still)
+    g.config.chaos.crazyCards ??= false;
+    g.devDeck ??= buildDevDeck(g.config.chaos.crazyCards, new RNG(g.config.seed + ':dev'));
+    g.devCardPlayedThisTurn ??= false;
+    g.freeRoads ??= 0;
+    g.devPrompt ??= null;
+    g.robberSource ??= null;
+    g.largestArmy ??= null;
+    for (const p of g.players) {
+      p.devCards ??= [];
+      p.devVp ??= 0;
+      p.knightsPlayed ??= 0;
+      p.stats.devCardsBought ??= 0;
+      p.stats.knightsPlayed ??= 0;
+    }
     return g;
   } catch {
     return null;
@@ -554,9 +688,18 @@ export const useGame = create<Store>()(immer((set, get) => {
       }
       if (g.phase === 'main' && g.placement?.kind === 'road') {
         if (!g.placement.spots.includes(id)) { sfx.invalid(); return; }
+        const free = g.freeRoads > 0;
         g.placement = null;
         g.hoverSpot = null;
-        applyBuild(g, s.toasts, pid, 'road', id);
+        applyBuild(g, s.toasts, pid, 'road', id, free);
+        if (free) {
+          g.freeRoads--;
+          if (g.freeRoads > 0) {
+            const next = validRoadSpots(g, pid);
+            if (next.length > 0) g.placement = { kind: 'road', spots: next };
+            else g.freeRoads = 0;
+          }
+        }
         saveMatch(g);
       }
     }),
@@ -729,6 +872,54 @@ export const useGame = create<Store>()(immer((set, get) => {
       g.npcOffer = null;
     }),
 
+    // ---- development cards (human) ----
+
+    buyDevCard: () => set((s) => {
+      const g = s.game;
+      if (!g || g.winner !== null || g.phase !== 'main') return;
+      const pid = g.current;
+      if (g.players[pid].isNpc) return;
+      if (!canBuyDev(g, pid)) {
+        sfx.invalid();
+        addToastTo(s.toasts, t('g.cannotAfford'), 'warn',
+          g.devDeck.length === 0 ? t('g.devDeckEmpty') : costText('dev'), 2500);
+        return;
+      }
+      doBuyDevCard(g, s.toasts, pid);
+      saveMatch(g);
+    }),
+
+    playDevCard: (index) => set((s) => {
+      const g = s.game;
+      if (!g || g.winner !== null || g.phase !== 'main') return;
+      const pid = g.current;
+      if (g.players[pid].isNpc) return;
+      if (beginPlayDevHuman(g, s.toasts, pid, index)) saveMatch(g);
+    }),
+
+    resolveDevPrompt: (res) => set((s) => {
+      const g = s.game;
+      if (!g || !g.devPrompt) return;
+      const pid = g.current;
+      if (g.players[pid].isNpc) return;
+      const prompt = g.devPrompt;
+      // Monopoly names one resource; the others take from the bank.
+      if (prompt.card === 'monopoly' && prompt.need === 1) {
+        g.devPrompt = null;
+        applyMonopoly(g, s.toasts, pid, res);
+      } else {
+        prompt.picks.push(res);
+        if (prompt.picks.length >= prompt.need) {
+          const picks = prompt.picks.slice();
+          g.devPrompt = null;
+          grantChosen(g, s.toasts, pid, picks);
+        }
+      }
+      recomputeVpAll(g);
+      checkWinner(g, s.toasts);
+      saveMatch(g);
+    }),
+
     // ---- turn flow ----
 
     endTurn: () => set((s) => {
@@ -805,6 +996,10 @@ export const useGame = create<Store>()(immer((set, get) => {
           const action = aiMainAction(g2, p.id);
           if (action.type === 'build') {
             applyBuild(g2, st.toasts, p.id, action.kind, action.spot);
+          } else if (action.type === 'buyDev') {
+            doBuyDevCard(g2, st.toasts, p.id);
+          } else if (action.type === 'playDev') {
+            resolveDevInline(g2, st.toasts, p.id, action.card);
           } else if (action.type === 'bank') {
             const rate = bankRate(g2, action.give);
             if (p.resources[action.give] >= rate) {
@@ -852,8 +1047,8 @@ if (typeof window !== 'undefined') (window as any).__game = useGame;
 
 // ---------- flow helpers used by both human clicks and the AI driver ------
 
-function costText(kind: BuildKind): string {
-  const c = COSTS[kind];
+function costText(kind: BuildKind | 'dev'): string {
+  const c = kind === 'dev' ? DEV_CARD_COST : COSTS[kind];
   return Object.entries(c).map(([r, n]) => `${n} ${resName(r as Resource)}`).join(' + ');
 }
 
@@ -937,9 +1132,11 @@ function npcSetupStep(g: MatchState, toasts: Toast[]) {
 }
 
 function moveRobberTo(g: MatchState, toasts: Toast[], pid: number, tileId: number, chosenVictim: number | null) {
+  const source = g.robberSource;
+  g.robberSource = null;
   g.robberTile = tileId;
   const tile = g.board.tiles[tileId];
-  addFx(g, 'ring', tile.x, tile.z, '#222222');
+  addFx(g, 'ring', tile.x, tile.z, source === 'earthquake' ? '#c0392b' : '#222222');
   focus(g, tile.x, tile.z);
   pushLog(g, t('g.movesRobber', { name: g.players[pid].name }));
 
@@ -950,22 +1147,152 @@ function moveRobberTo(g: MatchState, toasts: Toast[], pid: number, tileId: numbe
     const b = g.buildings[v.id];
     if (b && b.owner !== pid && handSize(g.players[b.owner]) > 0) victims.add(b.owner);
   }
-  let victim: number | null = chosenVictim;
-  if (victim === null || !victims.has(victim)) {
-    const arr = [...victims];
-    victim = arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
-  }
-  if (victim !== null) {
-    stealRandom(g, pid, victim, toasts);
-    if (g.players[pid].isNpc) say(g, pid, npcLine(new RNG(Math.random() * 1e9), 'robbing'));
+
+  if (source === 'earthquake') {
+    // 🌋 an earthquake shakes a card loose from EVERY adjacent rival
+    for (const vId of victims) stealRandom(g, pid, vId, toasts);
+    if (victims.size > 0 && g.players[pid].isNpc) say(g, pid, npcLine(new RNG(Math.random() * 1e9), 'robbing'));
+  } else {
+    let victim: number | null = chosenVictim;
+    if (victim === null || !victims.has(victim)) {
+      const arr = [...victims];
+      victim = arr.length > 0 ? arr[Math.floor(Math.random() * arr.length)] : null;
+    }
+    if (victim !== null) {
+      stealRandom(g, pid, victim, toasts);
+      if (g.players[pid].isNpc) say(g, pid, npcLine(new RNG(Math.random() * 1e9), 'robbing'));
+    }
   }
   g.phase = 'main';
   saveMatch(g);
 }
 
+// ----- development-card buy & play flow ------------------------------------
+
+function canBuyDev(g: MatchState, pid: number): boolean {
+  if (g.phase !== 'main' || g.devDeck.length === 0) return false;
+  const p = g.players[pid];
+  return RESOURCES.every((r) => p.resources[r] >= (DEV_CARD_COST[r] ?? 0));
+}
+
+function doBuyDevCard(g: MatchState, toasts: Toast[], pid: number): boolean {
+  if (!canBuyDev(g, pid)) return false;
+  const p = g.players[pid];
+  for (const r of RESOURCES) p.resources[r] -= DEV_CARD_COST[r] ?? 0;
+  const kind = g.devDeck.shift()!;
+  p.stats.devCardsBought++;
+  sfx.tradeDone();
+  if (kind === 'victory') {
+    p.devVp++;
+    pushLog(g, t('g.devBoughtVictory', { emoji: p.emoji, name: p.name }));
+    recomputeVpAll(g);
+    checkWinner(g, toasts); // a VP card can be the winning point
+  } else {
+    p.devCards.push({ kind, boughtOnTurn: g.turnCount });
+    pushLog(g, t('g.devBought', { emoji: p.emoji, name: p.name }));
+  }
+  return true;
+}
+
+// A dev card in a player's hand is playable if it wasn't bought this turn and
+// they haven't already played a card this turn.
+function devCardPlayable(g: MatchState, pid: number, card: { boughtOnTurn: number }): boolean {
+  return g.phase === 'main' && !g.devCardPlayedThisTurn && card.boughtOnTurn !== g.turnCount;
+}
+
+// Human-facing: begin playing a held card (may open the robber phase or a
+// resource-pick prompt that the human then resolves).
+function beginPlayDevHuman(g: MatchState, toasts: Toast[], pid: number, index: number): boolean {
+  const card = g.players[pid].devCards[index];
+  if (!card || !devCardPlayable(g, pid, card)) { sfx.invalid(); return false; }
+  g.players[pid].devCards.splice(index, 1);
+  g.devCardPlayedThisTurn = true;
+  g.placement = null;
+  g.hoverSpot = null;
+  const k = card.kind;
+  sfx.click();
+
+  if (k === 'knight') {
+    pushLog(g, t('g.devPlayKnight', { name: g.players[pid].name }));
+    creditKnight(g, toasts, pid);
+    if (g.winner !== null) return true;
+    g.robberSource = 'knight';
+    g.phase = 'robber';
+  } else if (k === 'earthquake') {
+    pushLog(g, t('g.devPlayEarthquake', { name: g.players[pid].name }));
+    g.robberSource = 'earthquake';
+    g.phase = 'robber';
+  } else if (k === 'roadBuilding') {
+    startFreeRoads(g, toasts, pid);
+  } else if (k === 'plague') {
+    applyPlague(g, toasts, pid);
+  } else if (k === 'windfall') {
+    applyWindfall(g, toasts, pid);
+  } else if (DEV_PICKS[k]) {
+    g.devPrompt = { card: k, need: DEV_PICKS[k]!, picks: [] };
+  }
+  recomputeVpAll(g);
+  checkWinner(g, toasts);
+  return true;
+}
+
+function startFreeRoads(g: MatchState, toasts: Toast[], pid: number) {
+  const spots = validRoadSpots(g, pid);
+  pushLog(g, t('g.devRoadBuilding', { name: g.players[pid].name }));
+  if (spots.length === 0) { g.freeRoads = 0; return; }
+  g.freeRoads = 2;
+  if (!g.players[pid].isNpc) g.placement = { kind: 'road', spots };
+}
+
+// AI-facing: resolve a chosen card fully in one shot (choosing targets/resources
+// via heuristics), so an NPC turn stays atomic.
+function resolveDevInline(g: MatchState, toasts: Toast[], pid: number, card: DevKind) {
+  const idx = g.players[pid].devCards.findIndex((c) => c.kind === card && devCardPlayable(g, pid, c));
+  if (idx < 0) return;
+  g.players[pid].devCards.splice(idx, 1);
+  g.devCardPlayedThisTurn = true;
+
+  if (card === 'knight') {
+    pushLog(g, t('g.devPlayKnight', { name: g.players[pid].name }));
+    creditKnight(g, toasts, pid);
+    if (g.winner !== null) return;
+    const choice = aiRobberChoice(g, pid);
+    g.robberSource = 'knight';
+    moveRobberTo(g, toasts, pid, choice.tile, choice.victim);
+  } else if (card === 'earthquake') {
+    pushLog(g, t('g.devPlayEarthquake', { name: g.players[pid].name }));
+    const choice = aiRobberChoice(g, pid);
+    g.robberSource = 'earthquake';
+    moveRobberTo(g, toasts, pid, choice.tile, null);
+  } else if (card === 'roadBuilding') {
+    pushLog(g, t('g.devRoadBuilding', { name: g.players[pid].name }));
+    for (let i = 0; i < 2; i++) {
+      const spot = aiFreeRoadSpot(g, pid);
+      if (!spot) break;
+      applyBuild(g, toasts, pid, 'road', spot, true);
+    }
+  } else if (card === 'monopoly') {
+    applyMonopoly(g, toasts, pid, aiDevMonopolyResource(g, pid));
+  } else if (card === 'yearOfPlenty') {
+    grantChosen(g, toasts, pid, aiDevGainResources(g, pid, 2));
+  } else if (card === 'bounty') {
+    grantChosen(g, toasts, pid, aiDevGainResources(g, pid, 3));
+  } else if (card === 'plague') {
+    applyPlague(g, toasts, pid);
+  } else if (card === 'windfall') {
+    applyWindfall(g, toasts, pid);
+  }
+  recomputeVpAll(g);
+  checkWinner(g, toasts);
+}
+
 function advanceTurn(g: MatchState, toasts: Toast[]) {
   g.placement = null;
   g.hoverSpot = null;
+  g.devCardPlayedThisTurn = false;
+  g.freeRoads = 0;
+  g.devPrompt = null;
+  g.robberSource = null;
   g.aiActionsThisTurn = 0;
   g.turnCount++;
   g.current = (g.current + 1) % g.players.length;

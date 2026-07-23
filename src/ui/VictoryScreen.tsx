@@ -16,7 +16,8 @@ function computeAbsurdStats(g: MatchState) {
     : '—';
   const banker = [...g.players].sort((a, b) => b.stats.tradesBank - a.stats.tradesBank)[0];
   const mostRobbed = [...g.players].sort((a, b) => b.stats.timesRobbed - a.stats.timesRobbed)[0];
-  return { sheepTotal, bestRoll, bestRollN, angriest, strongestName, banker, mostRobbed };
+  const devBuyer = [...g.players].sort((a, b) => b.stats.devCardsBought - a.stats.devCardsBought)[0];
+  return { sheepTotal, bestRoll, bestRollN, angriest, strongestName, banker, mostRobbed, devBuyer };
 }
 
 export function VictoryScreen() {
@@ -83,6 +84,8 @@ export function VictoryScreen() {
             <div className="stat"><b>{t('stat.market')}</b><span>{t('stat.marketVal', { emoji: abs.banker.emoji, name: abs.banker.name, n: abs.banker.stats.tradesBank })}</span></div>
             <div className="stat"><b>{t('stat.mostRobbed')}</b><span>{t('stat.mostRobbedVal', { emoji: abs.mostRobbed.emoji, name: abs.mostRobbed.name, n: abs.mostRobbed.stats.timesRobbed })}</span></div>
             <div className="stat"><b>{t('stat.longestRoad')}</b><span>{game.longestRoad ? t('stat.longestRoadVal', { name: game.players[game.longestRoad.owner].name, n: game.longestRoad.length }) : t('stat.longestRoadNone')}</span></div>
+            <div className="stat"><b>{t('stat.largestArmy')}</b><span>{game.largestArmy ? t('stat.largestArmyVal', { name: game.players[game.largestArmy.owner].name, n: game.largestArmy.count }) : t('stat.largestArmyNone')}</span></div>
+            {abs.devBuyer.stats.devCardsBought > 0 && <div className="stat"><b>{t('stat.devCards')}</b><span>{t('stat.devCardsVal', { emoji: abs.devBuyer.emoji, name: abs.devBuyer.name, n: abs.devBuyer.stats.devCardsBought })}</span></div>}
             <div className="stat"><b>{t('stat.biggestHarvest')}</b><span>{t('stat.cards', { n: Math.max(...game.players.map((p) => p.stats.biggestHarvest)) })}</span></div>
             <div className="stat"><b>{t('stat.seed')}</b><span>{game.config.seed}</span></div>
           </div>

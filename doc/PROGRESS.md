@@ -503,3 +503,67 @@ noise + tighter trades).
 - Only `src/game/ai.ts` (logic) + spec/progress touched — no frozen screen, no
   shared store/types/CSS. `chill` noise (7) is tuned to the ~0–18 `vertexScore`
   range; if `vertexScore` is rescaled later, revisit `pickNoise`.
+
+---
+
+## 2026-07-23 — Development cards (classic set) + optional Crazy Cards
+
+### What changed (user request: 一般的なカタンの発展カード + クレイジー版のトグル)
+Added a full development-card system — a new core mechanic — plus a chaos toggle
+for extra "crazy" cards.
+
+- **New `src/game/dev.ts`**: deck composition, `DEV_CARD_COST` (1🪨1🌾1🐑),
+  `buildDevDeck(crazyCards, rng)` (deterministic shuffle from seed `+':dev'`),
+  `DEV_ICON`, `DEV_PICKS`, `LARGEST_ARMY_MIN`. Standard deck = 14 Knight / 5
+  Victory / 2 Road Building / 2 Year of Plenty / 2 Monopoly.
+- **Types** (`types.ts`): `DevKind`, `DevCard`, `DevPrompt`; `ChaosFlags.crazyCards`;
+  per-player `devCards[] / devVp / knightsPlayed`; match `devDeck /
+  devCardPlayedThisTurn / freeRoads / devPrompt / robberSource / largestArmy`;
+  stats `devCardsBought / knightsPlayed`.
+- **Rules**: `computeVp` now adds `devVp` + Largest Army (+2 VP). `store.ts` gains
+  `buyDevCard / playDevCard / resolveDevPrompt` (human) and, for the AI,
+  `resolveDevInline` (atomic). Effects: knight (→robber, credits Largest Army),
+  Victory (auto +1 VP on draw, not a held card), Road Building (2 free roads via
+  `freeRoads` + free `applyBuild`), Year of Plenty / Monopoly / Treasure Haul
+  (`devPrompt` pick overlay for human, heuristic picks for AI), plus the crazy
+  cards: Plague (all rivals discard 2), Earthquake (robber steals from ALL
+  adjacent rivals — routed through `moveRobberTo` via `robberSource`), Wild
+  Gamble (~2/3 jackpot / else loss). `updateLargestArmy` mirrors longest road.
+  One card per turn; can't play the turn it's bought (`boughtOnTurn` vs turnCount).
+- **AI** (`ai.ts`): new actions `buyDev` / `playDev`; `aiChooseDevPlay`,
+  `aiWantBuyDev`, and exported target-pickers `aiDevMonopolyResource /
+  aiDevGainResources / aiFreeRoadSpot`. NPCs buy with spare ore/wheat/sheep and
+  play cards heuristically (knight to kick the robber / hunt leader / chase army,
+  monopoly on hoarded resources, resource cards to finish a build, gamblers love
+  Wild Gamble).
+- **UI**: BottomBar dev-card row (buy button w/ deck count + playable/held cards)
+  + Monopoly/YoP/Treasure resource-pick overlay + free-road banner; TopBar ⚔️
+  Largest Army badge + 🎴 held-card count; SetupScreen 🃏 Crazy Cards chaos card;
+  VictoryScreen Largest Army + dev-cards-bought stats. New CSS `.dev-row/.dev-buy/
+  .dev-card/.dev-prompt/.dev-pick` (+ mobile). i18n `dev.*` / `g.dev*` / `chaos.crazy`
+  / `top.*ArmyTip` / `stat.largestArmy*` / `stat.devCards*` (en/ja).
+- **Migration**: `loadMatch` backfills all new fields (old saves get a fresh
+  standard deck, empty hands, no army).
+- **spec.md** §3/§4/§5/§6 updated in the same commit.
+
+### Verified
+- `npm run build` + `npm run simulate` pass (added a `crazy-cards/medium` config
+  and turned crazy on in the chaos run); ran the sim 4× — every config reaches a
+  real winner (~130–405 steps), no softlocks. The simulate human (player 0) now
+  exercises the real human code paths: buyDev, playDev, `devPrompt` resolution,
+  free-road placement, and knight/earthquake robber.
+- Playwright (throwaway install, pre-installed headless_shell) screenshotted:
+  setup screen with the 🃏 Crazy Cards card (frozen 初代 design intact); in-game
+  HUD with the dev-card buy button + hand (Knight/Monopoly/YoP/Wild Gamble
+  playable, Road Building dimmed "next turn") + ⚔️ army badge; the Monopoly
+  resource-pick overlay. Zero page errors. Playwright reverted out of
+  package.json (NOT a committed dep).
+
+### Gotchas / notes
+- NPCs resolve dev cards **inline** (atomic turn) via `resolveDevInline`; the
+  **human** uses phases/prompts (`playDevCard` → robber phase / `devPrompt` /
+  free-road placement). Earthquake vs knight steal behavior is switched inside
+  `moveRobberTo` on `g.robberSource` (cleared at start of that fn + on turn end).
+- Victory Point cards apply VP immediately on draw (public), so a bought VP card
+  can be the winning point — `doBuyDevCard` calls `checkWinner`.
+- Standard dev cards are ALWAYS on (core); the toggle only adds crazy cards.

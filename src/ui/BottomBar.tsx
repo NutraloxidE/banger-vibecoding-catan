@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useGame } from '../game/store';
 import { COSTS, canAfford, validSpots, MEGA_ROAD_REQ } from '../game/rules';
-import { RESOURCES, BuildKind } from '../game/types';
+import { RESOURCES, BuildKind, Resource } from '../game/types';
+import { DEV_ICON, DEV_CARD_COST } from '../game/dev';
 import { RES_EMOJI, costChips } from './util';
 import { sfx } from '../audio/sfx';
 import { TradeModal } from './TradeModal';
@@ -20,6 +21,9 @@ export function BottomBar() {
   const cancelPlacement = useGame((s) => s.cancelPlacement);
   const rollDice = useGame((s) => s.rollDice);
   const endTurn = useGame((s) => s.endTurn);
+  const buyDevCard = useGame((s) => s.buyDevCard);
+  const playDevCard = useGame((s) => s.playDevCard);
+  const resolveDevPrompt = useGame((s) => s.resolveDevPrompt);
   const settings = useGame((s) => s.settings);
   const setSetting = useGame((s) => s.setSetting);
   const [tradeOpen, setTradeOpen] = useState(false);
@@ -32,6 +36,15 @@ export function BottomBar() {
 
   const buildDesc = (kind: BuildKind) =>
     kind === 'megacity' ? t('build.megacity.desc', { roads: MEGA_ROAD_REQ }) : t(`build.${kind}.desc`);
+
+  const deckLeft = game.devDeck.length;
+  const canBuyDev = deckLeft > 0 && RESOURCES.every((r) => me.resources[r] >= (DEV_CARD_COST[r] ?? 0));
+  const devPlayable = (boughtOnTurn: number) => !game.devCardPlayedThisTurn && boughtOnTurn !== game.turnCount;
+  const devPrompt = game.devPrompt;
+  const promptHint =
+    devPrompt?.card === 'monopoly' ? t('dev.pickMonopoly') :
+    devPrompt?.card === 'bounty' ? t('dev.pickBounty', { n: devPrompt.need - devPrompt.picks.length }) :
+    devPrompt ? t('dev.pickYearOfPlenty', { n: devPrompt.need - devPrompt.picks.length }) : '';
 
   return (
     <>
@@ -99,6 +112,34 @@ export function BottomBar() {
                   );
                 })}
               </div>
+              <div className="dev-row">
+                <button className={`dev-buy ${canBuyDev ? 'usable' : 'locked'}`}
+                  onClick={() => buyDevCard()}
+                  title={`${t('dev.buy')} — ${costChips(DEV_CARD_COST)}`}>
+                  <span className="dev-buy-icon">🎴</span>
+                  <span className="dev-buy-label">{t('dev.buy')}</span>
+                  <span className="dev-buy-cost">{costChips(DEV_CARD_COST)}</span>
+                  <span className="dev-buy-deck">{deckLeft > 0 ? t('dev.deck', { n: deckLeft }) : t('dev.deckEmpty')}</span>
+                </button>
+                {me.devCards.length > 0 && (
+                  <div className="dev-hand">
+                    {me.devCards.map((c, i) => {
+                      const playable = devPlayable(c.boughtOnTurn);
+                      return (
+                        <button key={i}
+                          className={`dev-card ${playable ? 'playable' : 'held'}`}
+                          disabled={!playable}
+                          onClick={() => playDevCard(i)}
+                          title={`${t(`dev.${c.kind}`)} — ${t(`dev.${c.kind}.desc`)}`}>
+                          <span className="dev-card-icon">{DEV_ICON[c.kind]}</span>
+                          <span className="dev-card-label">{t(`dev.${c.kind}`)}</span>
+                          {!playable && <span className="dev-card-note">{t('dev.nextTurn')}</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
               <div className="turn-row">
                 <button className="btn btn-big" onClick={() => { sfx.click(); setTradeOpen(true); }}>
                   {t('bottom.trade')}
@@ -115,13 +156,33 @@ export function BottomBar() {
       {game.placement && (
         <div className="placement-banner">
           <span>
-            {t(`banner.${game.placement.kind}`)}
-            {' — '}
-            {t(game.placement.spots.length > 1 ? 'banner.spots' : 'banner.spot', { n: game.placement.spots.length })}
+            {isMyTurn && game.freeRoads > 0
+              ? t('dev.freeRoads', { n: game.freeRoads })
+              : <>
+                  {t(`banner.${game.placement.kind}`)}
+                  {' — '}
+                  {t(game.placement.spots.length > 1 ? 'banner.spots' : 'banner.spot', { n: game.placement.spots.length })}
+                </>}
           </span>
           <button className="btn btn-ghost cancel-btn" onClick={() => { sfx.click(); cancelPlacement(); }}>
             {t('banner.cancel')}
           </button>
+        </div>
+      )}
+
+      {isMyTurn && devPrompt && (
+        <div className="dev-prompt">
+          <div className="dev-prompt-hint">{promptHint}</div>
+          <div className="dev-prompt-picks">
+            {RESOURCES.map((r: Resource) => (
+              <button key={r} className={`dev-pick res-${r}`}
+                onClick={() => { sfx.click(); resolveDevPrompt(r); }}
+                title={t(`res.${r}`)}>
+                <span className="dev-pick-emoji">{RES_EMOJI[r]}</span>
+                <span className="dev-pick-have">{me.resources[r]}</span>
+              </button>
+            ))}
+          </div>
         </div>
       )}
     </>

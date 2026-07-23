@@ -4,7 +4,10 @@
 
 import { useGame } from '../src/game/store';
 import { MatchConfig, MapSize, Difficulty } from '../src/game/types';
-import { aiSetupVertex, aiSetupRoad, aiMainAction, aiRobberChoice } from '../src/game/ai';
+import {
+  aiSetupVertex, aiSetupRoad, aiMainAction, aiRobberChoice,
+  aiDevMonopolyResource, aiDevGainResources, aiFreeRoadSpot,
+} from '../src/game/ai';
 import { validRoadSpots, bankRate } from '../src/game/rules';
 
 function playHumanLikeNpc() {
@@ -31,6 +34,20 @@ function playHumanLikeNpc() {
     return true;
   }
   if (g.phase === 'main') {
+    // resolve a pending dev-card resource prompt (Monopoly / Year of Plenty / Treasure Haul)
+    if (g.devPrompt) {
+      const res = g.devPrompt.card === 'monopoly'
+        ? aiDevMonopolyResource(g, 0)
+        : aiDevGainResources(g, 0, 1)[0];
+      s.resolveDevPrompt(res);
+      return true;
+    }
+    // place a free road granted by the Road Building card
+    if (g.placement?.kind === 'road' && g.freeRoads > 0) {
+      const spot = aiFreeRoadSpot(g, 0);
+      if (spot) s.clickEdge(spot); else s.cancelPlacement();
+      return true;
+    }
     const action = aiMainAction(g, 0);
     if (action.type === 'build') {
       s.startPlacement(action.kind);
@@ -42,6 +59,11 @@ function playHumanLikeNpc() {
         s.cancelPlacement();
         s.endTurn();
       }
+    } else if (action.type === 'buyDev') {
+      s.buyDevCard();
+    } else if (action.type === 'playDev') {
+      const idx = g.players[0].devCards.findIndex((c) => c.kind === action.card && c.boughtOnTurn !== g.turnCount);
+      if (idx >= 0) s.playDevCard(idx); else s.endTurn();
     } else if (action.type === 'bank') {
       s.bankTrade(action.give, action.get);
     } else {
@@ -86,15 +108,16 @@ function runOne(label: string, config: MatchConfig): boolean {
 const base: MatchConfig = {
   mapSize: 'medium', npcCount: 3, difficulty: 'normal', targetVp: 10,
   seed: 'SIM-1', worldEvents: true,
-  chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false },
+  chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: false },
 };
 
 const runs: [string, MatchConfig][] = [
   ['small/2npc/chill', { ...base, mapSize: 'small', npcCount: 2, difficulty: 'chill', seed: 'SIM-SMALL' }],
   ['medium/3npc/normal', { ...base, seed: 'SIM-MED' }],
   ['large/3npc/ruthless', { ...base, mapSize: 'large', difficulty: 'ruthless', seed: 'SIM-LARGE', targetVp: 12 }],
-  ['turbo+sheep chaos', { ...base, seed: 'SIM-CHAOS', chaos: { turbo: true, friendlyRobber: true, maximumSheep: true, drama: true, goldenHex: true } }],
+  ['turbo+sheep+crazy chaos', { ...base, seed: 'SIM-CHAOS', chaos: { turbo: true, friendlyRobber: true, maximumSheep: true, drama: true, goldenHex: true, crazyCards: true } }],
   ['1npc/vp8', { ...base, mapSize: 'small', npcCount: 1, targetVp: 8, seed: 'SIM-DUEL' }],
+  ['crazy-cards/medium', { ...base, seed: 'SIM-CRAZY', chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: true } }],
 ];
 
 let allOk = true;

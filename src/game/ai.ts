@@ -1,14 +1,17 @@
-import { MatchState, Resource, RESOURCES, BuildKind, PlayerState } from './types';
+import { MatchState, Resource, RESOURCES, BuildKind, PlayerState, DevKind } from './types';
 import { vertexScore, TOKEN_WEIGHT } from './board';
 import {
   COSTS, canAfford, validSettlementSpots, validRoadSpots, validCitySpots, validMegaSpots,
   bankRate, handSize, roadCount,
 } from './rules';
+import { DEV_CARD_COST, LARGEST_ARMY_MIN } from './dev';
 
 export type AiAction =
   | { type: 'build'; kind: BuildKind; spot: string }
   | { type: 'bank'; give: Resource; get: Resource }
   | { type: 'offerHuman'; give: Resource; get: Resource }
+  | { type: 'buyDev' }
+  | { type: 'playDev'; card: DevKind }
   | { type: 'end' };
 
 const rand = () => Math.random();
@@ -89,6 +92,111 @@ function currentGoal(state: MatchState, pid: number): BuildKind {
   return 'road';
 }
 
+// Does this tile touch a building owned by `pid`? (Is the robber hurting us?)
+function tileTouchesPlayer(state: MatchState, tileId: number, pid: number): boolean {
+  for (const v of Object.values(state.board.vertices)) {
+    if (v.tiles.includes(tileId) && state.buildings[v.id]?.owner === pid) return true;
+  }
+  return false;
+}
+
+// Which single resource should Monopoly grab — the one opponents hold the most of.
+export function aiDevMonopolyResource(state: MatchState, pid: number): Resource {
+  let best: Resource = RESOURCES[0];
+  let bestN = -1;
+  for (const r of RESOURCES) {
+    let n = 0;
+    for (const q of state.players) if (q.id !== pid) n += q.resources[r];
+    if (n > bestN) { bestN = n; best = r; }
+  }
+  return best;
+}
+
+// Which resources to draw from the bank (Year of Plenty / Treasure Haul):
+// fill toward the current build goal, then top up the scarcest holdings.
+export function aiDevGainResources(state: MatchState, pid: number, count: number): Resource[] {
+  const p = state.players[pid];
+  const missing = missingFor(p, currentGoal(state, pid));
+  const out: Resource[] = [];
+  for (let i = 0; i < count; i++) {
+    if (missing.length > 0) out.push(missing.shift()!);
+    else out.push([...RESOURCES].sort((a, b) => p.resources[a] - p.resources[b])[0]);
+  }
+  return out;
+}
+
+// Best free road spot for the Road Building card.
+export function aiFreeRoadSpot(state: MatchState, pid: number): string | null {
+  const spots = validRoadSpots(state, pid);
+  if (spots.length === 0) return null;
+  return pickBest(spots, (eid) => {
+    const e = state.board.edges[eid];
+    let s = 0;
+    for (const vid of [e.a, e.b]) if (!state.buildings[vid]) s = Math.max(s, vertexScore(state.board, vid));
+    return s;
+  }, pickNoise(state)) ?? spots[0];
+}
+
+// Choose a held development card worth playing this turn (or null to hold).
+function aiChooseDevPlay(state: MatchState, pid: number): DevKind | null {
+  if (state.devCardPlayedThisTurn) return null;
+  const p = state.players[pid];
+  const playable = p.devCards.filter((c) => c.boughtOnTurn !== state.turnCount);
+  if (playable.length === 0) return null;
+  const kinds = new Set(playable.map((c) => c.kind));
+  const missing = missingFor(p, currentGoal(state, pid));
+
+  // Monopoly — grab a resource opponents are hoarding
+  if (kinds.has('monopoly')) {
+    const res = aiDevMonopolyResource(state, pid);
+    let total = 0;
+    for (const q of state.players) if (q.id !== pid) total += q.resources[res];
+    if (total >= 3) return 'monopoly';
+  }
+  // Treasure Haul / Year of Plenty — cash in to complete a build
+  if (kinds.has('bounty') && missing.length > 0 && missing.length <= 3) return 'bounty';
+  if (kinds.has('yearOfPlenty') && missing.length > 0 && missing.length <= 2) return 'yearOfPlenty';
+  // Road Building — expand / chase the longest road
+  if (kinds.has('roadBuilding') && validRoadSpots(state, pid).length > 0) {
+    if (p.personality === 'expansionist' || p.personality === 'builder' || rand() < 0.5) return 'roadBuilding';
+  }
+  // Knight — kick the robber off our land, hunt the leader, or chase Largest Army
+  if (kinds.has('knight')) {
+    const hurtsUs = tileTouchesPlayer(state, state.robberTile, pid);
+    const nearArmy = p.knightsPlayed >= LARGEST_ARMY_MIN - 1;
+    if (hurtsUs || nearArmy || rand() < 0.35) return 'knight';
+  }
+  // Earthquake (crazy) — shake cards from every neighbor
+  if (kinds.has('earthquake')) {
+    const anyCards = state.players.some((q) => q.id !== pid && handSize(q) > 0);
+    if (anyCards && rand() < 0.6) return 'earthquake';
+  }
+  // Plague (crazy) — worthwhile when rivals are card-rich
+  if (kinds.has('plague')) {
+    let oppCards = 0;
+    for (const q of state.players) if (q.id !== pid) oppCards += handSize(q);
+    if (oppCards >= 6) return 'plague';
+  }
+  // Windfall (crazy) — gamblers can't resist
+  if (kinds.has('windfall') && (p.personality === 'gambler' || rand() < 0.3)) return 'windfall';
+
+  return null;
+}
+
+// Should the NPC spend a spare ore/wheat/sheep on a development card?
+function aiWantBuyDev(state: MatchState, pid: number): boolean {
+  if (state.devDeck.length === 0) return false;
+  const p = state.players[pid];
+  if (!RESOURCES.every((r) => p.resources[r] >= (DEV_CARD_COST[r] ?? 0))) return false;
+  if (p.personality === 'hoarder' && rand() < 0.7) return false;
+  const spare = (p.resources.ore - 1) + (p.resources.wheat - 1) + (p.resources.sheep - 1);
+  let chance = 0.12 + Math.min(0.4, spare * 0.06);
+  if (state.config.difficulty === 'ruthless') chance += 0.1;
+  if (state.config.difficulty === 'chill') chance -= 0.05;
+  if (p.personality === 'gambler') chance += 0.12;
+  return rand() < chance;
+}
+
 export function aiMainAction(state: MatchState, pid: number): AiAction {
   const p = state.players[pid];
   const diff = state.config.difficulty;
@@ -104,6 +212,10 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
   // turn and sit on their cards instead of pressing an advantage they could
   // clearly build on
   if (lazy && rand() < 0.28) return { type: 'end' };
+
+  // Play a beneficial development card (resource cards feed the build below)
+  const devPlay = aiChooseDevPlay(state, pid);
+  if (devPlay) return { type: 'playDev', card: devPlay };
 
   // 1) Mega city
   const megaSpots = validMegaSpots(state, pid);
@@ -159,6 +271,9 @@ export function aiMainAction(state: MatchState, pid: number): AiAction {
       }
     }
   }
+
+  // 4.5) Buy a development card with spare ore/wheat/sheep
+  if (aiWantBuyDev(state, pid)) return { type: 'buyDev' };
 
   // 5) Bank trade toward goal
   const goal = currentGoal(state, pid);
