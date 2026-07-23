@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useGame } from '../game/store';
 import { MatchConfig, MapSize, Difficulty, Terrain } from '../game/types';
 import { generateBoard, pickGoldenTile } from '../game/board';
@@ -9,6 +9,81 @@ import { useT } from './useT';
 import { LangToggle } from './LangToggle';
 
 const MAP_TILES: Record<MapSize, number> = { small: 19, medium: 37, large: 61 };
+
+// World presets — each bundles a full set of chaos toggles, from "really just
+// Catan" up to "everything cranked". Selecting one applies its flags; tweaking
+// any individual modifier afterward drops back to "Custom". Banger is default.
+type PresetKey = 'normal' | 'banger' | 'core' | 'maxxing';
+interface PresetFlags {
+  worldEvents: boolean;
+  turbo: boolean;
+  friendlyRobber: boolean;
+  maximumSheep: boolean;
+  drama: boolean;
+  goldenHex: boolean;
+  crazyCards: boolean;
+}
+const PRESET_ORDER: PresetKey[] = ['normal', 'banger', 'core', 'maxxing'];
+const PRESET_EMOJI: Record<PresetKey, string> = { normal: '🌾', banger: '🔥', core: '💥', maxxing: '🌋' };
+const PRESETS: Record<PresetKey, PresetFlags> = {
+  normal:  { worldEvents: false, turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: false },
+  banger:  { worldEvents: true,  turbo: false, friendlyRobber: false, maximumSheep: false, drama: true,  goldenHex: false, crazyCards: false },
+  core:    { worldEvents: true,  turbo: false, friendlyRobber: false, maximumSheep: false, drama: true,  goldenHex: true,  crazyCards: true  },
+  maxxing: { worldEvents: true,  turbo: true,  friendlyRobber: true,  maximumSheep: true,  drama: true,  goldenHex: true,  crazyCards: true  },
+};
+function matchPreset(f: PresetFlags): PresetKey | null {
+  return PRESET_ORDER.find((k) => {
+    const p = PRESETS[k];
+    return (Object.keys(p) as (keyof PresetFlags)[]).every((key) => p[key] === f[key]);
+  }) ?? null;
+}
+
+// Custom dropdown for the world preset — a native <select> can't style the
+// options panel, so we roll our own button + floating menu (closes on outside
+// click / Esc). `value` is the active preset, or null when the toggles below
+// have been hand-tweaked into a "Custom" mix.
+function PresetDropdown({ value, onPick }: { value: PresetKey | null; onPick: (k: PresetKey) => void }) {
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => { if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false); };
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => { document.removeEventListener('mousedown', onDoc); document.removeEventListener('keydown', onKey); };
+  }, [open]);
+
+  const label = value ? `${PRESET_EMOJI[value]} ${t(`preset.${value}`)}` : `🎛️ ${t('preset.custom')}`;
+
+  return (
+    <div className={`preset-dd ${open ? 'open' : ''}`} ref={ref}>
+      <button type="button" className="preset-trigger" aria-haspopup="listbox" aria-expanded={open}
+        onClick={() => { sfx.click(); setOpen((o) => !o); }}>
+        <span className="preset-trigger-label">{label}</span>
+        <span className="preset-caret" aria-hidden="true" />
+      </button>
+      {open && (
+        <ul className="preset-menu" role="listbox">
+          {PRESET_ORDER.map((k) => (
+            <li key={k} role="option" aria-selected={value === k}
+              className={`preset-opt ${value === k ? 'on' : ''}`}
+              onClick={() => { sfx.click(); onPick(k); setOpen(false); }}>
+              <span className="preset-opt-emoji">{PRESET_EMOJI[k]}</span>
+              <span className="preset-opt-text">
+                <span className="preset-opt-name">{t(`preset.${k}`)}</span>
+                <span className="preset-opt-desc">{t(`preset.${k}D`)}</span>
+              </span>
+              {value === k && <span className="preset-opt-check" aria-hidden="true">✓</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
 
 // 2D colors for the live preview (matches the 3D board's terrain palette)
 const PREVIEW_COLOR: Record<Terrain, string> = {
@@ -92,6 +167,19 @@ export function SetupScreen() {
 
   const chaosCount = [turbo, friendlyRobber, maximumSheep, goldenHex, crazyCards].filter(Boolean).length;
 
+  // Which preset (if any) the current toggle state exactly matches.
+  const activePreset = matchPreset({ worldEvents, turbo, friendlyRobber, maximumSheep, drama, goldenHex, crazyCards });
+  const applyPreset = (key: PresetKey) => {
+    const p = PRESETS[key];
+    setWorldEvents(p.worldEvents);
+    setTurbo(p.turbo);
+    setFriendlyRobber(p.friendlyRobber);
+    setMaximumSheep(p.maximumSheep);
+    setDrama(p.drama);
+    setGoldenHex(p.goldenHex);
+    setCrazyCards(p.crazyCards);
+  };
+
   // Rivals this seed will actually produce (same RNG path as buildMatch)
   const roster = useMemo(() => {
     const rng = new RNG((seed.trim() || 'x') + ':players');
@@ -130,6 +218,10 @@ export function SetupScreen() {
           <div className="cfg-head-spacer" />
           <LangToggle compact />
         </div>
+
+        <h3 className="cfg-label">{t('setup.preset')}</h3>
+        <PresetDropdown value={activePreset} onPick={applyPreset} />
+        <div className="preset-desc">{activePreset ? t(`preset.${activePreset}D`) : t('preset.customD')}</div>
 
         <div className="map-preview">
           <MapPreview mapSize={mapSize} seed={seed} goldenHex={goldenHex} />
