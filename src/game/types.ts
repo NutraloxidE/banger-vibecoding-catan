@@ -105,6 +105,14 @@ export interface ChaosFlags {
   crazyCards: boolean;
 }
 
+// Board-generation layout options (threaded into generateBoard). Traditional
+// options place the classic Catan number sequence / harbor set instead of the
+// procedural randomized layout.
+export interface BoardLayout {
+  traditionalNumbers: boolean;
+  traditionalPorts: boolean;
+}
+
 export interface MatchConfig {
   mapSize: MapSize;
   npcCount: number; // 1..3
@@ -113,6 +121,9 @@ export interface MatchConfig {
   seed: string;
   worldEvents: boolean;
   chaos: ChaosFlags;
+  // classic Catan board layout toggles (independent of chaos/presets)
+  traditionalNumbers: boolean;
+  traditionalPorts: boolean;
 }
 
 export interface PlayerStats {

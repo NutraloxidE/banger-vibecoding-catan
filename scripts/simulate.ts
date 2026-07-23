@@ -109,6 +109,7 @@ const base: MatchConfig = {
   mapSize: 'medium', npcCount: 3, difficulty: 'normal', targetVp: 10,
   seed: 'SIM-1', worldEvents: true,
   chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: false },
+  traditionalNumbers: false, traditionalPorts: false,
 };
 
 const runs: [string, MatchConfig][] = [
@@ -118,6 +119,8 @@ const runs: [string, MatchConfig][] = [
   ['turbo+sheep+crazy chaos', { ...base, seed: 'SIM-CHAOS', chaos: { turbo: true, friendlyRobber: true, maximumSheep: true, drama: true, goldenHex: true, crazyCards: true } }],
   ['1npc/vp8', { ...base, mapSize: 'small', npcCount: 1, targetVp: 8, seed: 'SIM-DUEL' }],
   ['crazy-cards/medium', { ...base, seed: 'SIM-CRAZY', chaos: { turbo: false, friendlyRobber: false, maximumSheep: false, drama: false, goldenHex: false, crazyCards: true } }],
+  ['traditional/small', { ...base, mapSize: 'small', npcCount: 2, seed: 'SIM-TRAD', traditionalNumbers: true, traditionalPorts: true }],
+  ['traditional/large', { ...base, mapSize: 'large', seed: 'SIM-TRAD-L', targetVp: 12, traditionalNumbers: true, traditionalPorts: true }],
 ];
 
 let allOk = true;

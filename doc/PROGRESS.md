@@ -686,3 +686,75 @@ convenience over the same `MatchConfig`; no store/types/rules/simulate changes.
   kept. spec.md §3 item 2 reworded (native dropdown → custom menu with ✓ rows).
 - Build + all 6 sims pass; Playwright screenshotted the open menu (4 rows,
   Banger checked), option hover, and post-pick collapsed state — zero page errors.
+
+---
+
+## 2026-07-23 — Traditional Catan board layout (numbers + ports)
+
+### What changed (user request: トラディショナルなカタンの数字配置・港配置を選択可能に)
+Added two **Board Layout** toggles that swap the procedural board for the
+classic Catan layout — independent of the World Preset, so they combine with
+any preset (Normal included). Confirmed via AskUserQuestion: two separate
+toggles, applied "traditional-style" across all map sizes (small = exact).
+
+- **`src/game/board.ts`**:
+  - `generateBoard(mapSize, seed, layout?)` gains an optional `BoardLayout`
+    (`{ traditionalNumbers, traditionalPorts }`). TitleScene's 2-arg call is
+    unaffected (layout optional → title board byte-for-byte unchanged).
+  - **Traditional numbers**: `traditionalTokens()` lays the classic A–R
+    sequence `[5,2,6,3,8,10,9,12,11,4,8,10,9,4,5,6,3,11]` over the land tiles
+    in an outer→inner angular spiral, skipping the desert (not counted). Seed
+    picks among spiral starts (outer-ring tile × ±dir) that keep 6/8 apart, so
+    a seed rotates/reflects the classic board rather than randomizing numbers.
+    Larger boards cycle the sequence. Extracted `noAdjacentHotspots()` helper.
+  - **Traditional ports**: `generatePorts(board, seed, traditional?)` — same
+    evenly-spaced coastal edges, but kinds = `traditionalPortKinds()`: one 2:1
+    per resource spread evenly + generic 3:1 filling the rest (19-tile board =
+    the standard 9 harbors: 4 generic + one of each resource).
+- **Types**: new `BoardLayout` interface; `MatchConfig` gains flat
+  `traditionalNumbers` / `traditionalPorts` (NOT in ChaosFlags — board layout,
+  not economy chaos; presets don't touch them).
+- **`src/game/store.ts`**: `buildMatch` threads the two flags into
+  `generateBoard`; `loadMatch` backfills `config.traditional*` (old saves keep
+  their already-generated board).
+- **`src/ui/SetupScreen.tsx`**: new "Board Layout" section (reuses
+  `.chaos-grid`/`.chaos-card`) with 🔢 Traditional Numbers + ⚓ Traditional
+  Ports, placed right after Map Size. State prefilled from `lastConfig`;
+  threaded into the config + the live `MapPreview` (so the preview reflects
+  traditional numbers).
+- **`src/i18n.ts`**: `setup.layout`, `layout.numbers(D)`, `layout.ports(D)` (en/ja).
+- **`scripts/simulate.ts`**: base config gets the two flags (false); added
+  `traditional/small` + `traditional/large` runs with both on.
+- **spec.md** §3 (setup order: new Board Layout item, list renumbered) and §5
+  (Traditional Numbers + Traditional Ports rules) updated in the same commit.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (incl. the two new
+  traditional runs → real winners, no softlocks).
+- Correctness script (5 seeds, small board): every seed reproduces the exact
+  classic 18-token multiset, **no** adjacent 6/8, exactly 9 ports (4 generic +
+  one 2:1 of each of wood/brick/wheat/sheep/ore); seed still rotates the board
+  (control random layout differs).
+- Playwright (throwaway, headless_shell, 412×915): setup screen with both
+  Board Layout toggles on — section renders after Map Size, gold borders,
+  frozen screen otherwise intact, zero page errors. Playwright reverted out of
+  package.json (NOT a committed dep).
+
+### Notes / scope
+- Frozen setup screen touched on explicit user request; matching spec update
+  shipped in the same commit.
+
+### Follow-up same day — presets drive Board Layout (user request: 通常プリセットでON、他はOFF)
+- The two Board Layout toggles are now part of the World Preset (they were
+  independent in the first pass). `PresetFlags` gained `traditionalNumbers` /
+  `traditionalPorts`; **Normal** sets both **on** (plain Catan = the classic
+  layout), Banger / CORE / MAXXING set both **off**. `applyPreset` sets the two
+  states and `matchPreset` compares them, so hand-toggling either card drops
+  the preset to "Custom" (same as the Chaos Modifiers). No store/rules/board
+  changes — purely the SetupScreen preset wiring. spec.md §3 items 2/5/10
+  updated in the same commit.
+- Verified: build passes; Playwright (throwaway, headless_shell, 412×915) —
+  default=Banger both off, picking Normal lights both cards + the preview shows
+  the classic spiral (trigger reads 🌾 Normal), MAXXING both off, then toggling
+  a card by hand flips the trigger to 🎛️ Custom; zero page errors. Playwright
+  reverted out of package.json.
