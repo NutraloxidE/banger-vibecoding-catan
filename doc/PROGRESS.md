@@ -567,3 +567,53 @@ for extra "crazy" cards.
 - Victory Point cards apply VP immediately on draw (public), so a bought VP card
   can be the winning point — `doBuyDevCard` calls `checkWinner`.
 - Standard dev cards are ALWAYS on (core); the toggle only adds crazy cards.
+
+---
+
+## 2026-07-23 — Dev-card play: cancel + in-play effect description
+
+### What changed (user request: カード使用のキャンセル + 選択中の解説)
+Playing a development card is now cancelable and shows what the card does while
+you're choosing.
+
+- **Deferred, reversible effects.** A card being played interactively is held in
+  new `MatchState.pendingDevCard` (returned to hand on cancel). Irreversible
+  effects are deferred until the interactive step completes:
+  - **Knight** no longer credits Largest Army at play time — `creditKnight` moved
+    into `moveRobberTo` (fires only when `robberSource==='knight'` and the robber
+    is actually placed). So canceling before placement fully returns the card and
+    grants no knight.
+  - **Monopoly / Year of Plenty / Treasure Haul** already applied only on pick
+    completion; `resolveDevPrompt` now also clears `pendingDevCard`.
+  - **Road Building** clears `pendingDevCard` when the 2nd free road lands; it's
+    reversible only before the first free road (`freeRoads===2`) — after one road
+    is placed, cancel forfeits the remainder and keeps the card spent.
+  - **Plague / Windfall** are instant (no target) — nothing to cancel.
+- **`cancelDevCard()` store action** (+ module `cancelPendingDev`): restores the
+  card, un-sets `devCardPlayedThisTurn`, and clears devPrompt/placement/freeRoads/
+  robberSource, reverting `phase` robber→main. Logs `g.devCancel`.
+- **UI.** The Monopoly/YoP/Treasure overlay now has a header (icon + name), the
+  card's effect description, the chosen-so-far chips, and a **Cancel card**
+  button. The card-triggered robber phase shows a `.dev-active` box (name +
+  description + "tap a tile or cancel" + Cancel). The free-road banner shows the
+  Road Building description and its cancel routes through `cancelDevCard`.
+- i18n: `g.devCancel`, `dev.cancel`, `dev.robberInfo`. New CSS `.dev-active*`,
+  `.dev-prompt-head`, `.dev-prompt-chosen`, `.placement-desc`. `loadMatch`
+  backfills `pendingDevCard`; `advanceTurn` resets it.
+
+### Verified
+- `npm run build` + `npm run simulate` pass (4×; deferred knight credit still
+  produces winners incl. via Largest Army).
+- Headless store test (throwaway tsx): monopoly play→cancel returns the card &
+  un-spends the turn; knight play leaves knights=0 until the robber is placed
+  (then =1), cancel keeps knights=0 & returns the card; YoP mid-pick grants no
+  resources and cancel restores everything.
+- Playwright (throwaway, headless_shell): screenshotted the Year-of-Plenty
+  overlay (name + "Take any 2 resources" + "1 left to choose" + chosen 🌾 +
+  Cancel) and the Knight robber phase (name + desc + "tap a tile or cancel" +
+  Cancel). Zero page errors. Playwright reverted out of package.json.
+
+### Notes
+- `moveRobberTo` is the single commit point for card-triggered robbers (dice-7
+  robber has `robberSource===null` → no knight credit, not cancelable). NPC
+  knight/earthquake go through the same path via `resolveDevInline`.

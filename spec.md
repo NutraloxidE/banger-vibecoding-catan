@@ -108,8 +108,12 @@ request AND a matching update to this section. Its defining elements:
   (Amendment: development cards — the dev-card row lets the human buy a card and
   play a held one; playing a card that needs a target opens the robber phase
   (Knight/Earthquake), a free-road placement (Road Building), or a resource-pick
-  overlay (Monopoly/Year of Plenty/Treasure Haul). NPCs resolve their own cards
-  atomically. See §5 for the rules.)
+  overlay (Monopoly/Year of Plenty/Treasure Haul). While a card is mid-play the
+  UI shows its name + effect description and a **Cancel card** button; canceling
+  before it resolves (robber not yet placed, no resource chosen, no free road
+  placed) returns the card to hand and un-spends the turn's card play. A Knight
+  only counts toward Largest Army once its robber is actually placed. NPCs
+  resolve their own cards atomically. See §5 for the rules.)
 - Dice ritual: two tumbling dice (decided-before-animation results, physics
   only presents), rare giant dice, skippable via fast mode + watchdog.
 

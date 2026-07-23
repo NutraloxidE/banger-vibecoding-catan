@@ -75,6 +75,7 @@ interface Store {
   buyDevCard: () => void;
   playDevCard: (index: number) => void;
   resolveDevPrompt: (res: Resource) => void;
+  cancelDevCard: () => void;
 
   endTurn: () => void;
   aiTick: () => void;
@@ -505,7 +506,7 @@ function buildMatch(config: MatchConfig): MatchState {
     robberSource: null,
     goldenTile,
     devDeck: buildDevDeck(config.chaos.crazyCards, new RNG(config.seed + ':dev')),
-    devCardPlayedThisTurn: false, freeRoads: 0, devPrompt: null,
+    devCardPlayedThisTurn: false, freeRoads: 0, devPrompt: null, pendingDevCard: null,
     placement: null, hoverSpot: null, npcOffer: null,
     worldEvent: null, longestRoad: null, largestArmy: null,
     log: goldenTile !== null ? [t('g.newWorld'), t('g.goldenHex')] : [t('g.newWorld')],
@@ -575,6 +576,7 @@ function loadMatch(): MatchState | null {
     g.devCardPlayedThisTurn ??= false;
     g.freeRoads ??= 0;
     g.devPrompt ??= null;
+    g.pendingDevCard ??= null;
     g.robberSource ??= null;
     g.largestArmy ??= null;
     for (const p of g.players) {
@@ -699,6 +701,7 @@ export const useGame = create<Store>()(immer((set, get) => {
             if (next.length > 0) g.placement = { kind: 'road', spots: next };
             else g.freeRoads = 0;
           }
+          if (g.freeRoads === 0) g.pendingDevCard = null; // Road Building resolved
         }
         saveMatch(g);
       }
@@ -906,18 +909,28 @@ export const useGame = create<Store>()(immer((set, get) => {
       // Monopoly names one resource; the others take from the bank.
       if (prompt.card === 'monopoly' && prompt.need === 1) {
         g.devPrompt = null;
+        g.pendingDevCard = null;
         applyMonopoly(g, s.toasts, pid, res);
       } else {
         prompt.picks.push(res);
         if (prompt.picks.length >= prompt.need) {
           const picks = prompt.picks.slice();
           g.devPrompt = null;
+          g.pendingDevCard = null;
           grantChosen(g, s.toasts, pid, picks);
         }
       }
       recomputeVpAll(g);
       checkWinner(g, s.toasts);
       saveMatch(g);
+    }),
+
+    cancelDevCard: () => set((s) => {
+      const g = s.game;
+      if (!g || g.winner !== null) return;
+      const pid = g.current;
+      if (g.players[pid].isNpc) return;
+      if (cancelPendingDev(g, s.toasts, pid)) saveMatch(g);
     }),
 
     // ---- turn flow ----
@@ -1134,6 +1147,7 @@ function npcSetupStep(g: MatchState, toasts: Toast[]) {
 function moveRobberTo(g: MatchState, toasts: Toast[], pid: number, tileId: number, chosenVictim: number | null) {
   const source = g.robberSource;
   g.robberSource = null;
+  g.pendingDevCard = null; // a card-triggered robber is now committed
   g.robberTile = tileId;
   const tile = g.board.tiles[tileId];
   addFx(g, 'ring', tile.x, tile.z, source === 'earthquake' ? '#c0392b' : '#222222');
@@ -1163,7 +1177,10 @@ function moveRobberTo(g: MatchState, toasts: Toast[], pid: number, tileId: numbe
       if (g.players[pid].isNpc) say(g, pid, npcLine(new RNG(Math.random() * 1e9), 'robbing'));
     }
   }
-  g.phase = 'main';
+  // a Knight only counts toward Largest Army once the robber is actually placed
+  // (so canceling before placement fully returns the card)
+  if (source === 'knight') creditKnight(g, toasts, pid);
+  if (g.winner === null) g.phase = 'main';
   saveMatch(g);
 }
 
@@ -1205,17 +1222,18 @@ function devCardPlayable(g: MatchState, pid: number, card: { boughtOnTurn: numbe
 function beginPlayDevHuman(g: MatchState, toasts: Toast[], pid: number, index: number): boolean {
   const card = g.players[pid].devCards[index];
   if (!card || !devCardPlayable(g, pid, card)) { sfx.invalid(); return false; }
-  g.players[pid].devCards.splice(index, 1);
+  const removed = g.players[pid].devCards.splice(index, 1)[0];
   g.devCardPlayedThisTurn = true;
+  g.pendingDevCard = removed; // held so the human can cancel before it resolves
   g.placement = null;
   g.hoverSpot = null;
-  const k = card.kind;
+  const k = removed.kind;
   sfx.click();
 
+  // Knight / Earthquake open the robber phase; the effect (and the Largest Army
+  // credit for a Knight) only commits when the robber is actually placed.
   if (k === 'knight') {
     pushLog(g, t('g.devPlayKnight', { name: g.players[pid].name }));
-    creditKnight(g, toasts, pid);
-    if (g.winner !== null) return true;
     g.robberSource = 'knight';
     g.phase = 'robber';
   } else if (k === 'earthquake') {
@@ -1225,9 +1243,12 @@ function beginPlayDevHuman(g: MatchState, toasts: Toast[], pid: number, index: n
   } else if (k === 'roadBuilding') {
     startFreeRoads(g, toasts, pid);
   } else if (k === 'plague') {
+    // instant, no target to choose — nothing to cancel
     applyPlague(g, toasts, pid);
+    g.pendingDevCard = null;
   } else if (k === 'windfall') {
     applyWindfall(g, toasts, pid);
+    g.pendingDevCard = null;
   } else if (DEV_PICKS[k]) {
     g.devPrompt = { card: k, need: DEV_PICKS[k]!, picks: [] };
   }
@@ -1236,12 +1257,45 @@ function beginPlayDevHuman(g: MatchState, toasts: Toast[], pid: number, index: n
   return true;
 }
 
-function startFreeRoads(g: MatchState, toasts: Toast[], pid: number) {
+// Cancel a dev card that's mid-play (robber not yet placed, no resource picked,
+// or no free road placed yet) and return it to the player's hand.
+function cancelPendingDev(g: MatchState, toasts: Toast[], pid: number): boolean {
+  const pending = g.pendingDevCard;
+  if (!pending) return false;
+  // Road Building is only fully reversible before the first free road is placed.
+  const roadCommitted = pending.kind === 'roadBuilding' && g.freeRoads < 2;
+  if (!roadCommitted) {
+    g.players[pid].devCards.push(pending);
+    g.devCardPlayedThisTurn = false;
+  }
+  g.pendingDevCard = null;
+  g.devPrompt = null;
+  g.placement = null;
+  g.hoverSpot = null;
+  g.freeRoads = 0;
+  g.robberSource = null;
+  if (g.phase === 'robber') g.phase = 'main';
+  sfx.click();
+  pushLog(g, t('g.devCancel', { name: g.players[pid].name, card: t(`dev.${pending.kind}`) }));
+  recomputeVpAll(g);
+  checkWinner(g, toasts);
+  return true;
+}
+
+// Human-only: begin the two free roads from a Road Building card.
+function startFreeRoads(g: MatchState, _toasts: Toast[], pid: number) {
   const spots = validRoadSpots(g, pid);
+  if (spots.length === 0) {
+    // no legal road anywhere — return the card rather than waste it
+    if (g.pendingDevCard) { g.players[pid].devCards.push(g.pendingDevCard); g.pendingDevCard = null; }
+    g.devCardPlayedThisTurn = false;
+    g.freeRoads = 0;
+    sfx.invalid();
+    return;
+  }
   pushLog(g, t('g.devRoadBuilding', { name: g.players[pid].name }));
-  if (spots.length === 0) { g.freeRoads = 0; return; }
   g.freeRoads = 2;
-  if (!g.players[pid].isNpc) g.placement = { kind: 'road', spots };
+  g.placement = { kind: 'road', spots };
 }
 
 // AI-facing: resolve a chosen card fully in one shot (choosing targets/resources
@@ -1254,11 +1308,9 @@ function resolveDevInline(g: MatchState, toasts: Toast[], pid: number, card: Dev
 
   if (card === 'knight') {
     pushLog(g, t('g.devPlayKnight', { name: g.players[pid].name }));
-    creditKnight(g, toasts, pid);
-    if (g.winner !== null) return;
     const choice = aiRobberChoice(g, pid);
     g.robberSource = 'knight';
-    moveRobberTo(g, toasts, pid, choice.tile, choice.victim);
+    moveRobberTo(g, toasts, pid, choice.tile, choice.victim); // credits the knight
   } else if (card === 'earthquake') {
     pushLog(g, t('g.devPlayEarthquake', { name: g.players[pid].name }));
     const choice = aiRobberChoice(g, pid);
@@ -1292,6 +1344,7 @@ function advanceTurn(g: MatchState, toasts: Toast[]) {
   g.devCardPlayedThisTurn = false;
   g.freeRoads = 0;
   g.devPrompt = null;
+  g.pendingDevCard = null;
   g.robberSource = null;
   g.aiActionsThisTurn = 0;
   g.turnCount++;

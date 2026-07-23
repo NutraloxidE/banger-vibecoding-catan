@@ -24,6 +24,7 @@ export function BottomBar() {
   const buyDevCard = useGame((s) => s.buyDevCard);
   const playDevCard = useGame((s) => s.playDevCard);
   const resolveDevPrompt = useGame((s) => s.resolveDevPrompt);
+  const cancelDevCard = useGame((s) => s.cancelDevCard);
   const settings = useGame((s) => s.settings);
   const setSetting = useGame((s) => s.setSetting);
   const [tradeOpen, setTradeOpen] = useState(false);
@@ -41,10 +42,12 @@ export function BottomBar() {
   const canBuyDev = deckLeft > 0 && RESOURCES.every((r) => me.resources[r] >= (DEV_CARD_COST[r] ?? 0));
   const devPlayable = (boughtOnTurn: number) => !game.devCardPlayedThisTurn && boughtOnTurn !== game.turnCount;
   const devPrompt = game.devPrompt;
+  const pending = game.pendingDevCard;
   const promptHint =
     devPrompt?.card === 'monopoly' ? t('dev.pickMonopoly') :
     devPrompt?.card === 'bounty' ? t('dev.pickBounty', { n: devPrompt.need - devPrompt.picks.length }) :
     devPrompt ? t('dev.pickYearOfPlenty', { n: devPrompt.need - devPrompt.picks.length }) : '';
+  const robberFromCard = isMyTurn && game.phase === 'robber' && !!pending;
 
   return (
     <>
@@ -85,8 +88,22 @@ export function BottomBar() {
             </button>
           )}
 
-          {isMyTurn && game.phase === 'robber' && (
+          {isMyTurn && game.phase === 'robber' && !robberFromCard && (
             <div className="phase-hint big-hint danger">{t('bottom.hintRobber')}</div>
+          )}
+
+          {robberFromCard && pending && (
+            <div className="dev-active danger">
+              <div className="dev-active-head">
+                <span className="dev-active-icon">{DEV_ICON[pending.kind]}</span>
+                <span className="dev-active-name">{t(`dev.${pending.kind}`)}</span>
+              </div>
+              <div className="dev-active-desc">{t(`dev.${pending.kind}.desc`)}</div>
+              <div className="dev-active-hint">{t('dev.robberInfo')}</div>
+              <button className="btn btn-ghost cancel-btn" onClick={() => cancelDevCard()}>
+                {t('dev.cancel')}
+              </button>
+            </div>
           )}
 
           {isMyTurn && game.phase === 'main' && (
@@ -153,26 +170,43 @@ export function BottomBar() {
         </div>
       </div>
 
-      {game.placement && (
-        <div className="placement-banner">
-          <span>
-            {isMyTurn && game.freeRoads > 0
-              ? t('dev.freeRoads', { n: game.freeRoads })
-              : <>
-                  {t(`banner.${game.placement.kind}`)}
-                  {' — '}
-                  {t(game.placement.spots.length > 1 ? 'banner.spots' : 'banner.spot', { n: game.placement.spots.length })}
-                </>}
-          </span>
-          <button className="btn btn-ghost cancel-btn" onClick={() => { sfx.click(); cancelPlacement(); }}>
-            {t('banner.cancel')}
-          </button>
-        </div>
-      )}
+      {game.placement && (() => {
+        const freeRoad = isMyTurn && game.freeRoads > 0;
+        return (
+          <div className="placement-banner">
+            <span>
+              {freeRoad
+                ? <>
+                    {t('dev.freeRoads', { n: game.freeRoads })}
+                    <span className="placement-desc"> · {t('dev.roadBuilding.desc')}</span>
+                  </>
+                : <>
+                    {t(`banner.${game.placement.kind}`)}
+                    {' — '}
+                    {t(game.placement.spots.length > 1 ? 'banner.spots' : 'banner.spot', { n: game.placement.spots.length })}
+                  </>}
+            </span>
+            <button className="btn btn-ghost cancel-btn"
+              onClick={() => { sfx.click(); freeRoad ? cancelDevCard() : cancelPlacement(); }}>
+              {t('banner.cancel')}
+            </button>
+          </div>
+        );
+      })()}
 
       {isMyTurn && devPrompt && (
         <div className="dev-prompt">
+          <div className="dev-prompt-head">
+            <span className="dev-active-icon">{DEV_ICON[devPrompt.card]}</span>
+            <span className="dev-active-name">{t(`dev.${devPrompt.card}`)}</span>
+          </div>
+          <div className="dev-active-desc">{t(`dev.${devPrompt.card}.desc`)}</div>
           <div className="dev-prompt-hint">{promptHint}</div>
+          {devPrompt.picks.length > 0 && (
+            <div className="dev-prompt-chosen">
+              {devPrompt.picks.map((r, i) => <span key={i}>{RES_EMOJI[r]}</span>)}
+            </div>
+          )}
           <div className="dev-prompt-picks">
             {RESOURCES.map((r: Resource) => (
               <button key={r} className={`dev-pick res-${r}`}
@@ -183,6 +217,9 @@ export function BottomBar() {
               </button>
             ))}
           </div>
+          <button className="btn btn-ghost cancel-btn" onClick={() => cancelDevCard()}>
+            {t('dev.cancel')}
+          </button>
         </div>
       )}
     </>

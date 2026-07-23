@@ -234,6 +234,9 @@ export interface MatchState {
   devCardPlayedThisTurn: boolean; // at most one dev card played per turn
   freeRoads: number; // free roads still to place (Road Building card)
   devPrompt: DevPrompt | null; // pending resource choice from a played card
+  // the card currently mid-play (robber / free-road / resource pick) — held so
+  // the human can cancel and get it back before it resolves
+  pendingDevCard: DevCard | null;
   // interaction
   placement: Placement | null;
   hoverSpot: string | null;

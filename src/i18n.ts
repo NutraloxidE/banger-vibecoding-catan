@@ -120,6 +120,8 @@ const M: Record<string, [string, string]> = {
   'dev.hint': ['Tap a card to play it (one per turn)', 'カードをタップして使用（1手番に1枚）'],
   'dev.nextTurn': ['next turn', '次の手番'],
   'dev.played': ['already played a card', '今手番は使用済み'],
+  'dev.cancel': ['✕ Cancel card', '✕ カードを取消'],
+  'dev.robberInfo': ['🦹 Tap a tile to place the robber — or cancel', '🦹 タイルをタップして盗賊を配置 — または取消'],
   'dev.freeRoads': ['🛤️ Place {n} FREE road(s) — tap a glowing edge', '🛤️ 無料の道を{n}本設置 — 光る辺をタップ'],
   'dev.pickMonopoly': ['📈 MONOPOLY — pick the resource to seize from everyone', '📈 独占 — 全員から奪う資源を選択'],
   'dev.pickYearOfPlenty': ['🌾 pick a resource ({n} left to choose)', '🌾 資源を選択（あと{n}個）'],
@@ -262,6 +264,7 @@ const M: Record<string, [string, string]> = {
   'g.largestArmySub': ['{name} holds the largest army (+2 VP)', '{name} が最大騎士力を保持 (+2 VP)'],
 
   // ---- development cards ----
+  'g.devCancel': ['↩️ {name} cancels the {card} card', '↩️ {name} が{card}カードの使用を取り消した'],
   'g.devBought': ['🎴 {emoji} {name} buys a development card', '🎴 {emoji} {name} が発展カードを購入'],
   'g.devBoughtVictory': ['🎓 {emoji} {name} draws a Victory Point card (+1 VP)', '🎓 {emoji} {name} が勝利点カードを引いた (+1 VP)'],
   'g.devDeckEmpty': ['The development deck is empty', '発展カードの山札が尽きた'],
