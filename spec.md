@@ -198,20 +198,28 @@ request AND a matching update to this section. Its defining elements:
   seed, additionally drops 1 random ("wildcard") resource per building hit
   whenever it produces. Announced in the log at match start.
 - **Harbors / ports** (always on, standard Catan): generated on coastal edges
-  (edges touching one tile), spaced around the coast, never sharing a vertex.
-  Per board there is (room permitting) one 2:1 harbor per resource + several
-  generic 3:1 harbors; count scales with the coastline (~4–9). A player
+  (edges touching one tile), placed **evenly around the entire coast** (so
+  harbors ring the whole island — no bare side), never sharing a vertex. The
+  ring is rotated by a per-seed anchor. Per board there is (room permitting)
+  one 2:1 harbor per resource + several generic 3:1 harbors (kinds randomized);
+  count scales with the coastline (~4–9). A player
   controls a harbor while owning a building (settlement/city/megacity) on
   either of its two vertices, and then trades at that harbor's rate:
   generic = 3 identical → 1 any; resource = 2 of that resource → 1 any.
   `bankRate` returns the best rate available to the current trader (harbor
   vs. festival vs. Maximum Sheep vs. the 4:1 base).
-  **Traditional Ports** (Board Layout toggle, default off): the harbor
-  *positions* are still the evenly-spaced coastal edges, but the kinds are
-  the classic set — exactly one 2:1 per resource, spread evenly around the
-  coast, with generic 3:1 filling the rest (on the 19-tile board this is the
-  standard 9 harbors: 4 generic + one of each resource). Off = the kinds are
-  randomized as before.
+  **Traditional Ports** (Board Layout toggle, default off): reproduces the
+  real board's harbor ring. Harbors are placed **evenly around the entire
+  coast** (never crammed into one arc), never sharing a vertex, and **anchored
+  to the number-token frame** — harbor #0 sits nearest token tile "A" and the
+  ring follows the token spiral's winding direction, so the harbor↔numbered-
+  tile relationship matches the physical board instead of rotating on its own
+  (when Traditional Numbers is off, the ring uses a stable per-seed
+  orientation). Kinds run in the printed clockwise sequence — 3:1, wheat 2:1,
+  ore 2:1, 3:1, sheep 2:1, 3:1, brick 2:1, wood 2:1, 3:1 (on the 19-tile board
+  exactly the standard 9 harbors: 4 generic + one of each resource); longer
+  coasts cycle the same sequence. Off = the default procedural harbors (same
+  even ring, but per-seed rotation + randomized kinds).
   Flavor: each harbor gets a themed generated name; **claiming a harbor**
   (first settlement on a harbor vertex) fires a HARBOR WELCOME toast + a
   one-time +1 welcome card. Harbor vertices are worth extra in the AI/
