@@ -170,18 +170,33 @@ body.tension-2 .game-screen::after {
 .chaos-card:hover { border-color: rgba(255,255,255,0.25); }
 .chaos-card.on { border-color: var(--gold); background: rgba(255, 206, 74, 0.07); }
 .preset-select {
-  width: 100%; background: var(--panel-lite); color: var(--ink);
-  border: 2px solid rgba(255,255,255,0.14); border-radius: 12px;
-  padding: 13px 40px 13px 14px; font-family: inherit; font-size: 15px;
-  font-weight: 800; cursor: pointer; transition: all 0.15s;
+  width: 100%; color: var(--ink);
+  border: 2px solid rgba(255, 206, 74, 0.38); border-radius: 14px;
+  padding: 14px 58px 14px 16px; font-family: inherit; font-size: 16px;
+  font-weight: 800; letter-spacing: 0.01em; cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
   -webkit-appearance: none; appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'%3E%3Cpath d='M1 1l6 6 6-6' fill='none' stroke='%23ffce4a' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E");
-  background-repeat: no-repeat; background-position: right 15px center;
+  /* gold rounded-badge chevron on the right, over a gold-tinted panel */
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='30' height='48' viewBox='0 0 30 48'%3E%3Crect x='1' y='10' width='28' height='28' rx='9' fill='%23ffce4a'/%3E%3Cpath d='M9 21l6 6 6-6' fill='none' stroke='%233a2604' stroke-width='2.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")
+      no-repeat right 9px center,
+    linear-gradient(180deg, rgba(255, 206, 74, 0.13), rgba(16, 30, 46, 0.82));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
-.preset-select:hover { border-color: rgba(255,255,255,0.28); }
-.preset-select:focus { outline: none; border-color: var(--gold); }
-.preset-select option { background: #16202c; color: var(--ink); font-weight: 700; }
-.preset-desc { font-size: 12.5px; opacity: 0.65; line-height: 1.4; margin-top: 8px; }
+.preset-select:hover {
+  border-color: rgba(255, 206, 74, 0.7);
+  box-shadow: 0 6px 22px rgba(255, 200, 60, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+.preset-select:focus {
+  outline: none; border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(255, 206, 74, 0.22), 0 6px 22px rgba(255, 200, 60, 0.2);
+}
+.preset-select option { background: #101f2e; color: var(--ink); font-weight: 700; }
+.preset-select option:disabled { color: rgba(238, 244, 248, 0.4); }
+.preset-desc {
+  font-size: 13px; opacity: 0.72; line-height: 1.45; margin-top: 9px;
+  padding-left: 2px; font-style: italic;
+}
 .chaos-emoji { font-size: 26px; display: block; margin-bottom: 6px; }
 .chaos-name { font-weight: 800; font-size: 15px; display: block; margin-bottom: 4px; }
 .chaos-desc { font-size: 12.5px; opacity: 0.7; line-height: 1.45; display: block; }
