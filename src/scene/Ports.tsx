@@ -13,12 +13,28 @@ const RES_EMOJI: Record<Resource, string> = {
   wood: '🪵', brick: '🧱', wheat: '🌾', sheep: '🐑', ore: '🪨',
 };
 
-const plankGeo = new THREE.BoxGeometry(0.5, 0.06, 0.22);
 const postGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.72, 6);
 const armGeo = new THREE.BoxGeometry(0.4, 0.04, 0.04);
 const signGeo = new THREE.PlaneGeometry(0.52, 0.52);
 const buoyGeo = new THREE.SphereGeometry(0.06, 8, 6);
 const bridgePostGeo = new THREE.BoxGeometry(0.04, 0.14, 0.04);
+
+// Landing platform (乗り場) + support pilings (足場): a solid wooden footing at
+// the water's edge where the two plank bridges converge and where a ship would
+// berth. Static (aligned with the static bridges), so the walkways read as
+// leaving a real landing rather than a thin floating plank.
+const landingGeo = new THREE.BoxGeometry(0.48, 0.08, 0.42);
+const plankLineGeo = new THREE.BoxGeometry(0.48, 0.014, 0.02);
+const pilingGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.5, 6);
+const bollardGeo = new THREE.CylinderGeometry(0.035, 0.05, 0.14, 8);
+
+const PLATFORM_TOP = 0.14; // deck top surface (matches the bridge dock height)
+const PLATFORM_THICK = 0.08;
+// Four corner pilings and three deck planking seams, positioned once.
+const PILING_OFFSETS: [number, number][] = [
+  [0.19, 0.16], [0.19, -0.16], [-0.19, 0.16], [-0.19, -0.16],
+];
+const PLANK_SEAMS = [-0.13, 0, 0.13];
 
 const woodMat = new THREE.MeshStandardMaterial({ color: '#8a5a33' });
 const postMat = new THREE.MeshStandardMaterial({ color: '#6f4a2b' });
@@ -74,7 +90,7 @@ function Bridge({ from, to }: { from: [number, number, number]; to: [number, num
 }
 
 function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: string | null; showRate: boolean }) {
-  const ref = useRef<THREE.Group>(null);
+  const buoyRef = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const signTex = useMemo(
     () => portSignTexture(port.rate, port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind]),
@@ -90,8 +106,9 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
   );
   const phase = useMemo(() => port.x + port.z, [port.x, port.z]);
 
+  // Only the buoy bobs on the water; the pier/landing is a solid structure.
   useFrame(({ clock }) => {
-    if (ref.current) ref.current.position.y = 0.02 + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
+    if (buoyRef.current) buoyRef.current.position.y = 0.05 + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
   });
 
   // face the sign back toward the island center
@@ -100,11 +117,24 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
 
   return (
     <group position={[port.x, 0, port.z]} rotation={[0, yaw, 0]}>
-      <group ref={ref}
+      <group
         onPointerOver={(e) => { e.stopPropagation(); setHover(true); }}
         onPointerOut={() => setHover(false)}
       >
-        <mesh geometry={plankGeo} material={woodMat} castShadow />
+        {/* Landing platform (乗り場) — the deck the bridges land on */}
+        <mesh geometry={landingGeo} material={woodMat} position={[0, PLATFORM_TOP - PLATFORM_THICK / 2, 0]} castShadow receiveShadow />
+        {/* deck planking seams */}
+        {PLANK_SEAMS.map((z) => (
+          <mesh key={z} geometry={plankLineGeo} material={postMat} position={[0, PLATFORM_TOP + 0.007, z]} />
+        ))}
+        {/* support pilings (足場) sinking into the water at each corner */}
+        {PILING_OFFSETS.map(([px, pz]) => (
+          <mesh key={`${px},${pz}`} geometry={pilingGeo} material={postMat} position={[px, PLATFORM_TOP - PLATFORM_THICK - 0.19, pz]} />
+        ))}
+        {/* mooring bollards on the water-facing edge, where a ship ties up */}
+        <mesh geometry={bollardGeo} material={postMat} position={[0.2, PLATFORM_TOP + 0.07, 0.11]} />
+        <mesh geometry={bollardGeo} material={postMat} position={[0.2, PLATFORM_TOP + 0.07, -0.11]} />
+        {/* mast + hanging sign, standing on the landing */}
         <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.36, 0.04]} />
         <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
         {/* two back-to-back front-facing planes so the text reads correctly
@@ -117,13 +147,16 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
             <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
           </mesh>
         </group>
-        <mesh geometry={buoyGeo} material={buoyMat} position={[0.2, 0.05, -0.05]} />
         {ownerColor && (
-          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]}>
-            <ringGeometry args={[0.28, 0.36, 20]} />
+          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, PLATFORM_TOP + 0.01, 0]}>
+            <ringGeometry args={[0.3, 0.38, 24]} />
             <meshBasicMaterial color={ownerColor} transparent opacity={0.7} depthWrite={false} />
           </mesh>
         )}
+      </group>
+      {/* buoy floating on the water just off the landing */}
+      <group ref={buoyRef} position={[0.28, 0.05, -0.08]}>
+        <mesh geometry={buoyGeo} material={buoyMat} />
       </group>
       {/* Dedicated flat readout: when the camera looks from near overhead the
           vertical sign goes edge-on, so a screen-facing DOM badge fades in with
@@ -161,8 +194,8 @@ export function Ports() {
   });
   if (!ports || !vertices || !buildings || !players) return null;
 
-  // Dock deck sits low over the water; the coastal nodes sit on the tile tops.
-  const DOCK_Y = 0.12;
+  // Bridges land on the landing-platform deck; the coastal nodes sit on the tile tops.
+  const DOCK_Y = PLATFORM_TOP;
   const NODE_Y = 0.3;
 
   return (

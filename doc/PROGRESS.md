@@ -961,3 +961,43 @@ across both layouts (`src/game/board.ts` only):
 - Frozen gameplay screen (default board) changed on explicit user request;
   matching `spec.md` update in the same commit. Only `board.ts` + spec/progress
   touched; render path (`Ports.tsx`) untouched.
+
+---
+
+## 2026-07-23 — Harbor landing platform (乗り場・足場) at the dock
+
+### What changed (user request: 船と橋がつながる箇所に港の乗り場・足場を追加してビジュアルを洗練)
+- `src/scene/Ports.tsx`: each harbor's thin bobbing plank is replaced by a
+  **solid wooden landing platform (乗り場)** where the two plank bridges
+  converge and a ship would berth. The platform is a static box deck
+  (`landingGeo` 0.48×0.08×0.42, top at `PLATFORM_TOP=0.14`) with three deck
+  planking seams, **four support pilings (足場)** (`pilingGeo`, one per corner)
+  sinking into the water, and **two mooring bollards** (`bollardGeo`) on the
+  water-facing edge. The mast + hanging "N:1" sign now stand on this platform
+  at the **same world height/orientation as before** (post `y=0.36`, arm
+  `0.66`, sign `0.4`) — only difference is they no longer bob.
+- **Bobbing split**: the whole dock used to bob; now the pier structure is
+  static (so it aligns with the static bridges) and only the **buoy** bobs on
+  the water (its own `buoyRef` group; `useFrame` moved to just the buoy).
+- `Ports()` `DOCK_Y` now `= PLATFORM_TOP` (was 0.12) so the bridge dock-ends
+  land on the platform deck. Removed the now-unused `plankGeo`. Owner ring
+  moved to the platform top (`y=PLATFORM_TOP+0.01`, radius bumped to fit the
+  wider deck). Hover name-tag, top-down rate badge, trade math — all untouched.
+- `spec.md` §4 harbor amendment updated in the same commit (frozen gameplay
+  screen changed on explicit user request).
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only change;
+  simulate is headless so logic is unaffected).
+- Playwright (throwaway `--no-save`, pre-installed Chromium at
+  `/opt/pw-browsers/chromium-1194`, reverted out of package.json): traditional
+  small board — default view shows the harbor ring intact; a low-angle zoomed
+  close-up confirms each harbor now has a wooden landing deck on visible
+  pilings with the mast/sign standing on it, bridges landing on the deck, and
+  the red buoy floating beside it. Zero page errors on every shot.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress) touched — no game logic, no
+  shared store/types/CSS. Geometry-only refinement; the sign's height,
+  orientation and two-sided readability are preserved. If tile-top/dock Y
+  levels change, keep `PLATFORM_TOP` (deck top) == `DOCK_Y` (bridge start).
