@@ -112,7 +112,10 @@ request AND a matching update to this section. Its defining elements:
   (Amendment: coastal harbors render as small docks with a hanging "N:1"
   sign out on the water; the sign hangs from a raised mast and is large
   enough to read the rate + resource from the default camera, and reads
-  correctly (non-mirrored) from either side; a claimed
+  correctly (non-mirrored) from either side. Two wooden plank bridges (with
+  side rails + corner posts) span from each dock up to the two coastal nodes
+  it serves, so it reads at a glance which corners the harbor connects to; a
+  claimed
   harbor shows a ring + buoy in the owner's color. Hovering a dock shows
   its name and rate. As the camera orbits toward a near top-down view — where
   the vertical signs go edge-on — a dedicated flat, screen-facing DOM badge
