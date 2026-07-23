@@ -22,11 +22,11 @@ const buoyGeo = new THREE.SphereGeometry(0.06, 8, 6);
 const woodMat = new THREE.MeshStandardMaterial({ color: '#8a5a33' });
 const postMat = new THREE.MeshStandardMaterial({ color: '#6f4a2b' });
 
+// Shared scratch vector for the per-frame camera-angle check (no per-frame alloc).
 const camDir = new THREE.Vector3();
 
-function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null }) {
+function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: string | null; showRate: boolean }) {
   const ref = useRef<THREE.Group>(null);
-  const signRef = useRef<THREE.Group>(null);
   const [hover, setHover] = useState(false);
   const signTex = useMemo(
     () => portSignTexture(port.rate, port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind]),
@@ -42,21 +42,13 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
   );
   const phase = useMemo(() => port.x + port.z, [port.x, port.z]);
 
-  useFrame(({ clock, camera }) => {
+  useFrame(({ clock }) => {
     if (ref.current) ref.current.position.y = 0.02 + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
-    // When the camera looks down from near overhead, the vertical sign is
-    // edge-on and unreadable — tilt it flat so the N:1 ratio faces upward.
-    // elevation = downward component of the view (0 = horizontal, 1 = top-down).
-    if (signRef.current) {
-      camera.getWorldDirection(camDir);
-      const elevation = THREE.MathUtils.clamp(-camDir.y, 0, 1);
-      const t = THREE.MathUtils.smoothstep(elevation, 0.65, 0.92);
-      signRef.current.rotation.x = -Math.PI / 2 * t;
-    }
   });
 
   // face the sign back toward the island center
   const yaw = port.angle + Math.PI;
+  const rateEmoji = port.kind === 'generic' ? '⚓' : RES_EMOJI[port.kind];
 
   return (
     <group position={[port.x, 0, port.z]} rotation={[0, yaw, 0]}>
@@ -69,7 +61,7 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
         <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
         {/* two back-to-back front-facing planes so the text reads correctly
             from either side (a single DoubleSide plane mirrors the back) */}
-        <group ref={signRef} position={[0.04, 0.4, 0.05]}>
+        <group position={[0.04, 0.4, 0.05]}>
           <mesh geometry={signGeo} rotation={[0, Math.PI, 0]}>
             <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
           </mesh>
@@ -85,6 +77,17 @@ function PortDock({ port, ownerColor }: { port: Port; ownerColor: string | null 
           </mesh>
         )}
       </group>
+      {/* Dedicated flat readout: when the camera looks from near overhead the
+          vertical sign goes edge-on, so a screen-facing DOM badge fades in with
+          the trade ratio. Anchored over the dock so you know which harbor it is. */}
+      <Html position={[0, 0.7, 0]} center style={{ pointerEvents: 'none' }} zIndexRange={[20, 0]}>
+        <div
+          className={`port-rate-badge${showRate ? ' on' : ''}`}
+          style={ownerColor ? { borderColor: ownerColor } : undefined}
+        >
+          {rateEmoji} {port.rate}:1
+        </div>
+      </Html>
       {hover && (
         <Html position={[0, 0.9, 0]} center style={{ pointerEvents: 'none' }} rotation={[0, -yaw, 0]}>
           <div className="name-tag">⚓ {port.name} · {port.rate}:1 {port.kind === 'generic' ? '' : RES_EMOJI[port.kind]}</div>
@@ -98,6 +101,15 @@ export function Ports() {
   const ports = useGame((s) => s.game?.board.ports);
   const buildings = useGame((s) => s.game?.buildings);
   const players = useGame((s) => s.game?.players);
+  // Show the flat rate badges only when the camera is near top-down (where the
+  // 3D signs are edge-on). Hysteresis (on >0.8, off <0.68) avoids flicker.
+  const [topDown, setTopDown] = useState(false);
+  useFrame(({ camera }) => {
+    camera.getWorldDirection(camDir);
+    const elevation = -camDir.y; // 0 = horizontal view, 1 = straight down
+    if (!topDown && elevation > 0.8) setTopDown(true);
+    else if (topDown && elevation < 0.68) setTopDown(false);
+  });
   if (!ports || !buildings || !players) return null;
 
   return (
@@ -105,7 +117,7 @@ export function Ports() {
       {ports.map((port) => {
         const ownerId = port.vertices.map((v) => buildings[v]?.owner).find((o) => o != null);
         const ownerColor = ownerId != null ? players[ownerId].color : null;
-        return <PortDock key={port.id} port={port} ownerColor={ownerColor ?? null} />;
+        return <PortDock key={port.id} port={port} ownerColor={ownerColor ?? null} showRate={topDown} />;
       })}
     </group>
   );

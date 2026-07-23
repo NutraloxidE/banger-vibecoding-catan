@@ -788,3 +788,34 @@ toggles, applied "traditional-style" across all map sizes (small = exact).
 - `npm run simulate` reaches a winner on all 8 configs.
 - Note: no live top-down screenshot this session (Playwright not installed);
   the default-view invariance is guaranteed by the threshold math above.
+
+---
+
+## 2026-07-23 (2) — Harbor rate: dedicated top-down UI (replaces sign tilt)
+
+### What changed (supersedes the earlier same-day tilt entry)
+- Reverted the sign-tilt approach. Per user follow-up, the harbor trade rate is
+  now surfaced through a **dedicated UI** instead of reorienting the 3D sign.
+- `src/scene/Ports.tsx`: each harbor renders a flat, screen-facing DOM badge
+  (drei `<Html>`) reading its ratio ("🪵 2:1" / "⚓ 3:1"), border-tinted to the
+  owner's color when claimed. The badges fade in only when the camera is near
+  top-down (where the vertical 3D signs go edge-on) and fade back out otherwise.
+  `Ports()` runs one `useFrame` reading the camera's downward view component and
+  toggles a `topDown` boolean with hysteresis (on >0.8, off <0.68) to avoid
+  flicker; the flag is passed to every `PortDock`. The 3D signs are unchanged.
+- `src/styles.css`: new `.port-rate-badge` (+ `.on`) — opacity/scale transition,
+  `pointer-events: none`. Modeled on `.name-tag`.
+- `spec.md` §4 harbor amendment updated to describe the badge behavior.
+
+### Why the default/frozen view is unchanged
+- Default camera `[7,9,9]` → downward component ≈ 0.62, below the 0.68 off
+  threshold, so `topDown` is false and every badge stays at opacity 0
+  (pointer-events none). The badges are DOM overlays only — the 3D scene is
+  untouched at every angle.
+
+### Verified
+- `npm run build` + `npm run simulate` (all 8 configs) pass.
+- Playwright (throwaway, reverted from package.json), 1280×800, traditional
+  ports: default view = 9 badges rendered / 0 shown (screenshot matches the
+  prior frozen look); after orbiting to top-down = 9/9 badges faded in and
+  readable over each harbor; zero page errors.
