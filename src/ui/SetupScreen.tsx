@@ -173,17 +173,14 @@ export function SetupScreen() {
         </div>
 
         <h3 className="cfg-label">{t('setup.preset')}</h3>
-        <div className="preset-grid">
+        <select className="preset-select" value={activePreset ?? 'custom'}
+          onChange={(e) => { sfx.click(); applyPreset(e.target.value as PresetKey); }}>
           {PRESET_ORDER.map((k) => (
-            <button key={k} className={`preset-card ${activePreset === k ? 'on' : ''}`}
-              onClick={() => { sfx.click(); applyPreset(k); }}>
-              <span className="preset-emoji">{PRESET_EMOJI[k]}</span>
-              <span className="preset-name">{t(`preset.${k}`)}</span>
-              <span className="preset-desc">{t(`preset.${k}D`)}</span>
-            </button>
+            <option key={k} value={k}>{`${PRESET_EMOJI[k]} ${t(`preset.${k}`)}`}</option>
           ))}
-        </div>
-        {activePreset === null && <div className="preset-custom">{t('preset.customD')}</div>}
+          {activePreset === null && <option value="custom" disabled>{`🎛️ ${t('preset.custom')}`}</option>}
+        </select>
+        <div className="preset-desc">{activePreset ? t(`preset.${activePreset}D`) : t('preset.customD')}</div>
 
         <div className="map-preview">
           <MapPreview mapSize={mapSize} seed={seed} goldenHex={goldenHex} />

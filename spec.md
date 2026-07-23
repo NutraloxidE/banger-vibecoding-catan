@@ -50,11 +50,11 @@ Order, top to bottom:
 
 1. Header row: `← Back` button, `Configure Your World` heading, language
    toggle at the right.
-2. **World Preset** — a 2×2 grid of single-select cards that bundle the
-   chaos modifiers into escalating flavors; **Banger** is the default.
-   Selecting one applies its full set of toggles below; tweaking any
-   individual modifier afterward drops to an unselected "Custom" state
-   (a caption notes this). The presets:
+2. **World Preset** — a dropdown that bundles the chaos modifiers into
+   escalating flavors; **Banger** is the default. Picking one applies its
+   full set of toggles below (a caption under the dropdown describes the
+   selection); tweaking any individual modifier afterward drops to a
+   disabled "Custom" entry. The presets:
    - 🌾 **Normal** — really just plain Catan: every chaos modifier and
      World Events off.
    - 🔥 **Banger** (default) — pleasantly weird: World Events + NPC Drama on.

@@ -658,3 +658,16 @@ convenience over the same `MatchConfig`; no store/types/rules/simulate changes.
   update shipped in the same commit. The preset just drives the existing
   toggles — no new mechanic, and the Chaos Modifier cards stay fully editable
   (that's what produces the "Custom" state).
+
+### Follow-up same day — preset is a dropdown (user request: プルダウンで)
+- Swapped the 2×2 `.preset-grid` cards for a native `<select className="preset-select">`
+  (custom gold chevron via inline SVG `background-image`, `appearance:none`).
+  Options are the four presets; a disabled "🎛️ Custom" option appears + is shown
+  selected only when flags match no preset. A `.preset-desc` caption under the
+  dropdown shows the active preset's (or Custom's) description. `applyPreset`
+  now fires from the select's `onChange`. `matchPreset`/`PRESETS`/`PRESET_EMOJI`
+  unchanged. New i18n `preset.custom`. CSS: `.preset-grid/.preset-card/.preset-emoji/
+  .preset-name/.preset-custom` removed, `.preset-select` added, `.preset-desc` kept.
+  spec.md §3 item 2 reworded (grid → dropdown). Build + all 6 sims pass;
+  Playwright confirms the dropdown defaults to 🔥 Banger, selecting 🌋 BANGER
+  MAXXING lights the preview's Golden Hex — zero page errors.

@@ -66,6 +66,7 @@ const M: Record<string, [string, string]> = {
   'preset.coreD': ['A bit weirder still.', 'もうちょいおかしい。'],
   'preset.maxxing': ['BANGER MAXXING', 'BANGER MAXXING'],
   'preset.maxxingD': ['Every chaos element maxed.', 'おかしい要素全部マックス。'],
+  'preset.custom': ['Custom', 'カスタム'],
   'preset.customD': ['Custom mix — your own set of modifiers.', 'カスタム — 自分好みの組み合わせ。'],
   'setup.mapSize': ['Map Size', 'マップサイズ'],
   'setup.small': ['Small', '小'],
