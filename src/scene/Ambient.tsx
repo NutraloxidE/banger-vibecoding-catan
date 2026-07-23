@@ -68,8 +68,12 @@ function Cloud({ x, y, z, s, speed }: { x: number; y: number; z: number; s: numb
   );
 }
 
-export function Ambient({ boardRadius }: { boardRadius: number }) {
-  const worldR = boardRadius * 1.9 + 3;
+export function Ambient({ boardRadius, boatDistance }: { boardRadius: number; boatDistance?: number }) {
+  // Inner boat orbit radius. Defaults to the original formula (keeps the frozen
+  // title screen unchanged); GameScene passes a larger value so the gameplay
+  // boats stay well offshore and don't visually merge with the coastal harbor
+  // docks at low camera angles.
+  const worldR = boatDistance ?? boardRadius * 1.9 + 3;
   const clouds = useMemo(() => Array.from({ length: 5 }, (_, i) => ({
     x: (i * 13.7) % 30 - 15,
     y: 6 + (i % 3) * 1.4,

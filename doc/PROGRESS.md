@@ -1001,3 +1001,40 @@ across both layouts (`src/game/board.ts` only):
   shared store/types/CSS. Geometry-only refinement; the sign's height,
   orientation and two-sided readability are preserved. If tile-top/dock Y
   levels change, keep `PLATFORM_TOP` (deck top) == `DOCK_Y` (bridge start).
+
+---
+
+## 2026-07-23 — Boats kept offshore (stop merging with harbor docks)
+
+### What changed (user request: 船がドックと一体化してるので船をもう少し離して)
+- The circling ambient boats orbit at a constant world radius far outside the
+  harbor docks, but at low/zoomed camera angles a near-side boat (at the
+  waterline) projected right onto a coastal dock and read as "merged" with it.
+  Pushed the boats further offshore so they clearly separate from the docks.
+- `src/scene/Ambient.tsx`: `Ambient` gains an optional `boatDistance?: number`
+  prop; the inner boat orbit `worldR = boatDistance ?? boardRadius * 1.9 + 3`
+  (the `??` keeps the **default = the original formula**). The outer boat stays
+  `worldR + 1.6`.
+- `src/scene/GameScene.tsx`: passes `boatDistance={boardRadius * 2.5 + 5}` — so
+  the gameplay boats move out (small board 11.55→16.25 inner radius, docks at
+  ~4.9), clearing the coast at low angles.
+- **Frozen title screen unchanged**: `TitleScene.tsx` renders `<Ambient
+  boardRadius={6.3} />` with **no** `boatDistance`, so it falls back to the
+  original formula → title boats byte-for-byte identical (verified). Ambient's
+  only two consumers are GameScene + TitleScene.
+- `spec.md` §4 boats bullet updated in the same commit (frozen gameplay screen
+  changed on explicit user request).
+
+### Verified
+- `npm run build` passes (render-only change; `npm run simulate` unaffected —
+  headless, no ambient scene — left from the prior harbor entry, all 8 green).
+- Playwright (throwaway `--no-save`, reverted out of package.json): same
+  low-angle traditional-small view that previously showed a boat sitting on the
+  left "2:1" dock now shows that dock clear, with the boat riding higher/further
+  out on open water; title screen screenshot unchanged. Zero page errors.
+
+### Notes / scope
+- Only `src/scene/Ambient.tsx` + `src/scene/GameScene.tsx` (+ spec/progress)
+  touched. `boatDistance` is additive/optional so the shared `Ambient` stays
+  safe for the title screen. If boats ever look too far on huge boards, tune the
+  `boardRadius * 2.5 + 5` in GameScene (title is independent).

@@ -102,7 +102,9 @@ request AND a matching update to this section. Its defining elements:
 
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
-  water/boats (slightly enlarged for presence)/clouds, orbit/zoom/pan camera
+  water/boats (slightly enlarged for presence; kept well offshore so they
+  read as open-water vessels and don't visually merge with the harbor docks)/
+  clouds, orbit/zoom/pan camera
   with soft auto-focus on events. (Desktop: WASD glides the view horizontally
   along the ground relative to the camera's facing direction — W forward,
   S back, A/D strafe — and takes precedence over auto-focus while held; the
