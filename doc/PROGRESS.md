@@ -856,3 +856,18 @@ toggles, applied "traditional-style" across all map sizes (small = exact).
   geometries are created per-port via inline `<boxGeometry>` (length is stable
   per port, so no per-frame churn); corner-post geometry is a shared module
   const. If vertex/dock Y levels change, update `DOCK_Y`/`NODE_Y` in `Ports()`.
+
+### Follow-up same day — fix bridge roll on steep/short spans (user report)
+- The first pass oriented each `Bridge` with `Quaternion.setFromUnitVectors(X,
+  dir)` — the **shortest-arc** rotation. When a span rose from the low dock to
+  the higher node with any sideways component, that shortest arc introduced an
+  unwanted **roll about the deck's long axis**, so short/steep bridges looked
+  twisted. Fixed by building an **explicit orthonormal basis** instead: X =
+  heading (dock→node, incl. slope), Z = `cross(X, worldUp)` normalized (the
+  horizontal width axis, so the deck never rolls), Y = `cross(Z, X)` (deck up);
+  quaternion via `Matrix4.makeBasis(x,y,z)`. Near-vertical guard falls back to
+  a fixed Z if `cross(X,up)` degenerates (our bridges are never that steep).
+  Deck now always lies flat-top regardless of span length/slope.
+- Verified: `npm run build` passes; Playwright close-ups (same seed as before)
+  confirm every bridge deck is flat, fanning in a clean V from dock to both
+  nodes, no twist; zero page errors. Only `Ports.tsx` touched.

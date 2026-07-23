@@ -25,20 +25,28 @@ const postMat = new THREE.MeshStandardMaterial({ color: '#6f4a2b' });
 
 // Shared scratch vector for the per-frame camera-angle check (no per-frame alloc).
 const camDir = new THREE.Vector3();
-// Local +X axis a bridge deck is built along, aligned to the dock→node vector.
-const X_AXIS = new THREE.Vector3(1, 0, 0);
+const WORLD_UP = new THREE.Vector3(0, 1, 0);
 
 // A plank walkway spanning from the harbor dock (out on the water) up to one of
 // the two coastal nodes it serves, so it reads at a glance which corners the
-// harbor connects to. Oriented in world space via a quaternion so it can rise
-// from the low dock to the higher shore.
+// harbor connects to. Oriented in world space so it heads toward the node and
+// rises from the low dock to the higher shore — the deck's width axis is kept
+// horizontal (no roll about the long axis), so the plank always lies flat-top
+// even when a short span forces a steep slope.
 function Bridge({ from, to }: { from: [number, number, number]; to: [number, number, number] }) {
   const { pos, quat, len } = useMemo(() => {
     const f = new THREE.Vector3(...from);
     const t = new THREE.Vector3(...to);
     const dir = t.clone().sub(f);
     const length = dir.length();
-    const q = new THREE.Quaternion().setFromUnitVectors(X_AXIS, dir.clone().normalize());
+    // Build an explicit orthonormal basis instead of a shortest-arc rotation:
+    // X = heading (dock→node, with slope); Z = horizontal width (perpendicular
+    // to both the heading and world-up) so the deck never rolls; Y = deck up.
+    const x = dir.clone().normalize();
+    const z = new THREE.Vector3().crossVectors(x, WORLD_UP);
+    if (z.lengthSq() < 1e-6) z.set(0, 0, 1); else z.normalize(); // near-vertical guard
+    const y = new THREE.Vector3().crossVectors(z, x).normalize();
+    const q = new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, y, z));
     const mid = f.add(t).multiplyScalar(0.5);
     return { pos: mid.toArray() as [number, number, number], quat: q.toArray() as [number, number, number, number], len: length };
   }, [from, to]);
