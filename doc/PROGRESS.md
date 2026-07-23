@@ -871,3 +871,59 @@ toggles, applied "traditional-style" across all map sizes (small = exact).
 - Verified: `npm run build` passes; Playwright close-ups (same seed as before)
   confirm every bridge deck is flat, fanning in a clean V from dock to both
   nodes, no twist; zero page errors. Only `Ports.tsx` touched.
+
+---
+
+## 2026-07-23 — Traditional ports: ring the whole coast, anchored to the token frame
+
+### What changed (user request: トラディショナル港の位置・繋がり方を本物のカタンに合わせて洗練。数字トークン=Aの位置と回転方向・港種の標準順・間隔で。写真の赤丸は拾い画像で無関係)
+The Traditional Ports layout had a real bug: `generatePorts` picked coastal
+edges with a **greedy angular walk** that stopped the instant it reached the
+target count, so it never wrapped around — on the 19-tile board ~1/3 of the
+coast (the bottom arc) got **zero harbors**. It also assigned kinds with an
+independent RNG, so ports rotated separately from the numbers. Confirmed with
+the user (AskUserQuestion): make traditional ports **fixed to the number-token
+frame**.
+
+All in `src/game/board.ts` (only file touched):
+- **`traditionalTokens` now returns `{ tokens, frame }`** where `frame =
+  { startAng, dir }` is the chosen spiral start (tile "A"'s angle + winding
+  direction). `generateBoard` captures it as `portFrame` and threads it into
+  `generatePorts(base, seed, traditionalPorts, portFrame)`.
+- **New `pickTraditionalPorts(ordered, target, frame)`**: selects coastal
+  edges **evenly around the full coast** (slot `k` = `round(k*n/target)` edges
+  from the A-anchored start, walked in the token `dir`), with a shared-vertex
+  guard that steps along if a slot collides. Kinds run in the printed
+  clockwise sequence `TRADITIONAL_PORT_ORDER = [generic, wheat, ore, generic,
+  sheep, generic, brick, wood, generic]` (cycled for longer coasts). Harbor #0
+  sits nearest A, so the harbor↔numbered-tile relationship reproduces the real
+  board (seed → rotation/reflection of the same canonical layout).
+- **`generatePorts`** now branches: traditional → `pickTraditionalPorts`;
+  procedural (default board) → the **unchanged** greedy angular walk + shuffled
+  kinds (moved verbatim into the `else` branch — default boards are byte-for-
+  byte identical). When Traditional Ports is on but Traditional Numbers is off
+  (no token frame), a deterministic per-seed frame (`seed+':portframe'`) keeps
+  the ring's orientation stable.
+- Removed the old `traditionalPortKinds` (superseded).
+- `spec.md` §5 Traditional Ports rewritten to match, same commit.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (incl. the two
+  traditional runs → real winners).
+- Inspection script (small/medium/large × several seeds): traditional boards
+  now have **no shared vertices**, **max angular gap ~40–49°** (ideal 40° for 9
+  ports; was ~110°+ empty arc before), and the kind sequence is always the
+  canonical cycle (rotated or mirrored per seed, matching the token winding).
+- Playwright (throwaway, pre-installed Chromium at
+  `/opt/pw-browsers/chromium-1194`, reverted out of package.json): traditional
+  small board, top-down — **9 docks/badges ring the entire coast** including
+  the previously-empty bottom; zero page errors. `git status` shows only
+  `board.ts` + spec/progress.
+
+### Gotchas / notes
+- Frozen gameplay screen changed on explicit user request; matching spec update
+  shipped in the same commit. Render path (`Ports.tsx`) untouched — this is
+  purely which coastal edges get harbors + their kinds.
+- The token↔port alignment relies on `traditionalTokens` returning the SAME
+  `frame` used to lay the numbers. If the token spiral's start logic changes,
+  the ports follow automatically (they read the returned frame).
