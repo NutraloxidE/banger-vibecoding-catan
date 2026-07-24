@@ -6,7 +6,20 @@ Vercel with zero configuration (no server, DB, env vars, or external assets).
 
 ## Development workflow — `spec.md` is the Single Source of Truth
 
-Follow this order at the start of EVERY session / task:
+### Session and branch definition — one session, one branch
+
+- A **session** means the entire Codex conversation, counted from the very
+  first message in that conversation through its end. Later user messages,
+  follow-up requests, task additions, context compaction, and continued work
+  in that same conversation are all part of the same session; they do not
+  start a new session.
+- Use **exactly one dedicated branch per session**. Create it once before the
+  first edit, keep using it for the entire conversation, and do not create or
+  switch to another task branch when a follow-up request arrives. A new
+  conversation starts a new session and therefore gets a new branch; do not
+  reuse a previous session's branch.
+
+Follow this order at the start of EVERY session:
 
 1. **Read `AGENTS.md`** (this file) — conventions and commands.
 2. **Update `main` before branching.** Run `git fetch origin`, compare local
@@ -14,10 +27,11 @@ Follow this order at the start of EVERY session / task:
    with `git switch main` then `git pull --ff-only origin main`. Never discard
    or overwrite an in-flight dirty worktree to do this; preserve existing work
    first, then integrate the latest `origin/main` only when it is safe.
-3. **Create a dedicated session branch from the up-to-date `main` before
-   editing.** Never work directly
-   on `main`. Use a short task-specific name under `codex/` (for example,
-   `codex/20260724-refine-tiles`). If the worktree already contains in-flight
+3. **Create the session's one dedicated branch from the up-to-date `main`
+   before editing.** Never work directly on `main`. Use a short
+   session-specific name under `codex/` (for example,
+   `codex/20260724-refine-tiles`). Keep all follow-up work from the same
+   conversation on this branch. If the worktree already contains in-flight
    changes, preserve them by branching from the current `HEAD`; never discard
    or overwrite them just to change branches. Push each meaningful completed
    session branch to `origin` so its Vercel Preview is available from a phone.

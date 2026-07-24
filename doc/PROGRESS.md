@@ -2003,3 +2003,22 @@ gameplay-only framing/features:
   The settings panel opens downward from it and remains fully inside the
   viewport. At 1280px the existing `top: 64px; right: 12px` desktop position
   is unchanged. No browser warnings or errors.
+
+---
+
+## 2026-07-24 — One-session/one-branch rule clarified
+
+### What changed
+- `AGENTS.md` now explicitly defines a session as the entire Codex
+  conversation beginning with its very first message.
+- Follow-up requests, added tasks, context compaction, and continued work in
+  that conversation remain part of the same session.
+- Each session must create and use exactly one dedicated branch; later
+  requests in the same conversation stay on that branch, while a new
+  conversation gets a new branch and must not reuse the old one.
+
+### Verification
+- Documentation-only change; game behavior, visuals, rules, and `spec.md` are
+  unchanged.
+- `npm run build` passes, and all eight `npm run simulate` configurations
+  reach a winner.
