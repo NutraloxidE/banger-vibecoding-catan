@@ -1564,3 +1564,55 @@ the actual island silhouette.
   backtick-free.
 - `MAX_SHORE_TILES = 24` sizes the GLSL `uShoreTiles[24]` array; raising the
   max map radius past 4 means raising this too.
+
+---
+
+## 2026-07-24 — Sink the gameplay island into the sea (tiles no longer float)
+
+### What changed (user request: 波打ち際を追加したらタイルが浮いていることが判明した。タイルと、それの上に乗ってるオブジェクトを、水面にくっついて少し沈むまで下げて)
+The shoreline surf-foam ring (added in the two entries above) made it obvious
+that the gameplay island's hex tiles hovered just above the water: tile bottoms
+sit at world y=0, the gameplay sea is at `GAMEPLAY_WATER_LEVEL = -0.02`, so the
+coast floated ~0.02 over the foam line. Lowered the whole board a little so the
+coastline dips just below the waterline instead.
+
+- **`src/scene/Ambient.tsx`**: new `export const GAMEPLAY_BOARD_SINK = 0.1` next
+  to the water-level constants (island base 0 → -0.1, so the sea laps ~0.08 up
+  the 0.3-tall tile side — "少し沈む"). Additive; no existing behavior touched.
+- **`src/scene/GameScene.tsx`**: wrapped the board-anchored content — `Tiles`
+  (terrain + tokens + robber), `Pieces` (buildings), `Highlights`, `FxLayer`
+  (production rings) — in a single `<group position={[0, -GAMEPLAY_BOARD_SINK, 0]}>`.
+  Because every one of those anchors to the tile-top reference, one wrapper
+  drops them all together and preserves every relative offset. `Ambient` (water),
+  `Ports` (docks/boats), `DiceRitual`, and `CameraRig` stay OUTSIDE the group.
+- **`src/scene/Ports.tsx`**: docks/boats/buoys are hand-tuned to the water and
+  must NOT sink, but the plank bridges land on the coastal settlement nodes,
+  which did sink — so `NODE_Y` dropped from `0.3` to `0.3 - GAMEPLAY_BOARD_SINK`
+  (the water-anchored `DOCK_Y`/`from` end is unchanged; bridges are just a touch
+  less steep). Only the land-side bridge endpoint moved.
+
+### Why a GameScene wrapper (not editing Tiles)
+`Tiles` is shared with the FROZEN title screen (`TitleScene`); `Pieces`,
+`Highlights`, `Ports`, `FxLayer` are gameplay-only. Sinking via a wrapper group
+in `GameScene` leaves the `Tiles` component itself byte-for-byte unchanged, so
+the title screen (which has its own deeper sea at `DEFAULT_WATER_LEVEL = -0.16`
+and is not part of this request) is untouched.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 8 configs
+  (render-only change).
+- Playwright (throwaway `playwright --no-save`, chromium at
+  `/opt/pw-browsers/chromium-1194`, script + preview reverted — `git status`
+  shows only `Ambient.tsx`/`GameScene.tsx`/`Ports.tsx` + spec/progress): a fresh
+  `small/3npc` board (`window.__game.newGame(...)`) shows the island sitting IN
+  the sea, coast dipping to the waterline with the surf-foam lace hugging it;
+  docks + plank bridges still meet the coast; placement highlight rings, tokens,
+  and HUD unchanged; zero page errors.
+
+### Notes / scope
+- Frozen gameplay screen changed per explicit user request; `spec.md` §4 (3D
+  board / water) updated in the same commit.
+- `GAMEPLAY_BOARD_SINK` is the single knob for how deep the island sits — bump
+  it for more/less submersion; it stays in sync across GameScene and Ports.
+- If more board-anchored scene content is ever added to `GameScene`, put it
+  inside the sink `<group>` (or it will float at the old height).

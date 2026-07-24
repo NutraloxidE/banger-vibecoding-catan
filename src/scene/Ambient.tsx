@@ -21,6 +21,13 @@ export const DEFAULT_WATER_LEVEL = -0.16;
 // the coastline just meeting the water). Shared with Ports.tsx so the harbor
 // boat + buoy float at the same line.
 export const GAMEPLAY_WATER_LEVEL = -0.02;
+// How far the gameplay island is lowered into the sea so the coastline dips a
+// little BELOW the waterline instead of hovering above it (the surf-foam ring
+// made the old ~hairline gap read as "floating"). GameScene sinks the whole
+// board-content group (tiles + everything riding on them) by this; Ports drops
+// its coastal bridge nodes by the same amount so the piers still meet the shore.
+// The water itself and the water-anchored dock/boat/buoy are NOT sunk.
+export const GAMEPLAY_BOARD_SINK = 0.1;
 
 // Cellular-noise (Worley) water surface. The sea plane is a subdivided ring
 // (a circle keeps the original silhouette, but a fan `circleGeometry` has no

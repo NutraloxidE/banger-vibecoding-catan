@@ -128,7 +128,13 @@ request AND a matching update to this section. Its defining elements:
   outward from each tile edge and fades with distance, distinct
   from the open-water cell-border foam; raised on the gameplay
   screen so the island + docks sit IN the sea rather than floating above
-  it — the frozen title keeps the original sea level; the cell drift runs at
+  it, and on the gameplay screen the whole board (tiles + everything riding
+  on the tile tops — decorations, tokens, robber, buildings, highlights,
+  production FX) is lowered a little so the coastline dips just below the
+  waterline instead of hovering above the surf-foam ring; the docks/boats and
+  the water are not lowered, and the coastal bridge nodes drop with the shore
+  so the piers still meet it — the frozen title keeps the original sea level
+  and board height; the cell drift runs at
   a slightly slower time frequency than the title screen's water for a calmer
   swell)/boats (slightly
   enlarged for presence; kept well offshore so they
