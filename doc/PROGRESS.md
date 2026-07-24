@@ -1303,3 +1303,44 @@ explicit user request with a matching spec update.
   `circleGeometry` (a fan has none). If you rescale the board, the ring already
   tracks `radius`; retune `amp`/frequency in `WATER_VERT` if the swell reads too
   strong/weak. `cameraPosition` in the frag shader is a three built-in uniform.
+
+---
+
+## 2026-07-24 (2) — Water: higher resolution, pastel palette, toon shading
+
+### What changed (user request: もっと解像度高くして 色を薄くしてパステリーな感じでトゥーン)
+Follow-up to the same-day Worley wave surface, refining its look per user
+feedback. All in `src/scene/Ambient.tsx` (`Water`), same shared component as
+before (title + gameplay, both frozen, changed on explicit request).
+
+- **Resolution:** `RingGeometry` bumped 120×44 → 200×72 segments (finer mesh
+  to carry the displacement). Added a **third, finer noise octave**
+  (`cellular(w * 1.15 + 11.0)`, weight 0.12) on top of the existing two, so the
+  wave pattern reads with more small-scale ripple detail; normal-sample epsilon
+  tightened 0.4 → 0.25 to resolve the finer bumps. Base amplitude trimmed
+  0.17 → 0.16 to offset the added octave's extra height.
+- **Pastel palette:** `uColorDeep` `#0e5482`→`#a3d3ec`, `uColorShallow`
+  `#2a86be`→`#dcf1f8`, `uColorCrest` `#c6e6f4`→`#ffffff` (bright, lighter,
+  lower-saturation blues); opacity 0.93→0.9. Underlayer circle color
+  `#0c3f63`→`#7bb0cf` to match (avoids a harsh dark ring showing through the
+  now-light, semi-transparent surface at the edges).
+- **Toon/cel shading (fragment shader):** diffuse term quantized to 4 hard
+  bands (`floor(diff*4+0.5)/4`) instead of a continuous gradient; specular
+  swapped from a smooth `pow` falloff to a binary `step` (crisp glint, no
+  soft highlight); depth-based deep/shallow color mix quantized to 3 bands;
+  foam border changed from a soft `smoothstep` blend to a hard `step` edge
+  (no gradient) — the whole surface now reads as flat-shaded cel bands with
+  crisp foam lines instead of a smooth PBR-ish gradient.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 8 configs
+  (render-only change).
+- Playwright (throwaway install + preview server, both reverted — `git status`
+  shows only `Ambient.tsx` + spec/progress): title screen screenshots (two,
+  ~1.5s apart) show a light pastel-blue/white toon sea with a visibly finer,
+  hard-edged cellular pattern and animated foam lines; zero page errors.
+
+### Notes
+- Same gotcha as the first Worley entry: `Water` is shared by title + gameplay,
+  no per-screen toggle. `spec.md` §2/§4 updated in the same commit to describe
+  the resolution/palette/toon changes.

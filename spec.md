@@ -31,8 +31,9 @@ Keep it exactly as-is; the only later addition kept is the language toggle.
 
 - Animated 3D demo island (fixed seed `HEXTOPIA-TITLE`) with slowly
   auto-orbiting camera, atmospheric lighting, fog, sky, water (a
-  cellular-noise / Worley wave surface — vertex-displaced swell with
-  gradient-derived shading and foam on the cell crests), boats,
+  cellular-noise / Worley wave surface, high-resolution mesh + a fine
+  third noise octave for detailed ripples, cel/toon-shaded in hard bands
+  with a crisp foam edge, pastel blue/white palette), boats,
   drifting clouds. Nothing more (no particles, birds, or launch
   transitions — tried and rejected by the user).
 - Centered title block: kicker line, "HEXFALL" logo (gradient, drop
@@ -104,12 +105,14 @@ request AND a matching update to this section. Its defining elements:
 
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
-  water (a cellular-noise / Worley wave surface — the sea plane is
-  vertex-displaced by an animated Worley height field, shaded from the
-  field's gradient with a specular glint and foam where the cells meet;
-  raised on the gameplay screen so the island + docks sit IN the sea
-  rather than floating above it — the frozen title keeps the original sea
-  level)/boats (slightly enlarged for presence; kept well offshore so they
+  water (a cellular-noise / Worley wave surface — the sea plane is a
+  high-resolution mesh vertex-displaced by an animated 3-octave Worley
+  height field; cel/toon-shaded in hard bands from the field's gradient
+  with a crisp specular glint and a hard-edged foam line where the cells
+  meet, in a light pastel blue/white palette; raised on the gameplay
+  screen so the island + docks sit IN the sea rather than floating above
+  it — the frozen title keeps the original sea level)/boats (slightly
+  enlarged for presence; kept well offshore so they
   read as open-water vessels and don't visually merge with the harbor docks)/
   clouds, orbit/zoom/pan camera
   with soft auto-focus on events. (Desktop: WASD glides the view horizontally

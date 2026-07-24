@@ -61,13 +61,16 @@ vec2 cellular(vec2 p){
   return vec2(sqrt(f1), sqrt(f2));
 }
 
-// Two octaves of cellular noise → a swell height field; also hands back the
-// coarse cell (F1,F2) so the fragment shader can foam the crests.
+// Three octaves of cellular noise → a swell height field (a fine high-freq
+// layer on top of the original two gives higher-resolution ripple detail);
+// also hands back the coarse cell (F1,F2) so the fragment shader can foam
+// the crests.
 float waveField(vec2 w, out vec2 cellOut){
   vec2 c1 = cellular(w * 0.18);
   vec2 c2 = cellular(w * 0.44 + 5.0);
+  vec2 c3 = cellular(w * 1.15 + 11.0);
   cellOut = c1;
-  return (c1.x - 0.5) * 0.9 + (c2.x - 0.5) * 0.35;
+  return (c1.x - 0.5) * 0.8 + (c2.x - 0.5) * 0.3 + (c3.x - 0.5) * 0.12;
 }
 
 void main(){
@@ -75,8 +78,8 @@ void main(){
   vec2 w = (modelMatrix * vec4(pos, 1.0)).xz; // world XZ so waves are stable
   vec2 cell;
   float h = waveField(w, cell);
-  const float amp = 0.17;
-  const float e = 0.4;
+  const float amp = 0.16;
+  const float e = 0.25;
   vec2 ignore;
   float hx = waveField(w + vec2(e, 0.0), ignore);
   float hz = waveField(w + vec2(0.0, e), ignore);
@@ -106,13 +109,18 @@ void main(){
   vec3 V = normalize(cameraPosition - vWorldPos);
   vec3 H = normalize(L + V);
   float diff = clamp(dot(N, L), 0.0, 1.0);
-  float spec = pow(clamp(dot(N, H), 0.0, 1.0), 60.0);
+  // Toon: quantize diffuse + depth shading into hard bands instead of a
+  // smooth gradient, and turn the specular into a crisp cel highlight.
+  float diffToon = floor(diff * 4.0 + 0.5) / 4.0;
+  float specRaw = pow(clamp(dot(N, H), 0.0, 1.0), 40.0);
+  float spec = step(0.55, specRaw);
   float depth = smoothstep(-0.5, 0.5, vHeight);
-  vec3 base = mix(uColorDeep, uColorShallow, depth);
-  // Foam where Worley cells border (F2-F1 small), biased toward wave crests.
-  float border = 1.0 - smoothstep(0.0, 0.15, vCell.y - vCell.x);
-  base = mix(base, uColorCrest, border * 0.55 * smoothstep(0.0, 0.35, vHeight + 0.12));
-  vec3 col = base * (0.55 + 0.6 * diff) + spec * vec3(1.0);
+  float depthToon = floor(depth * 3.0 + 0.5) / 3.0;
+  vec3 base = mix(uColorDeep, uColorShallow, depthToon);
+  // Foam where Worley cells border (F2-F1 small) — hard toon edge, no blend.
+  float border = step(vCell.y - vCell.x, 0.12) * step(-0.08, vHeight);
+  base = mix(base, uColorCrest, border);
+  vec3 col = base * (0.68 + 0.4 * diffToon) + spec * vec3(0.9);
   gl_FragColor = vec4(col, uOpacity);
 }
 `;
@@ -121,25 +129,25 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL }: { radius: number;
   const mat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
-      uColorDeep: { value: new THREE.Color('#0e5482') },
-      uColorShallow: { value: new THREE.Color('#2a86be') },
-      uColorCrest: { value: new THREE.Color('#c6e6f4') },
+      uColorDeep: { value: new THREE.Color('#a3d3ec') },
+      uColorShallow: { value: new THREE.Color('#dcf1f8') },
+      uColorCrest: { value: new THREE.Color('#ffffff') },
       uLightDir: { value: new THREE.Vector3(10, 18, 6).normalize() },
-      uOpacity: { value: 0.93 },
+      uOpacity: { value: 0.9 },
     },
     vertexShader: WATER_VERT,
     fragmentShader: WATER_FRAG,
     transparent: true,
     side: THREE.DoubleSide,
   }), []);
-  const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 120, 44), [radius]);
+  const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 200, 72), [radius]);
   useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.elapsedTime; });
   return (
     <group>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, level, 0]} geometry={geo} material={mat} raycast={() => null} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, level - 0.14, 0]} raycast={() => null}>
         <circleGeometry args={[radius * 6.2, 48]} />
-        <meshStandardMaterial color="#0c3f63" />
+        <meshStandardMaterial color="#7bb0cf" />
       </mesh>
     </group>
   );
