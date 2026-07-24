@@ -116,7 +116,7 @@ body.tension-2 .game-screen::after {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 34px; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 110%, rgba(4,10,18,0.55), transparent 60%);
+  background: radial-gradient(ellipse at 50% 110%, rgba(16, 30, 46, 0.55), transparent 60%);
 }
 .title-overlay .btn, .title-overlay input { pointer-events: auto; }
 .title-block { text-align: center; animation: floatIn 1.2s ease-out; }

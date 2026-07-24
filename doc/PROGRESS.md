@@ -1424,3 +1424,26 @@ switch.
 - Kept the *first* island on the exact original fixed seed so the very
   first frame a user sees is unchanged from before — only later swaps use
   random seeds.
+
+---
+
+## 2026-07-24 — Title screen vignette recolored (was reading as a black haze)
+
+### What changed
+User reported a black haze behind the title text, distinct from the logo's
+drop shadow. Traced it to `.title-overlay`'s `background: radial-gradient(...)`
+in `src/styles.css` — a dark vignette behind the title block/buttons, present
+since the first commit. Asked the user whether to remove it entirely or
+recolor it; they chose recolor. Changed the vignette color from a near-black
+`rgba(4,10,18,0.55)` to `rgba(16,30,46,0.55)` — the same navy already used by
+`--panel-lite` elsewhere in the UI — keeping the same shape/opacity/legibility
+purpose but matching the app's established dark-navy palette instead of
+reading as a flat black smudge.
+
+### Verified
+- `npm run build` and `npm run simulate` (all 8 configs) pass.
+- Playwright screenshot of the title screen confirms the vignette is now
+  navy-toned and less prominent as a "haze"; logo drop shadow unchanged.
+
+### Notes
+- `spec.md` §2 updated in the same commit per the frozen-surface rule.

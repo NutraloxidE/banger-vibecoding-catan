@@ -27,8 +27,9 @@ written here.
 ## 2. Title screen — first-commit look, FROZEN ✅
 
 **The atmosphere of the repository's first commit (07d9086) is the spec.**
-Keep it exactly as-is; the later additions kept are the language toggle and
-the periodic background-world regeneration below.
+Keep it exactly as-is; the later additions kept are the language toggle, the
+periodic background-world regeneration, and the recolored title vignette
+below.
 
 - Animated 3D demo island with slowly auto-orbiting camera, atmospheric
   lighting, fog, sky, water (a cellular-noise / Worley wave surface,
@@ -42,7 +43,10 @@ the periodic background-world regeneration below.
   world never looks static — same generator (`generateBoard`) the real game
   uses, just never persisted or played on.
 - Centered title block: kicker line, "HEXFALL" logo (gradient, drop
-  shadow, idle bobbing), subtitle.
+  shadow, idle bobbing), subtitle. Behind the block, a soft radial vignette
+  (navy, matching the app's `--panel-lite` tone) for legibility — recolored
+  from the original near-black tone, which read as a stray dark haze
+  distinct from the logo's own drop shadow.
 - Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
   `reset save` appear only when a valid save exists; footer tagline.
 - Language toggle (EN / 日本語) top-right — the sole permitted overlay.
