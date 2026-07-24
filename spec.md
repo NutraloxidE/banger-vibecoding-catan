@@ -27,15 +27,20 @@ written here.
 ## 2. Title screen — first-commit look, FROZEN ✅
 
 **The atmosphere of the repository's first commit (07d9086) is the spec.**
-Keep it exactly as-is; the only later addition kept is the language toggle.
+Keep it exactly as-is; the later additions kept are the language toggle and
+the periodic background-world regeneration below.
 
-- Animated 3D demo island (fixed seed `HEXTOPIA-TITLE`) with slowly
-  auto-orbiting camera, atmospheric lighting, fog, sky, water (a
-  cellular-noise / Worley wave surface, high-resolution mesh + a fine
-  third noise octave for detailed ripples, cel/toon-shaded in hard bands
-  with a crisp foam edge, pastel blue/white palette), boats,
-  drifting clouds. Nothing more (no particles, birds, or launch
-  transitions — tried and rejected by the user).
+- Animated 3D demo island with slowly auto-orbiting camera, atmospheric
+  lighting, fog, sky, water (a cellular-noise / Worley wave surface,
+  high-resolution mesh + a fine third noise octave for detailed ripples,
+  cel/toon-shaded in hard bands with a crisp foam edge, pastel blue/white
+  palette), boats, drifting clouds. Nothing more (no particles, birds, or
+  launch transitions — tried and rejected by the user).
+- The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
+  regenerates into a freshly, randomly seeded procedural island, hidden
+  behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
+  world never looks static — same generator (`generateBoard`) the real game
+  uses, just never persisted or played on.
 - Centered title block: kicker line, "HEXFALL" logo (gradient, drop
   shadow, idle bobbing), subtitle.
 - Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
