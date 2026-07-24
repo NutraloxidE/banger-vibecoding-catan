@@ -59,6 +59,7 @@ export function TitleScene({ paletteTuning = DEFAULT_TILE_PALETTE_TUNING }: { pa
             paletteSaturation={paletteTuning.saturation}
             facetContrast={paletteTuning.facetContrast}
             sandLightness={paletteTuning.sandLightness}
+            paletteColors={paletteTuning.colors}
           />
         </group>
         <OrbitControls autoRotate autoRotateSpeed={0.7} enablePan={false} enableZoom={false}

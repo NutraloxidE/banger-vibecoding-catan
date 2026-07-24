@@ -1880,3 +1880,15 @@ gameplay-only framing/features:
 - Rechecked the adjacent frozen setup screen and a newly generated medium
   gameplay screen; both remain visually intact.
 - `npm run build` and all eight `npm run simulate` configurations pass.
+
+### Same-session extension — individual base-colour controls
+- Added colour pickers for forest, fields, mountains, pasture, hills, desert,
+  the top beach blend, and the exposed sandy tile side. Each updates the title
+  diorama independently while preserving the committed palette as the reset
+  state.
+- Upgraded copied feedback to `HEXFALL_TILE_PALETTE_V2`, which includes all
+  four numeric adjustments plus the eight hex colours.
+- Verified live single-colour isolation (forest changed without altering other
+  terrain bases), full reset, V2 copy confirmation, and the complete panel at
+  desktop and 390×844 mobile sizes. `npm run build` and all eight simulation
+  configurations pass.

@@ -25,18 +25,28 @@ const TILE_EDGE_SEGMENTS = 5;
 const FACET_LIGHTNESS_STEP = 0.055;
 export const TILE_PALETTE_LIGHTNESS = 0.12;
 
+export type TilePaletteColors = Record<Terrain | 'sand' | 'sandSide', string>;
+
 export interface TilePaletteTuning {
   lightness: number;
   saturation: number;
   facetContrast: number;
   sandLightness: number;
+  colors: TilePaletteColors;
 }
+
+export const DEFAULT_TILE_PALETTE_COLORS: TilePaletteColors = {
+  ...TERRAIN_COLOR,
+  sand: '#f3d69c',
+  sandSide: '#dfbd7d',
+};
 
 export const DEFAULT_TILE_PALETTE_TUNING: TilePaletteTuning = {
   lightness: TILE_PALETTE_LIGHTNESS,
   saturation: 1,
   facetContrast: FACET_LIGHTNESS_STEP,
   sandLightness: 0,
+  colors: DEFAULT_TILE_PALETTE_COLORS,
 };
 
 function smooth01(v: number) {
@@ -118,6 +128,7 @@ function makeTerrainTexture(
   paletteSaturation: number,
   facetContrast: number,
   sandLightness: number,
+  paletteColors: TilePaletteColors,
 ) {
   const size = 144;
   const facetSize = 18;
@@ -126,8 +137,8 @@ function makeTerrainTexture(
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
   const image = ctx.createImageData(size, size);
-  const terrainColor = new THREE.Color(TERRAIN_COLOR[terrain]);
-  const sandColor = new THREE.Color('#f3d69c');
+  const terrainColor = new THREE.Color(paletteColors[terrain]);
+  const sandColor = new THREE.Color(paletteColors.sand);
 
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
@@ -366,6 +377,7 @@ export function Tiles({
   paletteSaturation = 1,
   facetContrast = FACET_LIGHTNESS_STEP,
   sandLightness = 0,
+  paletteColors = DEFAULT_TILE_PALETTE_COLORS,
 }: {
   board: BoardModel;
   seed: string;
@@ -373,6 +385,7 @@ export function Tiles({
   paletteSaturation?: number;
   facetContrast?: number;
   sandLightness?: number;
+  paletteColors?: TilePaletteColors;
 }) {
   const clickTile = useGame((s) => s.clickTile);
   const robberTile = useGame((s) => s.game?.robberTile ?? -1);
@@ -386,16 +399,16 @@ export function Tiles({
     (Object.keys(TERRAIN_COLOR) as Terrain[]).forEach((t) => {
       m[t] = new THREE.MeshStandardMaterial({
         color: '#ffffff',
-        map: makeTerrainTexture(t, paletteLightness, paletteSaturation, facetContrast, sandLightness),
+        map: makeTerrainTexture(t, paletteLightness, paletteSaturation, facetContrast, sandLightness, paletteColors),
         roughness: 0.94,
       });
     });
     return m as Record<Terrain, THREE.MeshStandardMaterial>;
-  }, [facetContrast, paletteLightness, paletteSaturation, sandLightness]);
+  }, [facetContrast, paletteColors, paletteLightness, paletteSaturation, sandLightness]);
   const sandSideMat = useMemo(() => {
-    const color = tuneColor(new THREE.Color('#dfbd7d'), paletteSaturation, paletteLightness + sandLightness);
+    const color = tuneColor(new THREE.Color(paletteColors.sandSide), paletteSaturation, paletteLightness + sandLightness);
     return new THREE.MeshStandardMaterial({ color, roughness: 0.92 });
-  }, [paletteLightness, paletteSaturation, sandLightness]);
+  }, [paletteColors.sandSide, paletteLightness, paletteSaturation, sandLightness]);
 
   useEffect(() => () => {
     Object.values(mats).forEach((material) => {

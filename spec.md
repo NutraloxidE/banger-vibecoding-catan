@@ -84,8 +84,10 @@ settings (next bullet).
   screen's top-left corner (each within 900ms of the previous one) open a
   mobile-friendly panel for live title-diorama adjustment of global HSL
   lightness, saturation multiplier, the three facet levels' lightness spacing,
-  and sandy-beach lightness. The current values can be copied as a stable
-  `HEXFALL_TILE_PALETTE_V1` text payload for user feedback. Calibration is
+  sandy-beach lightness, and the individual base colours for forest, fields,
+  mountains, pasture, hills, desert, beach, and the exposed sandy tile side.
+  The current values can be copied as a stable `HEXFALL_TILE_PALETTE_V2` text
+  payload for user feedback, including all numeric adjustments and hex colours. Calibration is
   deliberately session-only and does not change saved settings or gameplay;
   closing the panel keeps the live title preview, while a reload restores the
   committed defaults. When locked, the hotspot is transparent and the title

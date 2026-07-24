@@ -1,21 +1,43 @@
 import { useMemo, useRef, useState } from 'react';
 import { useGame } from '../game/store';
 import { TitleScene } from '../scene/TitleScene';
-import { DEFAULT_TILE_PALETTE_TUNING, TilePaletteTuning } from '../scene/Tiles';
+import {
+  DEFAULT_TILE_PALETTE_TUNING,
+  TilePaletteColors,
+  TilePaletteTuning,
+} from '../scene/Tiles';
 import { sfx } from '../audio/sfx';
 import { useT } from './useT';
 import { LangToggle } from './LangToggle';
 
 const CALIBRATION_TAP_GAP_MS = 900;
+const COLOR_CONTROLS: { key: keyof TilePaletteColors; label: string }[] = [
+  { key: 'forest', label: '森' },
+  { key: 'fields', label: '麦' },
+  { key: 'mountains', label: '石' },
+  { key: 'pasture', label: '羊' },
+  { key: 'hills', label: '土' },
+  { key: 'desert', label: '砂漠' },
+  { key: 'sand', label: '砂浜' },
+  { key: 'sandSide', label: '側面' },
+];
+
+function defaultTuning(): TilePaletteTuning {
+  return {
+    ...DEFAULT_TILE_PALETTE_TUNING,
+    colors: { ...DEFAULT_TILE_PALETTE_TUNING.colors },
+  };
+}
 
 function tuningText(tuning: TilePaletteTuning) {
   return [
-    'HEXFALL_TILE_PALETTE_V1',
+    'HEXFALL_TILE_PALETTE_V2',
     JSON.stringify({
       lightness: Number(tuning.lightness.toFixed(3)),
       saturation: Number(tuning.saturation.toFixed(3)),
       facetContrast: Number(tuning.facetContrast.toFixed(3)),
       sandLightness: Number(tuning.sandLightness.toFixed(3)),
+      colors: tuning.colors,
     }),
   ].join('\n');
 }
@@ -26,7 +48,7 @@ export function TitleScreen() {
   const savedAvailable = useGame((s) => s.savedAvailable);
   const clearSave = useGame((s) => s.clearSave);
   const t = useT();
-  const [paletteTuning, setPaletteTuning] = useState<TilePaletteTuning>({ ...DEFAULT_TILE_PALETTE_TUNING });
+  const [paletteTuning, setPaletteTuning] = useState<TilePaletteTuning>(defaultTuning);
   const [calibrationOpen, setCalibrationOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const tapSequence = useRef({ count: 0, lastAt: 0 });
@@ -47,6 +69,14 @@ export function TitleScreen() {
   const updateTuning = (key: keyof TilePaletteTuning, value: number) => {
     setCopied(false);
     setPaletteTuning((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateColor = (key: keyof TilePaletteColors, value: string) => {
+    setCopied(false);
+    setPaletteTuning((current) => ({
+      ...current,
+      colors: { ...current.colors, [key]: value.toLowerCase() },
+    }));
   };
 
   const copyCalibrationText = async () => {
@@ -106,11 +136,25 @@ export function TitleScreen() {
             <input type="range" min="-0.1" max="0.2" step="0.005" value={paletteTuning.sandLightness}
               onInput={(event) => updateTuning('sandLightness', Number(event.currentTarget.value))} />
           </label>
+          <div className="palette-calibration-section-title">ベース色</div>
+          <div className="palette-calibration-colors">
+            {COLOR_CONTROLS.map(({ key, label }) => (
+              <label className="palette-calibration-color" key={key}>
+                <span>{label} <output>{paletteTuning.colors[key]}</output></span>
+                <input
+                  type="color"
+                  value={paletteTuning.colors[key]}
+                  aria-label={`${label}の色`}
+                  onInput={(event) => updateColor(key, event.currentTarget.value)}
+                />
+              </label>
+            ))}
+          </div>
           <textarea className="palette-calibration-text" readOnly value={calibrationText} aria-label="コピー用の調整値" />
           <div className="palette-calibration-actions">
             <button type="button" className="btn btn-ghost" onClick={() => {
               setCopied(false);
-              setPaletteTuning({ ...DEFAULT_TILE_PALETTE_TUNING });
+              setPaletteTuning(defaultTuning());
             }}>初期値に戻す</button>
             <button type="button" className="btn btn-gold" onClick={copyCalibrationText}>
               {copied ? 'コピーしました' : '調整値をコピー'}
