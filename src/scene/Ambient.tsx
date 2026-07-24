@@ -191,9 +191,15 @@ void main(){
     float shoreOutward = smoothstep(-0.03, 0.05, d);
     float shoreFade = 1.0 - smoothstep(0.0, uShoreWidth, d);
     float shoreBand = shoreOutward * shoreFade;
-    vec2 shoreCell = shoreCellular(vWorldPos.xz * 3.4 + 9.0);
-    float shoreFoam = step(shoreCell.y - shoreCell.x, 0.2) * shoreBand;
-    col = mix(col, uColorCrest, shoreFoam * 0.9);
+    // The fine surf-lace Worley is only visible where the band is non-zero, but
+    // most fragments in this annulus sit between the tiles and open water with
+    // shoreBand == 0. Skip the 9-tap cellular there — the output is identical
+    // (shoreFoam would be multiplied by 0 anyway), it just avoids the cost.
+    if (shoreBand > 0.0) {
+      vec2 shoreCell = shoreCellular(vWorldPos.xz * 3.4 + 9.0);
+      float shoreFoam = step(shoreCell.y - shoreCell.x, 0.2) * shoreBand;
+      col = mix(col, uColorCrest, shoreFoam * 0.9);
+    }
   }
   gl_FragColor = vec4(col, uOpacity);
 }
@@ -239,7 +245,12 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAUL
     for (let i = n; i < MAX_SHORE_TILES; i++) arr[i].set(9999, 9999);
     mat.uniforms.uShoreCount.value = n;
   }, [mat, shoreTiles]);
-  const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 200, 72), [radius]);
+  // Sea-plane tessellation. The vertex shader evaluates the 3-octave Worley
+  // swell (plus two neighbour taps for the normal) per vertex, so this segment
+  // count dominates the water's cost. Trimmed from 200×72 to keep detailed
+  // ripples near the coast while shedding vertices that mostly fell on far,
+  // near-flat, largely off-screen water.
+  const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 160, 56), [radius]);
   useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.elapsedTime; });
   return (
     <group>

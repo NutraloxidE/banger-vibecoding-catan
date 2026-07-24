@@ -32,7 +32,8 @@ the periodic background-world regeneration below.
 
 - Animated 3D demo island with slowly auto-orbiting camera, atmospheric
   lighting, fog, sky, water (a cellular-noise / Worley wave surface,
-  high-resolution mesh + a fine third noise octave for detailed ripples,
+  subdivided mesh (segment count tuned for performance) + a fine third
+  noise octave for detailed ripples,
   cel/toon-shaded in hard bands with a crisp foam edge, pastel blue/white
   palette; a second, finer independent Worley field lays a surf-foam lace
   that follows the actual hex-tile coastline — a hexagon-SDF distance field
@@ -118,7 +119,8 @@ request AND a matching update to this section. Its defining elements:
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
   water (a cellular-noise / Worley wave surface — the sea plane is a
-  high-resolution mesh vertex-displaced by an animated 3-octave Worley
+  subdivided mesh (segment count tuned for performance) vertex-displaced by
+  an animated 3-octave Worley
   height field; cel/toon-shaded in hard bands from the field's gradient
   with a crisp specular glint and a hard-edged foam line where the cells
   meet, in a light pastel blue/white palette; a fine, independent Worley
