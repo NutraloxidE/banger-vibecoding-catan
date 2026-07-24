@@ -1692,3 +1692,222 @@ gameplay-only framing/features:
 - Only `src/scene/TitleScene.tsx` + spec/progress touched. `Ambient.tsx`,
   `GameScene.tsx`, and the shared water shader are unchanged — the title just
   passes the gameplay props that already existed.
+
+---
+
+## 2026-07-24 — Refined crowned tiles with procedural sandy beaches
+
+### What changed
+- Replaced each tile's flat visible cap in `src/scene/Tiles.tsx` with a
+  tessellated hex top that rises subtly toward the centre (`+0.055`) and
+  eases back to the original `y=0.3` edge height. The underlying cylinder now
+  reads as a sandy soil/cliff body.
+- Added runtime-generated per-terrain canvas textures: biome colour occupies
+  the tile interior, then blends through a narrow, slightly irregular beach
+  boundary into sand. Fine colour noise gives the beach a dry grain, with a
+  slightly darker outermost wet-sand line. Tile-id rotations provide six
+  deterministic variations without external assets.
+- Decorations and number tokens were lifted by the same crown amount; robber,
+  storm, and Golden Hex rings were also raised above the new surface. Shared
+  edge/corner height remains unchanged, so roads, buildings, highlights, and
+  harbor bridge alignment are preserved.
+- The tile renderer is shared by gameplay and the title diorama, matching the
+  existing same-world visual contract. `spec.md` §§2/4 were updated for this
+  explicit tile-visual request.
+
+### Verified
+- `npm run build` passes.
+- In-app Chromium screenshots of the title and a generated medium gameplay
+  board show the gentle crown, sandy perimeter/side, biome-to-sand transition,
+  and readable terrain colours. Tokens, decorations, placement rings, docks,
+  and HUD remain correctly layered; no console warnings/errors.
+
+### Notes
+- The surface shape is controlled by `TILE_CROWN`; the beach width/irregularity
+  is localized in `makeTerrainTexture`. Gameplay logic and board generation
+  are untouched.
+
+---
+
+## 2026-07-24 — Per-session branch workflow
+
+- Added a repository workflow rule to `AGENTS.md`: every new development
+  session creates a task-specific `codex/` branch before editing, never works
+  directly on `main`, preserves any in-flight dirty worktree when branching,
+  and pushes each meaningful completed session branch to `origin`.
+- Purpose: every session gets an independently accessible Vercel Preview,
+  making review and iteration practical from a phone.
+
+---
+
+## 2026-07-24 — Tile finish shifted to pastel low-poly
+
+### What changed
+- User feedback: the first beach texture felt oddly realistic. Removed the
+  fine sand grain, mottling, smooth blend, and dark wet-sand edge from
+  `src/scene/Tiles.tsx`.
+- Replaced the terrain palette with lighter pastel greens, coral, gold,
+  lavender-blue, and cream. The beach is now a warm pastel sand.
+- The runtime canvas texture now uses coarse triangular cells with three
+  discrete tone levels and stepped terrain→sand bands. Nearest magnification
+  keeps the facets crisp, giving the tiles a stylized low-poly energy instead
+  of a naturalistic surface.
+- Crown geometry, beach width, tile anchors, decorations, tokens, gameplay,
+  and board generation are unchanged. `spec.md` §§2/4 now explicitly reject
+  realistic grain/wet shading for the tile finish.
+
+### Verified
+- Title and medium gameplay board checked in the in-app Chromium renderer:
+  pastel facets read clearly at both camera distances; number tokens,
+  placement rings, decorations, docks, and HUD remain correctly layered.
+  No console warnings/errors.
+
+---
+
+## 2026-07-24 — Preserve alt design + make colour bands truly hexagonal
+
+### What changed
+- Preserved the pre-pastel realistic beach version at commit `17a6ac0` on
+  pushed branch `codex/alt-hex-tile-design`, so that design remains available
+  independently from the active pastel direction.
+- Fixed the active pastel texture's centre→edge colour spread. The previous
+  axial-coordinate approximation did not measure distance to a regular hex's
+  actual outline consistently, so the bands could read as rounded/circular.
+- Added `pointyHexRadius(x,z)`: for each direction it computes the exact radial
+  distance to the pointy-top regular-hex boundary, then normalizes the pixel's
+  centre distance against it. Terrain, transition, and sand thresholds now
+  form nested, similar regular hexagons parallel to the tile outline.
+
+### Verified
+- Title and medium gameplay screenshots show clearly hexagonal colour bands
+  while retaining the pastel triangular facets, crown, sandy edge, tokens,
+  placement rings, docks, and HUD. No console warnings/errors.
+
+---
+
+## 2026-07-24 — User-specified terrain palette with three shades
+
+### What changed
+- Applied the requested exact base colours in `src/scene/Tiles.tsx`:
+  forest `#138239`, fields `#CBB34F`, mountains `#858892`, pasture
+  `#91BC5E`, hills `#B45D30`, desert `#B45D30`.
+- Each triangular low-poly facet deterministically receives one of three HSL
+  lightness levels: dark (`-0.055`), the exact base colour, or light
+  (`+0.055`). Hue and saturation remain anchored to the supplied colour.
+- Updated the setup screen's separate `PREVIEW_COLOR` map to the same exact
+  base palette so its SVG board preview remains truthful to the 3D board.
+- Sand colour, nested regular-hex beach boundary, crown geometry, decorations,
+  and gameplay are unchanged.
+
+### Verified
+- Title and medium gameplay board checked in the in-app Chromium renderer:
+  three facet shades are distinct, terrain types remain readable, and tokens,
+  placement rings, docks, and HUD stay correctly layered. No console
+  warnings/errors.
+
+---
+
+## 2026-07-24 — Terrain facets use base-or-lighter shades only
+
+### What changed
+- User feedback: the requested palette read too dark when one third of the
+  facets were darker than the supplied base colours.
+- Changed the deterministic three-level mapping from `-0.055 / 0 / +0.055`
+  to `0 / +0.055 / +0.110` HSL lightness. The supplied colour is now the
+  darkest possible facet; all variation moves toward higher lightness only.
+- Hue, saturation, exact base palette, triangular layout, sand transition,
+  nested regular-hex bands, crown geometry, setup preview, and gameplay are
+  unchanged.
+
+### Verified
+- Title and medium gameplay board checked in the in-app Chromium renderer:
+  overall tiles read brighter, all three lightness levels remain distinct,
+  and terrain identity/tokens/placement rings/docks/HUD remain clear. No
+  console warnings/errors.
+
+---
+
+## 2026-07-24 — Gameplay-only stronger pastel lift
+
+### What changed
+- User requested a much paler, more overtly pastel gameplay board.
+- Added optional `paletteLightness` to shared `Tiles`. It raises HSL lightness
+  for every generated top facet and the sandy side material without changing
+  hue, saturation, facet layout, or geometry.
+- `GameScene` passes `paletteLightness={0.12}`. `TitleScene` omits the prop and
+  remains at the prior unlifted palette; the setup SVG preview is also
+  unchanged. This scopes the request to gameplay and avoids collateral changes
+  to the other frozen surfaces.
+
+### Verified
+- Side-by-side in-app Chromium screenshots: title retains its previous colour
+  depth; a medium gameplay board is substantially paler/pastel while keeping
+  three visible facet levels, terrain identity, sand borders, tokens,
+  placement rings, docks, and HUD clear. No console warnings/errors.
+
+### Scope correction before commit
+- User clarified the stronger pastel treatment should cover **both** the title
+  background and gameplay, not gameplay alone.
+- Promoted the shared lift to exported `TILE_PALETTE_LIGHTNESS = 0.12` and pass
+  it from both `TitleScene` and `GameScene`. The setup SVG preview remains on
+  the exact unlifted base palette. The earlier gameplay-only note above records
+  the intermediate direction; this correction is the final state.
+- Rechecked the title after the correction: it now matches the pale gameplay
+  palette, with logo/text contrast and tile readability intact; no console
+  warnings/errors.
+
+---
+
+## 2026-07-24 — Hidden title tile-palette calibrator
+
+### What changed
+- Added a transparent 64px top-left title hotspot that opens a calibration
+  panel after seven consecutive taps/clicks (maximum 900ms between taps).
+  Nothing is visible while the tool is locked.
+- Added live controls for global lightness, saturation, three-facet lightness
+  spacing, and sandy-beach lightness. Changes apply only to the title preview
+  and reset on reload; gameplay and saved settings are untouched.
+- Added reset and copy actions. Copy emits a stable
+  `HEXFALL_TILE_PALETTE_V1` payload with the four exact numeric values so the
+  user can paste a preferred result back into Codex.
+- Dynamic palette changes now dispose replaced canvas textures and materials,
+  preventing resource accumulation while sliders move.
+
+### Verified
+- In-app Chromium: hidden/locked title, seven-click unlock, all four sliders'
+  live values and visible colour response, copy confirmation/payload, close,
+  reload reset, and 390×844 mobile panel layout.
+- Rechecked the adjacent frozen setup screen and a newly generated medium
+  gameplay screen; both remain visually intact.
+- `npm run build` and all eight `npm run simulate` configurations pass.
+
+### Same-session extension — individual base-colour controls
+- Added colour pickers for forest, fields, mountains, pasture, hills, desert,
+  the top beach blend, and the exposed sandy tile side. Each updates the title
+  diorama independently while preserving the committed palette as the reset
+  state.
+- Upgraded copied feedback to `HEXFALL_TILE_PALETTE_V2`, which includes all
+  four numeric adjustments plus the eight hex colours.
+- Verified live single-colour isolation (forest changed without altering other
+  terrain bases), full reset, V2 copy confirmation, and the complete panel at
+  desktop and 390×844 mobile sizes. `npm run build` and all eight simulation
+  configurations pass.
+
+### Same-session extension — calibrated V2 promoted to shared defaults
+- Promoted the user's pasted `HEXFALL_TILE_PALETTE_V2` values to the title and
+  gameplay defaults: lightness `0.12`, saturation `1`, facet contrast `0.055`,
+  sand lightness `-0.065`; forest `#138239`, hills `#E89569`, fields
+  `#CFAC20`, pasture `#96BF63`, mountains `#A3AAC2`, desert `#DBC67B`, beach
+  `#F3D69C`, and tile side `#DFBD7D`.
+- The setup SVG preview deliberately keeps its independent original base
+  palette. Reload/reset in the hidden title calibrator now returns to the new
+  V2 defaults, and gameplay uses the same values without needing the panel.
+- Verified the calibrator's full default payload matches the pasted V2 text,
+  and visually checked the title plus a newly generated medium gameplay board.
+  The setup preview retains its prior independent colours. `npm run build` and
+  all eight `npm run simulate` configurations pass.
+
+### Same-session extension — calibrated default refinement
+- Updated the shared title/gameplay default to the latest pasted V2 controls:
+  lightness `0.16`, saturation `1.09`, facet contrast `0.035`, and sand
+  lightness `-0.040`; terrain, beach, and tile-side hex colours are unchanged.

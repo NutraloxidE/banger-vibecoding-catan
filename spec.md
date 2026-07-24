@@ -53,6 +53,23 @@ settings (next bullet).
   distance, a distinct wave-break band from the open-water foam), boats,
   drifting clouds. Nothing more (no particles, birds, or launch transitions
   — tried and rejected by the user).
+- The demo island uses the same refined tile surface as gameplay: each hex has
+  a subtly crowned centre that slopes gently toward its six edges, with a
+  narrow, irregular sandy beach band. Pastel biome colours transition into
+  sand through a few crisp, faceted colour steps shaped as nested regular
+  hexagons parallel to the tile outline (never a circular radial spread), for
+  a stylized low-poly look (no realistic grain or wet-sand shading). The
+  exposed tile sides are sandy. Each terrain uses three deterministic
+  lightness variants arranged across the triangular facets: the exact base
+  colour, base `+0.035` HSL lightness, and base `+0.070` HSL lightness. No
+  darker-than-base terrain variant is generated. Calibrated 3D base colours:
+  forest `#138239`, fields `#CFAC20`, mountains `#A3AAC2`, pasture `#96BF63`,
+  hills `#E89569`, and desert `#DBC67B`. The title diorama applies the same
+  additional `+0.16` HSL lightness lift as gameplay with a `1.09` saturation
+  multiplier, while the beach blend and exposed sandy side additionally receive
+  `-0.040` HSL lightness so the shore
+  stays distinct from the newly softened terrain palette. The setup SVG preview
+  retains its independent original unlifted palette.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -65,6 +82,19 @@ settings (next bullet).
 - Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
   `reset save` appear only when a valid save exists; footer tagline.
 - Language toggle (EN / 日本語) top-right — the sole permitted overlay.
+- A normally invisible palette-calibration tool is the one explicit exception
+  to the frozen overlay rule. Seven consecutive taps/clicks in the title
+  screen's top-left corner (each within 900ms of the previous one) open a
+  mobile-friendly panel for live title-diorama adjustment of global HSL
+  lightness, saturation multiplier, the three facet levels' lightness spacing,
+  sandy-beach lightness, and the individual base colours for forest, fields,
+  mountains, pasture, hills, desert, beach, and the exposed sandy tile side.
+  The current values can be copied as a stable `HEXFALL_TILE_PALETTE_V2` text
+  payload for user feedback, including all numeric adjustments and hex colours. Calibration is
+  deliberately session-only and does not change saved settings or gameplay;
+  closing the panel keeps the live title preview, while a reload restores the
+  committed defaults. When locked, the hotspot is transparent and the title
+  screen remains visually identical.
 
 ## 3. Setup screen — "Configure Your World" (初代 design), FROZEN ✅
 
@@ -127,7 +157,23 @@ Order, top to bottom:
 Do not change its layout, visuals, or interactions without an explicit user
 request AND a matching update to this section. Its defining elements:
 
-- 3D board: biome-decorated hex tiles, always-on-top number tokens
+- 3D board: biome-decorated hex tiles with a subtly crowned centre and a mild
+  outward slope; every tile transitions through a narrow, irregular,
+  pastel sand-beach band at its edge using crisp triangular low-poly colour
+  facets arranged in nested regular-hex bands parallel to the tile outline
+  (not circular radial bands), rather than realistic grain/wet shading, with
+  sandy exposed sides. Each terrain's facets use three deterministic
+  base-or-lighter variants (exact base, `+0.035`, `+0.070` HSL lightness;
+  never darker than base): forest `#138239`, fields `#CFAC20`, mountains
+  `#A3AAC2`, pasture `#96BF63`, hills `#E89569`, desert `#DBC67B`
+  — then both the gameplay and title renderers add a further `+0.16` HSL
+  lightness lift and a `1.09` saturation multiplier to every top facet. The beach blend and sandy tile side use
+  their existing bases (`#F3D69C` / `#DFBD7D`) with a shared additional
+  `-0.040` HSL lightness adjustment, keeping the coastline legible against the
+  lighter terrain. The setup SVG preview retains its independent original base
+  palette
+  (the six shared edge/corner anchors keep their original height so roads,
+  buildings, and harbors remain aligned); always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
   water (a cellular-noise / Worley wave surface — the sea plane is a
   subdivided mesh (segment count tuned for performance) vertex-displaced by
