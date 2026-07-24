@@ -1956,3 +1956,27 @@ gameplay-only framing/features:
   winner. In-app Chromium confirms the vivid, bright reference-like grade on
   title and gameplay scenes, while computed styles show the exact filter on
   the canvas and `none` on the game/HUD wrapper; zero console errors.
+
+---
+
+## 2026-07-24 — Mobile player status below portraits
+
+### What changed
+- On phone-width gameplay screens, every player chip now shows VP and total
+  resource-card count in a compact two-line readout directly below its portrait.
+  This keeps inactive rivals' key status visible instead of reducing them to
+  portrait-only chips.
+- The desktop HUD is unchanged. The active phone chip still shows its existing
+  name, title/personality, turn, threat, and award context; duplicate VP/resource
+  values in that expanded area are hidden because they are already below the
+  portrait.
+- Frozen gameplay screen changed on explicit user request; `spec.md` §4 was
+  updated in the same change.
+
+### Verification
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner.
+- In-app Chromium at 390×844 shows all four chips in one row with both values
+  visible below every portrait, no overlap, and no horizontal overflow. At
+  1280px the compact mobile values are hidden and the existing desktop chip
+  details remain visible. No browser warnings or errors.

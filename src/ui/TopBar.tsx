@@ -19,7 +19,13 @@ export function TopBar() {
             className={`player-chip ${active ? 'active' : ''} ${threat ? 'threat' : ''}`}
             style={{ ['--pc' as any]: p.color }}
           >
-            <div className="chip-portrait">{p.emoji}</div>
+            <div className="chip-portrait-column">
+              <div className="chip-portrait">{p.emoji}</div>
+              <div className="chip-mobile-stats">
+                <span className="vp">⭐ {p.vp}</span>
+                <span className="cards">🂠 {cards}</span>
+              </div>
+            </div>
             <div className="chip-info">
               <div className="chip-name">
                 {p.isNpc ? p.name : t('player.you')}
