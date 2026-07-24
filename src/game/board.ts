@@ -135,6 +135,17 @@ function traditionalTokens(
   return { tokens: best!, frame: { startAng: bestSt!.ang, dir: bestSt!.dir } };
 }
 
+// Centers (world x,z) of the tiles on the outer ring — i.e. the coastal tiles
+// whose outward edges form the island's silhouette against the sea. Used by the
+// water shader to lay shoreline surf foam along the actual tile edges (not a
+// circle). The board is a full hexagon of tiles with no interior holes, so
+// coastal ⇔ hexDist === radius.
+export function coastalTileCenters(board: BoardModel): [number, number][] {
+  return board.tiles
+    .filter((t) => hexDist(t.q, t.r) === board.radius)
+    .map((t) => [t.x, t.z] as [number, number]);
+}
+
 export function generateBoard(mapSize: MapSize, seed: string, layout?: BoardLayout): BoardModel {
   const rng = new RNG(seed + ':board');
   const radius = MAP_RADIUS[mapSize];
