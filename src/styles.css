@@ -610,13 +610,13 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
 /* ---------- hud corner ---------- */
 
 .hud-meta {
-  position: fixed; left: 12px; top: 64px; z-index: 30;
+  position: fixed; left: 12px; top: 8px; z-index: 30;
   display: flex; flex-direction: column; gap: 2px; align-items: flex-start;
   font-size: 11px; background: var(--panel-lite);
   padding: 6px 12px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
 }
 .hud-options {
-  position: fixed; right: 12px; top: 64px; z-index: 30;
+  position: fixed; right: 12px; top: 8px; z-index: 30;
 }
 .settings-pop {
   position: absolute; right: 0; top: 44px;
@@ -792,8 +792,8 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   .placement-banner { bottom: 190px; width: 94vw; justify-content: space-between; }
   .dev-prompt { bottom: 250px; width: 94vw; }
   .npc-offer { top: 70px; right: 8px; width: 220px; }
-  .hud-meta { top: 96px; left: 8px; }
-  .hud-options { top: 96px; right: 8px; }
+  .hud-meta { left: 8px; }
+  .hud-options { right: 8px; }
   .stats-grid { grid-template-columns: 1fr; }
 
   /* trade modal: keep everything inside the viewport on phones */

@@ -253,8 +253,8 @@ request AND a matching update to this section. Its defining elements:
   (buy button with deck-remaining count + playable/held held-card buttons) +
   roll / trade / end-turn bottom; chronicle log bottom-left; round + seed in
   a two-line panel fixed at the upper-left and settings fixed at the upper-right
-  on both desktop and phones (directly below the player-chip row on phones);
-  toasts center-top;
+  on both desktop and phones, inset only 8–12 px from the actual viewport
+  corners rather than below the player-chip row; toasts center-top;
   world-event banner; NPC offer popup
   with countdown.
   (Amendment: development cards — the dev-card row lets the human buy a card and

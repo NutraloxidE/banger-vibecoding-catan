@@ -2024,3 +2024,12 @@ gameplay-only framing/features:
   right options control are fixed in the requested corners, with no overlap or
   horizontal overflow. The open settings panel fits both viewports, and the
   browser reports no warnings or errors.
+
+### Same-session correction — actual viewport corners
+- User clarified that "upper-left/right" means the actual viewport corners,
+  not one row below the player chips. Both controls now use `top: 8px` on
+  desktop and phones; phone side insets remain 8px.
+- Reverified at 1280×800 and 390×844: both controls report `y: 8px`, the phone
+  HUD stays above the overlapping player row, the settings panel remains fully
+  inside the viewport, and there are no browser warnings or errors.
+- `npm run build` and all eight simulation configurations still pass.
