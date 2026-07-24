@@ -134,6 +134,48 @@ body.tension-2 .game-screen::after {
 .title-sub { margin-top: 10px; font-size: 14px; opacity: 0.85; text-shadow: 0 2px 6px #000; }
 .title-buttons { display: flex; flex-direction: column; gap: 12px; align-items: center; }
 .title-footer { position: absolute; bottom: 18px; font-size: 11px; opacity: 0.6; text-shadow: 0 1px 4px #000; }
+.palette-calibration-hotspot {
+  position: absolute; top: 0; left: 0; z-index: 20;
+  width: 64px; height: 64px; padding: 0;
+  border: 0; background: transparent; opacity: 0;
+  cursor: default; touch-action: manipulation;
+}
+.palette-calibration-panel {
+  position: absolute; top: 12px; left: 12px; z-index: 30;
+  width: min(350px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px); overflow-y: auto;
+  padding: 16px;
+  color: var(--ink); background: rgba(8, 20, 32, 0.94);
+  border: 1px solid rgba(255,255,255,0.2); border-radius: 16px;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.5);
+  backdrop-filter: blur(14px);
+  -webkit-user-select: text; user-select: text;
+}
+.palette-calibration-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 12px;
+}
+.palette-calibration-head h2 { font-size: 19px; }
+.palette-calibration-kicker { margin-bottom: 2px; color: var(--gold); font-size: 9px; font-weight: 800; letter-spacing: 0.18em; }
+.palette-calibration-close {
+  width: 32px; height: 32px; flex: 0 0 auto;
+  border: 1px solid rgba(255,255,255,0.18); border-radius: 9px;
+  color: var(--ink); background: rgba(255,255,255,0.08);
+  font: 700 22px/1 var(--font-display); cursor: pointer;
+}
+.palette-calibration-panel label { display: block; margin-top: 12px; font-size: 12px; font-weight: 800; }
+.palette-calibration-panel label span { display: flex; justify-content: space-between; gap: 12px; }
+.palette-calibration-panel output { color: var(--gold); font-variant-numeric: tabular-nums; }
+.palette-calibration-panel input[type='range'] { width: 100%; margin-top: 6px; accent-color: var(--gold); }
+.palette-calibration-text {
+  width: 100%; height: 74px; margin-top: 14px; padding: 9px;
+  resize: none; border: 1px solid rgba(255,255,255,0.14); border-radius: 9px;
+  color: #dce9f3; background: rgba(0,0,0,0.25);
+  font: 11px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace;
+}
+.palette-calibration-actions { display: flex; gap: 8px; margin-top: 10px; }
+.palette-calibration-actions .btn { flex: 1; padding: 9px 8px; font-size: 11px; }
+.palette-calibration-panel p { margin-top: 9px; font-size: 10px; line-height: 1.45; opacity: 0.65; }
 
 /* ---------- setup screen ---------- */
 

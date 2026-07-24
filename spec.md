@@ -79,6 +79,17 @@ settings (next bullet).
 - Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
   `reset save` appear only when a valid save exists; footer tagline.
 - Language toggle (EN / 日本語) top-right — the sole permitted overlay.
+- A normally invisible palette-calibration tool is the one explicit exception
+  to the frozen overlay rule. Seven consecutive taps/clicks in the title
+  screen's top-left corner (each within 900ms of the previous one) open a
+  mobile-friendly panel for live title-diorama adjustment of global HSL
+  lightness, saturation multiplier, the three facet levels' lightness spacing,
+  and sandy-beach lightness. The current values can be copied as a stable
+  `HEXFALL_TILE_PALETTE_V1` text payload for user feedback. Calibration is
+  deliberately session-only and does not change saved settings or gameplay;
+  closing the panel keeps the live title preview, while a reload restores the
+  committed defaults. When locked, the hotspot is transparent and the title
+  screen remains visually identical.
 
 ## 3. Setup screen — "Configure Your World" (初代 design), FROZEN ✅
 
