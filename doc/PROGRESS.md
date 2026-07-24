@@ -1892,3 +1892,17 @@ gameplay-only framing/features:
   terrain bases), full reset, V2 copy confirmation, and the complete panel at
   desktop and 390×844 mobile sizes. `npm run build` and all eight simulation
   configurations pass.
+
+### Same-session extension — calibrated V2 promoted to shared defaults
+- Promoted the user's pasted `HEXFALL_TILE_PALETTE_V2` values to the title and
+  gameplay defaults: lightness `0.12`, saturation `1`, facet contrast `0.055`,
+  sand lightness `-0.065`; forest `#138239`, hills `#E89569`, fields
+  `#CFAC20`, pasture `#96BF63`, mountains `#A3AAC2`, desert `#DBC67B`, beach
+  `#F3D69C`, and tile side `#DFBD7D`.
+- The setup SVG preview deliberately keeps its independent original base
+  palette. Reload/reset in the hidden title calibrator now returns to the new
+  V2 defaults, and gameplay uses the same values without needing the panel.
+- Verified the calibrator's full default payload matches the pasted V2 text,
+  and visually checked the title plus a newly generated medium gameplay board.
+  The setup preview retains its prior independent colours. `npm run build` and
+  all eight `npm run simulate` configurations pass.

@@ -8,11 +8,11 @@ import { useGame } from '../game/store';
 
 export const TERRAIN_COLOR: Record<Terrain, string> = {
   forest: '#138239',
-  hills: '#b45d30',
-  fields: '#cbb34f',
-  pasture: '#91bc5e',
-  mountains: '#858892',
-  desert: '#b45d30',
+  hills: '#e89569',
+  fields: '#cfac20',
+  pasture: '#96bf63',
+  mountains: '#a3aac2',
+  desert: '#dbc67b',
 };
 
 // The old single cylinder stays underneath as the sandy cliff/soil body.
@@ -24,6 +24,7 @@ const TILE_CROWN = 0.055;
 const TILE_EDGE_SEGMENTS = 5;
 const FACET_LIGHTNESS_STEP = 0.055;
 export const TILE_PALETTE_LIGHTNESS = 0.12;
+export const TILE_SAND_LIGHTNESS = -0.065;
 
 export type TilePaletteColors = Record<Terrain | 'sand' | 'sandSide', string>;
 
@@ -45,7 +46,7 @@ export const DEFAULT_TILE_PALETTE_TUNING: TilePaletteTuning = {
   lightness: TILE_PALETTE_LIGHTNESS,
   saturation: 1,
   facetContrast: FACET_LIGHTNESS_STEP,
-  sandLightness: 0,
+  sandLightness: TILE_SAND_LIGHTNESS,
   colors: DEFAULT_TILE_PALETTE_COLORS,
 };
 
@@ -376,7 +377,7 @@ export function Tiles({
   paletteLightness = 0,
   paletteSaturation = 1,
   facetContrast = FACET_LIGHTNESS_STEP,
-  sandLightness = 0,
+  sandLightness = TILE_SAND_LIGHTNESS,
   paletteColors = DEFAULT_TILE_PALETTE_COLORS,
 }: {
   board: BoardModel;
