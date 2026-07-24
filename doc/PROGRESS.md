@@ -2033,3 +2033,11 @@ gameplay-only framing/features:
   HUD stays above the overlapping player row, the settings panel remains fully
   inside the viewport, and there are no browser warnings or errors.
 - `npm run build` and all eight simulation configurations still pass.
+
+### Same-session extension — world-event banner clearance
+- Moved the world-event banner from `top: 68px` to `88px` on desktop and
+  `96px` on phones so labels such as "Brick Boom" sit below the player-chip
+  row instead of overlapping it.
+- At 1280×800 the player row ends at 81.8px, leaving 6.2px before the banner;
+  at 390×844 it ends at 87.2px, leaving 8.8px. No horizontal overflow or
+  browser warnings/errors. Build and all eight simulations pass.
