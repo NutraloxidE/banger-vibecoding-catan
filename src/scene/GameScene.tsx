@@ -3,7 +3,7 @@ import { Canvas } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import { useGame } from '../game/store';
 import { coastalTileCenters } from '../game/board';
-import { Tiles } from './Tiles';
+import { TILE_PALETTE_LIGHTNESS, Tiles } from './Tiles';
 import { Ports } from './Ports';
 import { Pieces } from './Pieces';
 import { Highlights } from './Highlights';
@@ -41,7 +41,7 @@ export function GameScene() {
           sink together into the sea so the coast dips just below the waterline
           instead of floating above it. The water, docks, and boats stay put. */}
       <group position={[0, -GAMEPLAY_BOARD_SINK, 0]}>
-        <Tiles board={board} seed={seed} />
+        <Tiles board={board} seed={seed} paletteLightness={TILE_PALETTE_LIGHTNESS} />
         <Pieces />
         <Highlights />
         <FxLayer />

@@ -64,7 +64,9 @@ settings (next bullet).
   colour, base `+0.055` HSL lightness, and base `+0.110` HSL lightness. No
   darker-than-base variant is generated. Base colours: forest `#138239`,
   fields `#CBB34F`, mountains `#858892`, pasture `#91BC5E`, hills `#B45D30`,
-  and desert `#B45D30`.
+  and desert `#B45D30`. The title diorama applies the same additional `+0.12`
+  HSL lightness lift as gameplay, so both 3D worlds share the deliberately pale
+  palette. The setup SVG preview retains the exact unlifted base colours.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -148,6 +150,10 @@ request AND a matching update to this section. Its defining elements:
   base-or-lighter variants (exact base, `+0.055`, `+0.110` HSL lightness;
   never darker than base): forest `#138239`, fields `#CBB34F`, mountains
   `#858892`, pasture `#91BC5E`, hills `#B45D30`, desert `#B45D30`
+  — then both the gameplay and title renderers add a further `+0.12` HSL
+  lightness lift to every top facet and the sandy tile side for deliberately
+  pale, strongly pastel 3D worlds. The setup SVG preview retains the base
+  palette
   (the six shared edge/corner anchors keep their original height so roads,
   buildings, and harbors remain aligned); always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,

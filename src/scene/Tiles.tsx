@@ -23,6 +23,7 @@ const TILE_TOP_Y = 0.302;
 const TILE_CROWN = 0.055;
 const TILE_EDGE_SEGMENTS = 5;
 const FACET_LIGHTNESS_STEP = 0.055;
+export const TILE_PALETTE_LIGHTNESS = 0.12;
 
 function smooth01(v: number) {
   const x = THREE.MathUtils.clamp(v, 0, 1);
@@ -86,7 +87,7 @@ function pointyHexRadius(x: number, z: number) {
   return Math.hypot(x, z) / edgeRadius;
 }
 
-function makeTerrainTexture(terrain: Terrain) {
+function makeTerrainTexture(terrain: Terrain, paletteLightness: number) {
   const size = 144;
   const facetSize = 18;
   const canvas = document.createElement('canvas');
@@ -119,7 +120,7 @@ function makeTerrainTexture(terrain: Terrain) {
             ? 0.28
             : 0;
       const color = terrainColor.clone().lerp(sandColor, beach);
-      color.offsetHSL(0, 0, facetTone * FACET_LIGHTNESS_STEP);
+      color.offsetHSL(0, 0, paletteLightness + facetTone * FACET_LIGHTNESS_STEP);
 
       const offset = (py * size + px) * 4;
       image.data[offset] = Math.round(color.r * 255);
@@ -162,7 +163,6 @@ const brickMat2 = new THREE.MeshStandardMaterial({ color: '#8d3f22' });
 const woolMat = new THREE.MeshStandardMaterial({ color: '#f2f0e8' });
 const sheepFaceMat = new THREE.MeshStandardMaterial({ color: '#3a3630' });
 const cactusMat = new THREE.MeshStandardMaterial({ color: '#4f9e57' });
-const sandSideMat = new THREE.MeshStandardMaterial({ color: '#dfbd7d', roughness: 0.92 });
 // Number tokens draw on top of terrain so they're never buried by trees,
 // mountains, or other tile decorations (depthTest off + high renderOrder).
 const TOKEN_RENDER_ORDER = 900;
@@ -324,7 +324,7 @@ function Robber({ x, z }: { x: number; z: number }) {
   );
 }
 
-export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
+export function Tiles({ board, seed, paletteLightness = 0 }: { board: BoardModel; seed: string; paletteLightness?: number }) {
   const clickTile = useGame((s) => s.clickTile);
   const robberTile = useGame((s) => s.game?.robberTile ?? -1);
   const phase = useGame((s) => s.game?.phase);
@@ -337,12 +337,16 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
     (Object.keys(TERRAIN_COLOR) as Terrain[]).forEach((t) => {
       m[t] = new THREE.MeshStandardMaterial({
         color: '#ffffff',
-        map: makeTerrainTexture(t),
+        map: makeTerrainTexture(t, paletteLightness),
         roughness: 0.94,
       });
     });
     return m as Record<Terrain, THREE.MeshStandardMaterial>;
-  }, []);
+  }, [paletteLightness]);
+  const sandSideMat = useMemo(() => {
+    const color = new THREE.Color('#dfbd7d').offsetHSL(0, 0, paletteLightness);
+    return new THREE.MeshStandardMaterial({ color, roughness: 0.92 });
+  }, [paletteLightness]);
 
   const robberSelecting = phase === 'robber' && isHumanTurn;
 

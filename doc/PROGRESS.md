@@ -1824,3 +1824,34 @@ gameplay-only framing/features:
   overall tiles read brighter, all three lightness levels remain distinct,
   and terrain identity/tokens/placement rings/docks/HUD remain clear. No
   console warnings/errors.
+
+---
+
+## 2026-07-24 — Gameplay-only stronger pastel lift
+
+### What changed
+- User requested a much paler, more overtly pastel gameplay board.
+- Added optional `paletteLightness` to shared `Tiles`. It raises HSL lightness
+  for every generated top facet and the sandy side material without changing
+  hue, saturation, facet layout, or geometry.
+- `GameScene` passes `paletteLightness={0.12}`. `TitleScene` omits the prop and
+  remains at the prior unlifted palette; the setup SVG preview is also
+  unchanged. This scopes the request to gameplay and avoids collateral changes
+  to the other frozen surfaces.
+
+### Verified
+- Side-by-side in-app Chromium screenshots: title retains its previous colour
+  depth; a medium gameplay board is substantially paler/pastel while keeping
+  three visible facet levels, terrain identity, sand borders, tokens,
+  placement rings, docks, and HUD clear. No console warnings/errors.
+
+### Scope correction before commit
+- User clarified the stronger pastel treatment should cover **both** the title
+  background and gameplay, not gameplay alone.
+- Promoted the shared lift to exported `TILE_PALETTE_LIGHTNESS = 0.12` and pass
+  it from both `TitleScene` and `GameScene`. The setup SVG preview remains on
+  the exact unlifted base palette. The earlier gameplay-only note above records
+  the intermediate direction; this correction is the final state.
+- Rechecked the title after the correction: it now matches the pale gameplay
+  palette, with logo/text contrast and tile readability intact; no console
+  warnings/errors.

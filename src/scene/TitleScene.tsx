@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky, OrbitControls } from '@react-three/drei';
 import { generateBoard, coastalTileCenters } from '../game/board';
-import { Tiles } from './Tiles';
+import { TILE_PALETTE_LIGHTNESS, Tiles } from './Tiles';
 import { Ambient, GAMEPLAY_WATER_LEVEL, GAMEPLAY_BOARD_SINK } from './Ambient';
 
 // Match the gameplay screen's calmer water swell (GameScene uses the same value)
@@ -52,7 +52,7 @@ export function TitleScene() {
             screen so the coastline dips just below the raised waterline instead
             of floating above it — the water itself stays put. */}
         <group position={[0, -GAMEPLAY_BOARD_SINK, 0]}>
-          <Tiles board={board} seed={seed} />
+          <Tiles board={board} seed={seed} paletteLightness={TILE_PALETTE_LIGHTNESS} />
         </group>
         <OrbitControls autoRotate autoRotateSpeed={0.7} enablePan={false} enableZoom={false}
           minPolarAngle={0.9} maxPolarAngle={1.2} />
