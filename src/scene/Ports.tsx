@@ -10,16 +10,16 @@ import { GAMEPLAY_WATER_LEVEL } from './Ambient';
 // The moored boat is held at a FIXED height by its ropes to the (fixed) dock —
 // it does NOT follow the sea level, so nudging the water can't drag the rope
 // ends off the bollards; the sea just laps a little higher/lower on the hull.
-// (Value == the original GAMEPLAY_WATER_LEVEL(−0.03) − 0.055 rest, frozen here
-// so the hand-tuned ropes stay exactly aligned.) It barely bobs, so it never
-// lifts into an air gap. The free-floating buoy DOES ride the sea level and
-// sits with its lower half under.
-const BOAT_Y = -0.085;
+// Hand-tuned so the hull sits above the current sea level (−0.02) with its
+// walls clear of the water; the ropes below are recomputed to match this height
+// + BOAT_SCALE. It barely bobs, so it never lifts into an air gap. The
+// free-floating buoy DOES ride the sea level and sits with its lower half under.
+const BOAT_Y = -0.072;
 const BUOY_Y = GAMEPLAY_WATER_LEVEL + 0.02;
 // The hull + rigging are drawn a touch larger. The mooring ropes are kept
 // OUTSIDE this scale (and hand-tuned for the boat's depth) so their ends stay
 // pinned to the dock bollards.
-const BOAT_SCALE = 1.2;
+const BOAT_SCALE = 1.35;
 
 // Coastal harbors: a small dock + a hanging sign showing the trade rate.
 // Decoration + readout only — the trade math lives in rules.ts::bankRate.
@@ -59,7 +59,7 @@ const boatWallEndGeo = new THREE.BoxGeometry(0.03, 0.07, 0.13);
 const boatBenchGeo = new THREE.BoxGeometry(0.05, 0.02, 0.12);
 const boatMastGeo = new THREE.CylinderGeometry(0.014, 0.018, 0.34, 6);
 const furledSailGeo = new THREE.BoxGeometry(0.036, 0.24, 0.036);
-const ropeGeo = new THREE.BoxGeometry(0.016, 0.016, 0.32);
+const ropeGeo = new THREE.BoxGeometry(0.016, 0.016, 0.30);
 // Dockside cargo clutter (a barrel + a crate) on the landing deck.
 const barrelGeo = new THREE.CylinderGeometry(0.05, 0.055, 0.11, 8);
 const crateGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
@@ -101,10 +101,10 @@ function MooredBoat({ phase }: { phase: number }) {
         <mesh geometry={furledSailGeo} material={sailclothMat} position={[-0.025, 0.26, 0]} rotation={[0, 0, 0.06]} />
       </group>
       {/* mooring ropes up to the dock's edge bollards — unscaled, angled to span
-          from the low hull's stern rail up to the fixed bollards (far end lands
-          ~[±0.1, 0.295, 0.36] in boat space, right at each bollard). */}
-      <mesh geometry={ropeGeo} material={ropeMat} position={[0.1, 0.222, 0.22]} rotation={[-0.478, 0, 0]} />
-      <mesh geometry={ropeGeo} material={ropeMat} position={[-0.1, 0.222, 0.22]} rotation={[-0.478, 0, 0]} />
+          from the hull's stern rail up to the fixed bollards (far end lands
+          ~[±0.1, 0.282, 0.36] in boat space, right at each bollard). */}
+      <mesh geometry={ropeGeo} material={ropeMat} position={[0.1, 0.2235, 0.224]} rotation={[-0.4064, 0, 0]} />
+      <mesh geometry={ropeGeo} material={ropeMat} position={[-0.1, 0.2235, 0.224]} rotation={[-0.4064, 0, 0]} />
     </group>
   );
 }

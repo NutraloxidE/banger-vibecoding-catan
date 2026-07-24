@@ -1223,3 +1223,34 @@ waterline through the swell. `BUOY_Y` unchanged.
   ambient boats track `GAMEPLAY_WATER_LEVEL`. If the sea level is nudged again,
   the boat/ropes need no change; only reconsider `BOAT_Y` if the boat looks too
   submerged.
+
+---
+
+## 2026-07-24 — Boat enlarged + raised (it looked submerged after the sea raise)
+
+### What changed (user: 舟が水没するので大きさを少し上げてから位置を上げて)
+After the sea level went up (−0.03→−0.02) with the boat pinned at a fixed
+height, the hull sat too deep. Per request, made the boat bigger AND raised it
+(`src/scene/Ports.tsx` only):
+- `BOAT_SCALE 1.2 → 1.35` (a little larger).
+- `BOAT_Y −0.085 → −0.072` (raised ~0.013) so the hull walls sit clearly above
+  the −0.02 sea surface again — no longer submerged.
+- **Ropes recomputed** for the new height + scale (raising the boat would
+  otherwise pull the rope ends off the fixed bollards): `ropeGeo` length
+  0.32→0.30, position `[±0.1, 0.222, 0.22]→[±0.1, 0.2235, 0.224]`, rotation.x
+  `−0.478→−0.4064`. Far ends land at boat-space `[±0.1, 0.282, 0.36]` == the
+  seaward bollards `[±0.1, PLATFORM_TOP+0.07, −0.16]` (verified by the endpoint
+  math and screenshots).
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway, reverted): deep-zoom close-ups across 5 bob phases —
+  the larger boat holds a steady waterline with its hull walls above the surface
+  (not submerged, no lift-off), and both ropes still meet the bollards. Zero
+  page errors. Spec §4 wording updated (hull walls above the waterline).
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress). The rope constants are tuned to
+  `BOAT_Y` + `BOAT_SCALE` + the fixed bollard `[±0.1, PLATFORM_TOP+0.07, −0.16]`
+  — change any of those three and recompute length/position/rotation so the far
+  end still lands on the bollard.
