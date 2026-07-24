@@ -61,12 +61,13 @@ settings (next bullet).
   a stylized low-poly look (no realistic grain or wet-sand shading). The
   exposed tile sides are sandy. Each terrain uses three deterministic
   lightness variants arranged across the triangular facets: the exact base
-  colour, base `+0.055` HSL lightness, and base `+0.110` HSL lightness. No
+  colour, base `+0.035` HSL lightness, and base `+0.070` HSL lightness. No
   darker-than-base terrain variant is generated. Calibrated 3D base colours:
   forest `#138239`, fields `#CFAC20`, mountains `#A3AAC2`, pasture `#96BF63`,
   hills `#E89569`, and desert `#DBC67B`. The title diorama applies the same
-  additional `+0.12` HSL lightness lift as gameplay, while the beach blend and
-  exposed sandy side additionally receive `-0.065` HSL lightness so the shore
+  additional `+0.16` HSL lightness lift as gameplay with a `1.09` saturation
+  multiplier, while the beach blend and exposed sandy side additionally receive
+  `-0.040` HSL lightness so the shore
   stays distinct from the newly softened terrain palette. The setup SVG preview
   retains its independent original unlifted palette.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
@@ -162,13 +163,13 @@ request AND a matching update to this section. Its defining elements:
   facets arranged in nested regular-hex bands parallel to the tile outline
   (not circular radial bands), rather than realistic grain/wet shading, with
   sandy exposed sides. Each terrain's facets use three deterministic
-  base-or-lighter variants (exact base, `+0.055`, `+0.110` HSL lightness;
+  base-or-lighter variants (exact base, `+0.035`, `+0.070` HSL lightness;
   never darker than base): forest `#138239`, fields `#CFAC20`, mountains
   `#A3AAC2`, pasture `#96BF63`, hills `#E89569`, desert `#DBC67B`
-  — then both the gameplay and title renderers add a further `+0.12` HSL
-  lightness lift to every top facet. The beach blend and sandy tile side use
+  — then both the gameplay and title renderers add a further `+0.16` HSL
+  lightness lift and a `1.09` saturation multiplier to every top facet. The beach blend and sandy tile side use
   their existing bases (`#F3D69C` / `#DFBD7D`) with a shared additional
-  `-0.065` HSL lightness adjustment, keeping the coastline legible against the
+  `-0.040` HSL lightness adjustment, keeping the coastline legible against the
   lighter terrain. The setup SVG preview retains its independent original base
   palette
   (the six shared edge/corner anchors keep their original height so roads,

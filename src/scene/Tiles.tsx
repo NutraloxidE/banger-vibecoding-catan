@@ -22,9 +22,10 @@ const hexBaseGeo = new THREE.CylinderGeometry(1, 1.06, 0.3, 6);
 const TILE_TOP_Y = 0.302;
 const TILE_CROWN = 0.055;
 const TILE_EDGE_SEGMENTS = 5;
-const FACET_LIGHTNESS_STEP = 0.055;
-export const TILE_PALETTE_LIGHTNESS = 0.12;
-export const TILE_SAND_LIGHTNESS = -0.065;
+const FACET_LIGHTNESS_STEP = 0.035;
+export const TILE_PALETTE_LIGHTNESS = 0.16;
+export const TILE_PALETTE_SATURATION = 1.09;
+export const TILE_SAND_LIGHTNESS = -0.04;
 
 export type TilePaletteColors = Record<Terrain | 'sand' | 'sandSide', string>;
 
@@ -44,7 +45,7 @@ export const DEFAULT_TILE_PALETTE_COLORS: TilePaletteColors = {
 
 export const DEFAULT_TILE_PALETTE_TUNING: TilePaletteTuning = {
   lightness: TILE_PALETTE_LIGHTNESS,
-  saturation: 1,
+  saturation: TILE_PALETTE_SATURATION,
   facetContrast: FACET_LIGHTNESS_STEP,
   sandLightness: TILE_SAND_LIGHTNESS,
   colors: DEFAULT_TILE_PALETTE_COLORS,
@@ -375,7 +376,7 @@ export function Tiles({
   board,
   seed,
   paletteLightness = 0,
-  paletteSaturation = 1,
+  paletteSaturation = TILE_PALETTE_SATURATION,
   facetContrast = FACET_LIGHTNESS_STEP,
   sandLightness = TILE_SAND_LIGHTNESS,
   paletteColors = DEFAULT_TILE_PALETTE_COLORS,

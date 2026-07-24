@@ -1906,3 +1906,8 @@ gameplay-only framing/features:
   and visually checked the title plus a newly generated medium gameplay board.
   The setup preview retains its prior independent colours. `npm run build` and
   all eight `npm run simulate` configurations pass.
+
+### Same-session extension — calibrated default refinement
+- Updated the shared title/gameplay default to the latest pasted V2 controls:
+  lightness `0.16`, saturation `1.09`, facet contrast `0.035`, and sand
+  lightness `-0.040`; terrain, beach, and tile-side hex colours are unchanged.
