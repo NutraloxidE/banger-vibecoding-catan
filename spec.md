@@ -36,7 +36,8 @@ settings (next bullet).
   water level (`GAMEPLAY_WATER_LEVEL`), island sink (`GAMEPLAY_BOARD_SINK`, so
   the coastline dips just below the raised waterline), water drift speed (the
   calmer `0.4` swell), scene lighting (ambient + the warm key light + a cool
-  `#a8c8ff` fill directional light), fog (`24`–`60`), solid sky color
+  `#A6C8FF` fill directional light at `0.55`, giving the tiles a brighter
+  sky-reflected cool lift), fog (`24`–`60`), solid sky color
   (`#D4F9FF`), camera FOV (`48`), and `dpr` (`[1, 1.75]`). The
   title keeps its own identity where it differs on purpose: the slowly
   auto-orbiting (non-interactive) camera and no harbors/docks.

@@ -46,7 +46,7 @@ export function TitleScene({ paletteTuning = DEFAULT_TILE_PALETTE_TUNING }: { pa
         <fog attach="fog" args={['#d4f9ff', 24, 60]} />
         <ambientLight intensity={0.85} />
         <directionalLight position={[10, 18, 6]} intensity={1.5} color="#fff4e0" />
-        <directionalLight position={[-8, 10, -10]} intensity={0.35} color="#a8c8ff" />
+        <directionalLight position={[-8, 10, -10]} intensity={0.55} color="#a6c8ff" />
         <Ambient boardRadius={6.3} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} shoreTiles={shoreTiles} />
         {/* Sink the island into the sea by the same amount as the gameplay
             screen so the coastline dips just below the raised waterline instead

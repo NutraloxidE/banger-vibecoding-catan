@@ -1932,3 +1932,14 @@ gameplay-only framing/features:
 - In-app Chromium screenshots confirm the title and gameplay scenes use the
   new pale-blue sky while water, terrain, HUD, and placement highlights remain
   intact; zero browser console errors.
+
+### Same-session extension — brighter blue sky reflection on tiles
+- Changed the shared title/gameplay cool fill light from `#A8C8FF` at `0.35`
+  to the requested `#A6C8FF` at `0.55`. The stronger opposing fill lifts the
+  shadowed faces of the rough tile materials and reads as pale-blue sky bounce.
+- Tile base colors/materials, warm key light, water, camera, and UI are
+  unchanged.
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner. In-app Chromium screenshots confirm brighter cool-lit tile shadows
+  in both title and gameplay without washing out the terrain colors; water,
+  HUD, and placement highlights remain intact, with zero console errors.

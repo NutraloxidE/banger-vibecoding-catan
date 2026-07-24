@@ -33,7 +33,7 @@ export function GameScene() {
       <fog attach="fog" args={['#d4f9ff', 24, 60]} />
       <ambientLight intensity={0.85} />
       <directionalLight position={[10, 18, 6]} intensity={1.5} color="#fff4e0" />
-      <directionalLight position={[-8, 10, -10]} intensity={0.35} color="#a8c8ff" />
+      <directionalLight position={[-8, 10, -10]} intensity={0.55} color="#a6c8ff" />
       <Ambient boardRadius={boardRadius} boatDistance={boardRadius * 2.5 + 5} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} shoreTiles={shoreTiles} />
       {/* The island and everything riding on the tile tops (terrain decorations,
           number tokens, robber, buildings, placement highlights, production FX)
