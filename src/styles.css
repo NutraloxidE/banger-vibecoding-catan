@@ -35,7 +35,7 @@ body {
    freshly generated island; matches the title scene's sky/fog color. */
 .title-scene-fade {
   position: absolute; inset: 0; pointer-events: none;
-  background: #9cc4de; opacity: 0;
+  background: #d4f9ff; opacity: 0;
   transition: opacity 0.9s ease-in-out;
 }
 .title-scene-fade-covered { opacity: 1; }

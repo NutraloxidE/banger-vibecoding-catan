@@ -9,24 +9,30 @@ Vercel with zero configuration (no server, DB, env vars, or external assets).
 Follow this order at the start of EVERY session / task:
 
 1. **Read `AGENTS.md`** (this file) — conventions and commands.
-2. **Create a dedicated session branch before editing.** Never work directly
+2. **Update `main` before branching.** Run `git fetch origin`, compare local
+   `main` with `origin/main`, and when local `main` is behind, fast-forward it
+   with `git switch main` then `git pull --ff-only origin main`. Never discard
+   or overwrite an in-flight dirty worktree to do this; preserve existing work
+   first, then integrate the latest `origin/main` only when it is safe.
+3. **Create a dedicated session branch from the up-to-date `main` before
+   editing.** Never work directly
    on `main`. Use a short task-specific name under `codex/` (for example,
    `codex/20260724-refine-tiles`). If the worktree already contains in-flight
    changes, preserve them by branching from the current `HEAD`; never discard
    or overwrite them just to change branches. Push each meaningful completed
    session branch to `origin` so its Vercel Preview is available from a phone.
-3. **Read `doc/PROGRESS.md`** — catch up on what was done, what is in
+4. **Read `doc/PROGRESS.md`** — catch up on what was done, what is in
    flight, and known issues.
-4. **Read `spec.md`** and check the request against it:
+5. **Read `spec.md`** and check the request against it:
    - If the request changes behavior, visuals, or rules → the spec must
      change too. Update `spec.md` in the same commit as the code.
    - If the request contradicts the spec, or the spec is silent on the
      point, decide whether a spec change is needed BEFORE coding.
    - When spec and code disagree, `spec.md` is the truth — fix the code
      (or explicitly change the spec).
-5. **Write an implementation plan before implementing.** Confirm unclear
+6. **Write an implementation plan before implementing.** Confirm unclear
    or ambiguous points with the user instead of guessing.
-6. After finishing: update `spec.md` if behavior changed, then append a
+7. After finishing: update `spec.md` if behavior changed, then append a
    dated entry to `doc/PROGRESS.md`.
 
 Note: `spec.md` describes WHAT the game is (the contract); `PLAN.md` is the

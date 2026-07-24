@@ -1911,3 +1911,24 @@ gameplay-only framing/features:
 - Updated the shared title/gameplay default to the latest pasted V2 controls:
   lightness `0.16`, saturation `1.09`, facet contrast `0.035`, and sand
   lightness `-0.040`; terrain, beach, and tile-side hex colours are unchanged.
+
+---
+
+## 2026-07-24 — Sky color set to #D4F9FF
+
+### What changed
+- Replaced the atmospheric `Sky` shader in both `GameScene` and `TitleScene`
+  with an exact solid scene background of `#D4F9FF`.
+- Matched both scenes' fog and the title world's regeneration cover-fade to
+  the same color so no old-color seam appears at the horizon or during swaps.
+- Terrain, water, lighting, camera, and UI remain unchanged.
+- Updated `AGENTS.md` session workflow: fetch first; if local `main` trails
+  `origin/main`, fast-forward it with `git pull --ff-only` before creating the
+  dedicated `codex/` task branch. Dirty in-flight work must still be preserved.
+
+### Verification
+- `npm run build` passes.
+- `npm run simulate` reaches a winner on all eight configurations.
+- In-app Chromium screenshots confirm the title and gameplay scenes use the
+  new pale-blue sky while water, terrain, HUD, and placement highlights remain
+  intact; zero browser console errors.

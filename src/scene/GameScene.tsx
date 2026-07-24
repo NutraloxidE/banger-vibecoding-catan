@@ -1,6 +1,5 @@
 import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Sky } from '@react-three/drei';
 import { useGame } from '../game/store';
 import { coastalTileCenters } from '../game/board';
 import { TILE_PALETTE_LIGHTNESS, Tiles } from './Tiles';
@@ -30,11 +29,11 @@ export function GameScene() {
       gl={{ antialias: true, powerPreference: 'high-performance' }}
       style={{ touchAction: 'none' }}
     >
-      <fog attach="fog" args={['#9cc4de', 24, 60]} />
+      <color attach="background" args={['#d4f9ff']} />
+      <fog attach="fog" args={['#d4f9ff', 24, 60]} />
       <ambientLight intensity={0.85} />
       <directionalLight position={[10, 18, 6]} intensity={1.5} color="#fff4e0" />
       <directionalLight position={[-8, 10, -10]} intensity={0.35} color="#a8c8ff" />
-      <Sky sunPosition={[60, 40, 20]} turbidity={6} rayleigh={1.6} />
       <Ambient boardRadius={boardRadius} boatDistance={boardRadius * 2.5 + 5} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} shoreTiles={shoreTiles} />
       {/* The island and everything riding on the tile tops (terrain decorations,
           number tokens, robber, buildings, placement highlights, production FX)
