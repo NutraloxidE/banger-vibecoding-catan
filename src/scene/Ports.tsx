@@ -5,7 +5,7 @@ import { Html } from '@react-three/drei';
 import { useGame } from '../game/store';
 import { Port, Resource, VertexNode } from '../game/types';
 import { portSignTexture } from './textures';
-import { GAMEPLAY_WATER_LEVEL } from './Ambient';
+import { GAMEPLAY_WATER_LEVEL, GAMEPLAY_BOARD_SINK } from './Ambient';
 
 // The moored boat is held at a FIXED height by its ropes to the (fixed) dock —
 // it does NOT follow the sea level, so nudging the water can't drag the rope
@@ -279,9 +279,11 @@ export function Ports() {
   });
   if (!ports || !vertices || !buildings || !players) return null;
 
-  // Bridges land on the landing-platform deck; the coastal nodes sit on the tile tops.
+  // Bridges land on the landing-platform deck; the coastal nodes sit on the tile
+  // tops, which are sunk into the sea with the rest of the board — so drop the
+  // land-side bridge end by the same amount (the water-anchored dock stays put).
   const DOCK_Y = PLATFORM_TOP;
-  const NODE_Y = 0.3;
+  const NODE_Y = 0.3 - GAMEPLAY_BOARD_SINK;
 
   return (
     <group>
