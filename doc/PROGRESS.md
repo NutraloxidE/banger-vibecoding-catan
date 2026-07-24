@@ -961,3 +961,296 @@ across both layouts (`src/game/board.ts` only):
 - Frozen gameplay screen (default board) changed on explicit user request;
   matching `spec.md` update in the same commit. Only `board.ts` + spec/progress
   touched; render path (`Ports.tsx`) untouched.
+
+---
+
+## 2026-07-23 — Harbor landing platform (乗り場・足場) at the dock
+
+### What changed (user request: 船と橋がつながる箇所に港の乗り場・足場を追加してビジュアルを洗練)
+- `src/scene/Ports.tsx`: each harbor's thin bobbing plank is replaced by a
+  **solid wooden landing platform (乗り場)** where the two plank bridges
+  converge and a ship would berth. The platform is a static box deck
+  (`landingGeo` 0.48×0.08×0.42, top at `PLATFORM_TOP=0.14`) with three deck
+  planking seams, **four support pilings (足場)** (`pilingGeo`, one per corner)
+  sinking into the water, and **two mooring bollards** (`bollardGeo`) on the
+  water-facing edge. The mast + hanging "N:1" sign now stand on this platform
+  at the **same world height/orientation as before** (post `y=0.36`, arm
+  `0.66`, sign `0.4`) — only difference is they no longer bob.
+- **Bobbing split**: the whole dock used to bob; now the pier structure is
+  static (so it aligns with the static bridges) and only the **buoy** bobs on
+  the water (its own `buoyRef` group; `useFrame` moved to just the buoy).
+- `Ports()` `DOCK_Y` now `= PLATFORM_TOP` (was 0.12) so the bridge dock-ends
+  land on the platform deck. Removed the now-unused `plankGeo`. Owner ring
+  moved to the platform top (`y=PLATFORM_TOP+0.01`, radius bumped to fit the
+  wider deck). Hover name-tag, top-down rate badge, trade math — all untouched.
+- `spec.md` §4 harbor amendment updated in the same commit (frozen gameplay
+  screen changed on explicit user request).
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only change;
+  simulate is headless so logic is unaffected).
+- Playwright (throwaway `--no-save`, pre-installed Chromium at
+  `/opt/pw-browsers/chromium-1194`, reverted out of package.json): traditional
+  small board — default view shows the harbor ring intact; a low-angle zoomed
+  close-up confirms each harbor now has a wooden landing deck on visible
+  pilings with the mast/sign standing on it, bridges landing on the deck, and
+  the red buoy floating beside it. Zero page errors on every shot.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress) touched — no game logic, no
+  shared store/types/CSS. Geometry-only refinement; the sign's height,
+  orientation and two-sided readability are preserved. If tile-top/dock Y
+  levels change, keep `PLATFORM_TOP` (deck top) == `DOCK_Y` (bridge start).
+
+---
+
+## 2026-07-23 — Boats kept offshore (stop merging with harbor docks)
+
+### What changed (user request: 船がドックと一体化してるので船をもう少し離して)
+- The circling ambient boats orbit at a constant world radius far outside the
+  harbor docks, but at low/zoomed camera angles a near-side boat (at the
+  waterline) projected right onto a coastal dock and read as "merged" with it.
+  Pushed the boats further offshore so they clearly separate from the docks.
+- `src/scene/Ambient.tsx`: `Ambient` gains an optional `boatDistance?: number`
+  prop; the inner boat orbit `worldR = boatDistance ?? boardRadius * 1.9 + 3`
+  (the `??` keeps the **default = the original formula**). The outer boat stays
+  `worldR + 1.6`.
+- `src/scene/GameScene.tsx`: passes `boatDistance={boardRadius * 2.5 + 5}` — so
+  the gameplay boats move out (small board 11.55→16.25 inner radius, docks at
+  ~4.9), clearing the coast at low angles.
+- **Frozen title screen unchanged**: `TitleScene.tsx` renders `<Ambient
+  boardRadius={6.3} />` with **no** `boatDistance`, so it falls back to the
+  original formula → title boats byte-for-byte identical (verified). Ambient's
+  only two consumers are GameScene + TitleScene.
+- `spec.md` §4 boats bullet updated in the same commit (frozen gameplay screen
+  changed on explicit user request).
+
+### Verified
+- `npm run build` passes (render-only change; `npm run simulate` unaffected —
+  headless, no ambient scene — left from the prior harbor entry, all 8 green).
+- Playwright (throwaway `--no-save`, reverted out of package.json): same
+  low-angle traditional-small view that previously showed a boat sitting on the
+  left "2:1" dock now shows that dock clear, with the boat riding higher/further
+  out on open water; title screen screenshot unchanged. Zero page errors.
+
+### Notes / scope
+- Only `src/scene/Ambient.tsx` + `src/scene/GameScene.tsx` (+ spec/progress)
+  touched. `boatDistance` is additive/optional so the shared `Ambient` stays
+  safe for the title screen. If boats ever look too far on huge boards, tune the
+  `boardRadius * 2.5 + 5` in GameScene (title is independent).
+
+---
+
+## 2026-07-24 — Harbor rework: moored boat + consistent dock frame + bridge fix
+
+### What changed (user screenshot: まだボートとドックが一体化 → ボートとドックっぽくして)
+The user's close-up showed the REAL problem: the dock itself read as a
+boat/dock hybrid — the big square sign looked like a sail on a hull, and a
+bridge deck sliced right through the sign. Two root causes found and fixed,
+all in `src/scene/Ports.tsx`:
+
+1. **Dock yaw was inconsistent per coast side (latent bug).** The old
+   `yaw = port.angle + π` does NOT face a chosen local axis inward — the
+   mapping flips with the port's angular position, so asymmetric dock parts
+   (bollards, buoy) landed on random sides. Invisible while the dock was
+   symmetric; fatal once it wasn't. New `yaw = 3π/2 − port.angle` maps the
+   dock-local frame consistently: **+z = toward island, −z = open water,
+   ±x = along the coast**. Sign faces the island everywhere.
+2. **Bridges started at the platform CENTER**, so their decks cut across the
+   landing and through the sign. Each bridge `from` is now offset 0.2 from
+   the port center toward its node — decks land on the platform's island-side
+   edge, never crossing the middle.
+3. **A real moored boat** (`MooredBoat`): open rowboat hull (flat base + low
+   walls + two benches) with a short mast and a furled beige sail, floating
+   just off the seaward edge, tied to the two edge bollards by taut ropes.
+   Gently bobs and rocks (`useFrame` on its own group). This makes "boat" and
+   "dock" two clearly separate silhouettes.
+4. **Flavor**: hanging sign sways softly (rotation.z sine); a barrel + crate
+   of dockside cargo on the deck; bollards moved to the seaward edge (where
+   the boat ties up); buoy repositioned beside the boat.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass.
+- Playwright (throwaway `--no-save`, reverted): traditional small board —
+  default view + low-angle + deep-zoom + 3/4 orbit: every harbor shows
+  sign-on-mast at one end facing the island, V-bridges landing on the deck
+  edge (no sign clipping), moored boat with furled sail + ropes on the sea
+  side, buoy beside it; orientation consistent around the whole coast. Zero
+  page errors on every shot.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress) touched. Render-only.
+- The dock-local frame contract is now: **+z island / −z sea / ±x coast**
+  (see the yaw comment in `PortDock`). Anything added to the dock must use it.
+- If `vertexScore`/board Y levels change, bridge `from` offset (0.2) assumes
+  the platform half-depth 0.21.
+
+---
+
+## 2026-07-24 — Harbor polish: raise sign, lower boat/buoy, raise sea level
+
+### What changed (user: 旗が沈んでる→上げて / 舟とボールが浮きすぎ→少し低く / 水位が低すぎて不自然に浮く→上げて)
+Three coupled height tweaks. Root cause of the "floating" look: the island
+base is at y=0 but the sea sat at y=−0.16, so the whole island (and the harbor
+boat/buoy, which sat even higher at y≈0.02–0.05) hovered above the water.
+
+1. **Sea level raised — gameplay only.** `src/scene/Ambient.tsx`: `Water` gains
+   a `level` prop (default `DEFAULT_WATER_LEVEL = −0.16`); both the surface mesh
+   and the dark underlayer (`level − 0.14`) follow it. `Ambient` gains a
+   `waterLevel` prop (same −0.16 default) threaded to `Water`. New exported
+   `GAMEPLAY_WATER_LEVEL = −0.03` (island base ≈ 0, so the coastline now just
+   meets the sea). `src/scene/GameScene.tsx` passes it. **Frozen title
+   unchanged**: `TitleScene` calls `<Ambient boardRadius={6.3} />` with no
+   `waterLevel` → default −0.16 (verified byte-for-byte).
+2. **Circling boats follow the sea.** The ambient `Boat` now takes a `baseY`
+   and floats at `waterLevel + 0.11` (preserves the old −0.05 freeboard at the
+   title's −0.16 level; lifts with the raised gameplay sea so they don't sink).
+3. **Harbor boat + buoy lowered to the waterline.** `src/scene/Ports.tsx`
+   imports `GAMEPLAY_WATER_LEVEL` and derives `BOAT_Y = level − 0.01`,
+   `BUOY_Y = level + 0.02` (used for both the static position and the bob
+   baseline). Net: the moored boat's hull now sits at the sea surface and the
+   buoy rides half-submerged — the "little lower" the user asked for is small
+   in absolute terms (~0.06) because the sea coming up does most of the work.
+4. **Sign raised clear of the deck.** Mast post `y 0.36→0.42` (top now 0.78),
+   arm `0.66→0.76`, sign group `0.4→0.50` (bottom 0.24, ~0.10 above the deck
+   top at 0.14) so the flag no longer dips into the planking.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway `--no-save`, reverted): traditional small board,
+  default + low-angle close-ups — island/docks now sit in the sea (coastline
+  meets water, no floating cliff), signs hang high & clear of the deck, moored
+  boat + red buoy ride at the waterline; **title screen screenshot unchanged**.
+  Zero page errors.
+
+### Notes / scope
+- `Ambient.tsx` is shared with the frozen title — the water/boat changes are
+  gated behind props that default to the original values, so only the gameplay
+  screen (which passes `waterLevel`/`boatDistance`) is affected.
+- Harbor boat/buoy heights are tied to `GAMEPLAY_WATER_LEVEL` via the imported
+  constant, so re-tuning the sea level moves them together. If the island base
+  (hex prism at y=0) ever changes, revisit `GAMEPLAY_WATER_LEVEL`.
+
+---
+
+## 2026-07-24 — Harbor boat: bigger, seated lower (no bob-float), ropes re-pinned
+
+### What changed (user: 揺れると浮きすぎる時ある / 船もうちょっとだけでかく / 紐がズレないよう注意)
+The moored boat sometimes lifted into an air gap during the bob, because its
+rest height put the hull bottom slightly ABOVE the sea's rest level and its own
+bob (±0.015, out of phase with the sea's ±0.03 swell) pushed it higher. Fixed
+in `src/scene/Ports.tsx` (only file touched):
+- **Seated lower + calmer.** `BOAT_Y = GAMEPLAY_WATER_LEVEL − 0.055` (was
+  −0.01), so the hull bottom rests ~0.025 below the sea surface; bob amplitude
+  cut 0.015→0.005 and roll 0.03→0.02. The boat now stays in the water through
+  the swell instead of floating, while its hull still shows above the line.
+- **A little bigger.** Hull + rigging wrapped in a `<group scale={1.2}>`
+  (`BOAT_SCALE`). The **ropes are kept OUTSIDE that scale** (siblings of the
+  scaled group) so scaling can't drag their ends off the bollards.
+- **Ropes re-pinned to the bollards.** Because the boat dropped, the ropes were
+  recomputed for the new depth: `ropeGeo` length 0.31→0.32, position
+  `[±0.1, 0.185, 0.215]→[±0.1, 0.222, 0.22]`, rotation.x `−0.36→−0.478`. Their
+  far ends land at boat-space `[±0.1, 0.295, 0.36]`, i.e. exactly the seaward
+  bollards `[±0.1, PLATFORM_TOP+0.07, −0.16]` (verified by the endpoint math).
+  With the tiny bob the boat barely moves, so the ropes stay pinned.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway `--no-save`, reverted): traditional small board — very
+  low, deep-zoom close-ups across several bob phases show the boat holding a
+  steady waterline (no lift/air gap), the larger hull reading clearly, and the
+  two ropes spanning hull→bollards on the seaward side. Default + seaward-side
+  views clean. Zero page errors.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress). `Ambient.tsx` untouched this
+  round, so the frozen title screen is unaffected by definition.
+- Rope geometry is hand-tuned to `BOAT_Y` + `BOAT_SCALE` + the bollard position.
+  If any of those change, recompute the rope length/position/rotation so the far
+  end still lands on `[±0.1, PLATFORM_TOP+0.07, −0.16]` (dock-local).
+
+---
+
+## 2026-07-24 — Buoy bob calmed (stop it rising above the water)
+
+### What changed (user: ボールがうえに行き過ぎるときがある → 周波数/amp ちょい低く)
+The harbor buoy occasionally rose above the sea surface at the top of its bob
+(its peak sat higher than the water's trough). Calmed the bob in
+`src/scene/Ports.tsx` (one line): amplitude `0.03→0.015` and frequency
+`1.4→1.1` in the buoy's `useFrame`. Peak rest height drops from `BUOY_Y+0.03`
+(0.02) to `BUOY_Y+0.015` (0.005), so the buoy now sits steadily at the
+waterline through the swell. `BUOY_Y` unchanged.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway, reverted): deep-zoom close-ups across 8 bob phases show
+  the buoy holding a steady waterline (no lift-off). Zero page errors.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` touched (a single animation line). Spec §4 already
+  describes a gently-bobbing buoy accurately, so no spec change was needed.
+
+---
+
+## 2026-07-24 — Sea level nudged up slightly + moored boat decoupled from it
+
+### What changed (user: 海の水位若干だけ上げて)
+- Raised the gameplay sea level a touch: `GAMEPLAY_WATER_LEVEL −0.03 → −0.02`
+  (`src/scene/Ambient.tsx`), so the coastline/island sits a hair lower in the
+  sea. The free-floating buoy and the circling ambient boats follow it (they're
+  derived from the constant), staying at the waterline.
+- **Decoupled the moored harbor boat from the sea level** to protect the rope
+  alignment (the user's recurring concern). Previously `BOAT_Y =
+  GAMEPLAY_WATER_LEVEL − 0.055`, so raising the sea lifted the boat and dragged
+  the rope far-ends off the fixed dock bollards. Now `BOAT_Y = −0.085` (a fixed
+  constant == the old value at the −0.03 level), matching the real "boat held by
+  taut ropes to a fixed dock" model: the boat stays put and the sea just laps a
+  little higher on its hull. **Ropes are byte-for-byte unchanged and still land
+  on the bollards.**
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway, reverted): default view shows the island sitting
+  slightly lower in a higher sea; harbor close-up confirms the boat a touch more
+  submerged (hull still above the line) with its ropes still meeting the
+  bollards. Zero page errors. Spec §4 updated (boat now moored at a fixed
+  height, not sea-tracking).
+
+### Notes / scope
+- `Ambient.tsx` change is the shared water level, but gated behind the
+  `waterLevel` prop → frozen title still uses `DEFAULT_WATER_LEVEL −0.16`,
+  unaffected. Harbor boat height is now an absolute constant; only the buoy +
+  ambient boats track `GAMEPLAY_WATER_LEVEL`. If the sea level is nudged again,
+  the boat/ropes need no change; only reconsider `BOAT_Y` if the boat looks too
+  submerged.
+
+---
+
+## 2026-07-24 — Boat enlarged + raised (it looked submerged after the sea raise)
+
+### What changed (user: 舟が水没するので大きさを少し上げてから位置を上げて)
+After the sea level went up (−0.03→−0.02) with the boat pinned at a fixed
+height, the hull sat too deep. Per request, made the boat bigger AND raised it
+(`src/scene/Ports.tsx` only):
+- `BOAT_SCALE 1.2 → 1.35` (a little larger).
+- `BOAT_Y −0.085 → −0.072` (raised ~0.013) so the hull walls sit clearly above
+  the −0.02 sea surface again — no longer submerged.
+- **Ropes recomputed** for the new height + scale (raising the boat would
+  otherwise pull the rope ends off the fixed bollards): `ropeGeo` length
+  0.32→0.30, position `[±0.1, 0.222, 0.22]→[±0.1, 0.2235, 0.224]`, rotation.x
+  `−0.478→−0.4064`. Far ends land at boat-space `[±0.1, 0.282, 0.36]` == the
+  seaward bollards `[±0.1, PLATFORM_TOP+0.07, −0.16]` (verified by the endpoint
+  math and screenshots).
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway, reverted): deep-zoom close-ups across 5 bob phases —
+  the larger boat holds a steady waterline with its hull walls above the surface
+  (not submerged, no lift-off), and both ropes still meet the bollards. Zero
+  page errors. Spec §4 wording updated (hull walls above the waterline).
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress). The rope constants are tuned to
+  `BOAT_Y` + `BOAT_SCALE` + the fixed bollard `[±0.1, PLATFORM_TOP+0.07, −0.16]`
+  — change any of those three and recompute length/position/rotation so the far
+  end still lands on the bollard.

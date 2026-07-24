@@ -102,7 +102,11 @@ request AND a matching update to this section. Its defining elements:
 
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
-  water/boats (slightly enlarged for presence)/clouds, orbit/zoom/pan camera
+  water (raised on the gameplay screen so the island + docks sit IN the sea
+  rather than floating above it — the frozen title keeps the original sea
+  level)/boats (slightly enlarged for presence; kept well offshore so they
+  read as open-water vessels and don't visually merge with the harbor docks)/
+  clouds, orbit/zoom/pan camera
   with soft auto-focus on events. (Desktop: WASD glides the view horizontally
   along the ground relative to the camera's facing direction — W forward,
   S back, A/D strafe — and takes precedence over auto-focus while held; the
@@ -110,13 +114,27 @@ request AND a matching update to this section. Its defining elements:
   (Amendment: when the Golden Hex modifier is on, the golden tile carries a
   static gold ring so the wildcard tile is identifiable.)
   (Amendment: coastal harbors render as small docks with a hanging "N:1"
-  sign out on the water; the sign hangs from a raised mast and is large
-  enough to read the rate + resource from the default camera, and reads
+  sign out on the water. Each dock is a solid wooden landing platform (乗り場)
+  standing on four support pilings (足場) that sink into the water. All docks
+  share a consistent local frame (island side vs. open-water side): two
+  mooring bollards sit on the seaward edge, and a small **moored rowboat**
+  (open hull, benches, short mast with a furled beige sail) sits just off that
+  edge, tied to the bollards by two taut ropes — so every harbor reads as a
+  distinct boat AND dock, never one merged silhouette. The boat is held at a
+  fixed height by its mooring ropes to the dock (it does not track the sea
+  level, so the ropes always meet the bollards) and only bobs slightly, seated
+  in the sea through the swell (no air gap) with its hull walls clearly above
+  the waterline; the free-floating owner's buoy does ride the sea surface.
+  A barrel + crate of dockside cargo sit on the deck. The sign hangs from a
+  raised mast at one end of the platform — high enough that it clears the deck
+  planking — faces the island, sways gently in the breeze, and is
+  large enough to read the rate + resource from the default camera, reading
   correctly (non-mirrored) from either side. Two wooden plank bridges (with
-  side rails + corner posts) span from each dock up to the two coastal nodes
-  it serves, so it reads at a glance which corners the harbor connects to; a
-  claimed
-  harbor shows a ring + buoy in the owner's color. Hovering a dock shows
+  side rails + corner posts) span from the platform's island-side edge (not
+  its center, so they never cut through the sign) up to the two coastal nodes
+  the harbor serves, so it reads at a glance which corners connect; a claimed
+  harbor shows a ring + buoy in the owner's color (the buoy floats beside the
+  moored boat; buoy bobs and boat rocks gently while the pier stays fixed). Hovering a dock shows
   its name and rate. As the camera orbits toward a near top-down view — where
   the vertical signs go edge-on — a dedicated flat, screen-facing DOM badge
   fades in over each harbor showing its trade ratio ("🪵 2:1" / "⚓ 3:1",
