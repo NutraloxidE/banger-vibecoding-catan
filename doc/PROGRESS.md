@@ -1451,3 +1451,57 @@ since the first commit.
 ### Notes
 - `spec.md` §2 updated in the same commit per the frozen-surface rule (now
   describes no vignette, replacing the earlier recolor note).
+
+---
+
+## 2026-07-24 — Shoreline surf foam at the tile/water contact line
+
+### What changed (user request: タイルと海の間、波打ち際の接点から外側に広がり外に向けて薄くなる細かいセルラーノイズ)
+`src/scene/Ambient.tsx` (`Water`, shared by the frozen title + gameplay
+screens — same shared-component pattern as every prior water-shader change):
+
+- **Vertex shader**: new `uniform float uRadius` (the island/coast radius,
+  same value already used to size the sea ring geometry) and a new varying
+  `vShoreDist = length(worldXZ) - uRadius` — signed distance outward from the
+  land/water contact ring, computed once per vertex and interpolated.
+- **Fragment shader**: a second, independent, higher-frequency Worley field
+  (`shoreCellular`, own `shoreHash2`, frequency ×3.4 vs. the swell's ×0.18–
+  ×1.15) samples `vWorldPos.xz` to produce a fine surf-lace pattern
+  (`step(F2-F1, 0.2)`), gated by a `shoreBand` factor: `smoothstep(-0.08,
+  0.06, vShoreDist)` (off well inside the island, on right at/after the
+  coast) × `1 - smoothstep(0, uShoreWidth, vShoreDist)` (fades to 0 by
+  `uShoreWidth` units outward). Mixed into the existing toon-shaded color
+  with `uColorCrest` (the same white used for the open-water cell-border
+  foam) — a distinct, finer lace anchored exactly at the coastline instead
+  of scattered wherever Worley cells border in open water.
+- **`Water` component**: added `uRadius`/`uShoreWidth` uniforms
+  (`uShoreWidth = radius * 0.16`), kept in sync via a `useEffect` on
+  `[mat, radius]` — same pattern already used for `uDriftSpeed`, so the
+  shader material itself is still created once (`useMemo(..., [])`).
+- No JS uniform wiring needed for `uTime`/`uDriftSpeed` in the new fragment
+  function — three.js `ShaderMaterial` shares one `uniforms` object across
+  both shader stages, so declaring the existing uniform names in the
+  fragment shader was enough to reuse the vertex shader's animated drift.
+
+### Verified
+- `npm run build` passes; `npm run simulate` reaches a winner on all 8
+  configs (render-only change).
+- Playwright (throwaway `npm install -D playwright --no-save` against a
+  `vite preview` server, both reverted after — `git status` shows only
+  `Ambient.tsx` + spec/progress): title screen and a freshly generated
+  gameplay board both show a fine white lace band hugging the coastline,
+  fading to nothing a short distance out over open water; the existing
+  open-water cell-border foam, board layout, HUD, and tokens are visually
+  unchanged; zero page errors on either screen.
+
+### Notes / scope
+- Only `Ambient.tsx` (+ spec/progress) touched — no geometry, camera, HUD,
+  or game-logic changes. Frozen title + gameplay screens both changed (this
+  shader has no per-screen toggle, per the established pattern from every
+  prior Worley/water entry above); `spec.md` §2 and §4 updated in the same
+  commit.
+- If the coast ever stops being well-approximated by `boardRadius` (e.g. a
+  non-circular island shape), `uShoreWidth`'s `radius * 0.16` heuristic and
+  the `vShoreDist` radial-distance math would need revisiting — currently
+  matches the same `radius` value already trusted for boat/dock placement
+  elsewhere.

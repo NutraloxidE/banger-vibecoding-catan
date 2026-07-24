@@ -32,10 +32,12 @@ export const GAMEPLAY_WATER_LEVEL = -0.02;
 const WATER_VERT = /* glsl */ `
 uniform float uTime;
 uniform float uDriftSpeed;
+uniform float uRadius;
 varying float vHeight;
 varying vec3 vNormalW;
 varying vec2 vCell;
 varying vec3 vWorldPos;
+varying float vShoreDist;
 
 vec2 hash2(vec2 p){
   p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -77,6 +79,7 @@ float waveField(vec2 w, out vec2 cellOut){
 void main(){
   vec3 pos = position;
   vec2 w = (modelMatrix * vec4(pos, 1.0)).xz; // world XZ so waves are stable
+  vShoreDist = length(w) - uRadius; // distance outward from the land/water contact ring
   vec2 cell;
   float h = waveField(w, cell);
   const float amp = 0.16;
@@ -99,10 +102,39 @@ uniform vec3 uColorShallow;
 uniform vec3 uColorCrest;
 uniform vec3 uLightDir;
 uniform float uOpacity;
+uniform float uTime;
+uniform float uDriftSpeed;
+uniform float uShoreWidth;
 varying float vHeight;
 varying vec3 vNormalW;
 varying vec2 vCell;
 varying vec3 vWorldPos;
+varying float vShoreDist;
+
+vec2 shoreHash2(vec2 p){
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453123);
+}
+
+// Finer, independent Worley field used only for the shoreline surf lace —
+// higher frequency than the swell's cells so it reads as small surf foam.
+vec2 shoreCellular(vec2 p){
+  vec2 ip = floor(p);
+  vec2 fp = fract(p);
+  float f1 = 9.0, f2 = 9.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 g = vec2(float(i), float(j));
+      vec2 o = shoreHash2(ip + g);
+      o = 0.5 + 0.5 * sin(uTime * uDriftSpeed * 1.7 + 6.2831853 * o);
+      vec2 r = g + o - fp;
+      float d = dot(r, r);
+      if (d < f1) { f2 = f1; f1 = d; }
+      else if (d < f2) { f2 = d; }
+    }
+  }
+  return vec2(sqrt(f1), sqrt(f2));
+}
 
 void main(){
   vec3 N = normalize(vNormalW);
@@ -122,6 +154,15 @@ void main(){
   float border = step(vCell.y - vCell.x, 0.12) * step(-0.08, vHeight);
   base = mix(base, uColorCrest, border);
   vec3 col = base * (0.68 + 0.4 * diffToon) + spec * vec3(0.9);
+  // Shoreline surf: a fine cellular-noise lace anchored at the land/water
+  // contact ring, spreading outward and fading with distance from shore —
+  // never shows inward (under the island) where it would be hidden anyway.
+  float shoreOutward = smoothstep(-0.08, 0.06, vShoreDist);
+  float shoreFade = 1.0 - smoothstep(0.0, uShoreWidth, vShoreDist);
+  float shoreBand = shoreOutward * shoreFade;
+  vec2 shoreCell = shoreCellular(vWorldPos.xz * 3.4 + 9.0);
+  float shoreFoam = step(shoreCell.y - shoreCell.x, 0.2) * shoreBand;
+  col = mix(col, uColorCrest, shoreFoam * 0.9);
   gl_FragColor = vec4(col, uOpacity);
 }
 `;
@@ -140,6 +181,8 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAUL
       uColorCrest: { value: new THREE.Color('#ffffff') },
       uLightDir: { value: new THREE.Vector3(10, 18, 6).normalize() },
       uOpacity: { value: 0.9 },
+      uRadius: { value: radius },
+      uShoreWidth: { value: radius * 0.16 },
     },
     vertexShader: WATER_VERT,
     fragmentShader: WATER_FRAG,
@@ -147,6 +190,10 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAUL
     side: THREE.DoubleSide,
   }), []);
   useEffect(() => { mat.uniforms.uDriftSpeed.value = driftSpeed; }, [mat, driftSpeed]);
+  useEffect(() => {
+    mat.uniforms.uRadius.value = radius;
+    mat.uniforms.uShoreWidth.value = radius * 0.16;
+  }, [mat, radius]);
   const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 200, 72), [radius]);
   useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.elapsedTime; });
   return (
