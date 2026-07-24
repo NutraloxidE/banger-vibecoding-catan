@@ -1943,3 +1943,16 @@ gameplay-only framing/features:
   winner. In-app Chromium screenshots confirm brighter cool-lit tile shadows
   in both title and gameplay without washing out the terrain colors; water,
   HUD, and placement highlights remain intact, with zero console errors.
+
+### Same-session extension — Clip Studio-style color-grade post-effect
+- Added a shared final-frame CSS color grade to the title/game WebGL canvas:
+  `saturate(1.24) brightness(1.17)`, mapping the supplied Clip Studio
+  Hue/Saturation/Luminosity reference (`0 / +24 / +17`).
+- The filter runs after the complete 3D scene is composited, so sky, sea,
+  terrain, pieces, ports, and 3D highlights receive one consistent grade.
+  DOM HUD/text are deliberately outside the filter to preserve readability.
+- No post-processing dependency or extra render pass was added.
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner. In-app Chromium confirms the vivid, bright reference-like grade on
+  title and gameplay scenes, while computed styles show the exact filter on
+  the canvas and `none` on the game/HUD wrapper; zero console errors.

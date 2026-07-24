@@ -54,6 +54,11 @@ settings (next bullet).
   distance, a distinct wave-break band from the open-water foam), boats,
   drifting clouds. Nothing more (no particles, birds, or launch transitions
   — tried and rejected by the user).
+- The final WebGL frame on both title and gameplay scenes receives a shared
+  color-grade post-effect matching the supplied Clip Studio Hue/Saturation/
+  Luminosity reference: hue `0`, saturation `+24`, luminosity `+17`
+  (`saturate(1.24) brightness(1.17)`). It affects the 3D canvas only; DOM HUD
+  and text remain unfiltered for readability.
 - The demo island uses the same refined tile surface as gameplay: each hex has
   a subtly crowned centre that slopes gently toward its six edges, with a
   narrow, irregular sandy beach band. Pastel biome colours transition into
