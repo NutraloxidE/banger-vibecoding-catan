@@ -1427,23 +1427,27 @@ switch.
 
 ---
 
-## 2026-07-24 — Title screen vignette recolored (was reading as a black haze)
+## 2026-07-24 — Title screen vignette recolored, then fully removed
 
 ### What changed
 User reported a black haze behind the title text, distinct from the logo's
 drop shadow. Traced it to `.title-overlay`'s `background: radial-gradient(...)`
 in `src/styles.css` — a dark vignette behind the title block/buttons, present
-since the first commit. Asked the user whether to remove it entirely or
-recolor it; they chose recolor. Changed the vignette color from a near-black
-`rgba(4,10,18,0.55)` to `rgba(16,30,46,0.55)` — the same navy already used by
-`--panel-lite` elsewhere in the UI — keeping the same shape/opacity/legibility
-purpose but matching the app's established dark-navy palette instead of
-reading as a flat black smudge.
+since the first commit.
+
+- First pass: asked the user remove-vs-recolor; they chose recolor. Changed
+  the vignette from near-black `rgba(4,10,18,0.55)` to `rgba(16,30,46,0.55)`
+  (the same navy as `--panel-lite` elsewhere in the UI).
+- Follow-up: user asked to try removing it outright ("一旦黒いもや消してみて").
+  Deleted the `background` line from `.title-overlay` entirely — no vignette
+  behind the title block now, logo drop-shadow filter untouched.
 
 ### Verified
-- `npm run build` and `npm run simulate` (all 8 configs) pass.
-- Playwright screenshot of the title screen confirms the vignette is now
-  navy-toned and less prominent as a "haze"; logo drop shadow unchanged.
+- `npm run build` and `npm run simulate` (all 8 configs) pass after the
+  removal.
+- Playwright screenshot confirms the vignette is gone and the logo's own
+  drop shadow is unaffected.
 
 ### Notes
-- `spec.md` §2 updated in the same commit per the frozen-surface rule.
+- `spec.md` §2 updated in the same commit per the frozen-surface rule (now
+  describes no vignette, replacing the earlier recolor note).
