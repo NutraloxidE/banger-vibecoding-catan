@@ -31,6 +31,15 @@ body {
 .scene-bg { position: absolute; inset: 0; }
 .scene-bg canvas { display: block; }
 
+/* Cover-fade used only while the title screen's background world swaps to a
+   freshly generated island; matches the title scene's sky/fog color. */
+.title-scene-fade {
+  position: absolute; inset: 0; pointer-events: none;
+  background: #9cc4de; opacity: 0;
+  transition: opacity 0.9s ease-in-out;
+}
+.title-scene-fade-covered { opacity: 1; }
+
 /* near-win tension vignette */
 body.tension-1 .game-screen::after,
 body.tension-2 .game-screen::after {
@@ -107,7 +116,6 @@ body.tension-2 .game-screen::after {
   position: absolute; inset: 0;
   display: flex; flex-direction: column; align-items: center; justify-content: center;
   gap: 34px; pointer-events: none;
-  background: radial-gradient(ellipse at 50% 110%, rgba(4,10,18,0.55), transparent 60%);
 }
 .title-overlay .btn, .title-overlay input { pointer-events: auto; }
 .title-block { text-align: center; animation: floatIn 1.2s ease-out; }

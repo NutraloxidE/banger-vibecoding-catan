@@ -1383,3 +1383,71 @@ FROZEN):
   mirroring the existing `level` prop pattern) instead of editing the shared
   shader constant directly, specifically to keep the frozen title screen
   byte-for-byte identical.
+
+---
+
+## 2026-07-24 — Title screen background world now regenerates periodically
+
+### What changed
+User explicitly asked for the title screen's background world to also be
+"generated" (it already was, via `generateBoard`, but on a fixed seed
+`HEXTOPIA-TITLE` — same island every load). Confirmed with the user via
+`AskUserQuestion` which behavior they wanted: periodic switch to a new
+random island (vs. one random island per page load) — they chose periodic
+switch.
+
+- `src/scene/TitleScene.tsx`: island seed is now React state, starting at
+  the original `HEXTOPIA-TITLE`. Every 45s (`WORLD_SWITCH_MS`) it swaps to
+  a freshly random seed (`HEXTOPIA-TITLE-<random>`), hidden behind a 0.9s
+  cover-fade (`FADE_MS`) so the swap never pops mid-frame. Camera orbit,
+  lighting, water, and everything else is untouched.
+- `src/styles.css`: added `.title-scene-fade` / `.title-scene-fade-covered`,
+  a title-screen-local overlay (matches the scene's fog/sky color
+  `#9cc4de`) — not touching the shared `.scene-bg` class also used by the
+  gameplay screen.
+- `spec.md` §2 updated in the same commit per the frozen-surface rule: the
+  title screen is still "first-commit look, FROZEN", but now documents the
+  fixed-seed start + 45s randomized regeneration as an explicitly kept
+  addition (alongside the language toggle).
+
+### Verified
+- `npm run build` and `npm run simulate` (all 8 configs) pass.
+- Playwright: loaded the dev build, screenshotted the title screen, waited
+  ~46s (one full switch + fade cycle), screenshotted again — the island
+  layout is visibly different (different resource/number-token
+  arrangement) after the fade, with zero console/page errors across the
+  wait.
+
+### Notes / gotchas
+- `Tiles` already takes `seed` as a prop and re-keys cleanly on change; no
+  internal caching issues swapping seeds at runtime.
+- Kept the *first* island on the exact original fixed seed so the very
+  first frame a user sees is unchanged from before — only later swaps use
+  random seeds.
+
+---
+
+## 2026-07-24 — Title screen vignette recolored, then fully removed
+
+### What changed
+User reported a black haze behind the title text, distinct from the logo's
+drop shadow. Traced it to `.title-overlay`'s `background: radial-gradient(...)`
+in `src/styles.css` — a dark vignette behind the title block/buttons, present
+since the first commit.
+
+- First pass: asked the user remove-vs-recolor; they chose recolor. Changed
+  the vignette from near-black `rgba(4,10,18,0.55)` to `rgba(16,30,46,0.55)`
+  (the same navy as `--panel-lite` elsewhere in the UI).
+- Follow-up: user asked to try removing it outright ("一旦黒いもや消してみて").
+  Deleted the `background` line from `.title-overlay` entirely — no vignette
+  behind the title block now, logo drop-shadow filter untouched.
+
+### Verified
+- `npm run build` and `npm run simulate` (all 8 configs) pass after the
+  removal.
+- Playwright screenshot confirms the vignette is gone and the logo's own
+  drop shadow is unaffected.
+
+### Notes
+- `spec.md` §2 updated in the same commit per the frozen-surface rule (now
+  describes no vignette, replacing the earlier recolor note).
