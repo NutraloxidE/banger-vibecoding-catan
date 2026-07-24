@@ -182,7 +182,7 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
   // The pier/landing is a solid structure; only the buoy bobs and the hanging
   // sign sways gently in the breeze.
   useFrame(({ clock }) => {
-    if (buoyRef.current) buoyRef.current.position.y = BUOY_Y + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
+    if (buoyRef.current) buoyRef.current.position.y = BUOY_Y + Math.sin(clock.elapsedTime * 1.1 + phase) * 0.015;
     if (signRef.current) signRef.current.rotation.z = Math.sin(clock.elapsedTime * 1.1 + phase) * 0.05;
   });
 

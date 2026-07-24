@@ -1168,3 +1168,24 @@ in `src/scene/Ports.tsx` (only file touched):
 - Rope geometry is hand-tuned to `BOAT_Y` + `BOAT_SCALE` + the bollard position.
   If any of those change, recompute the rope length/position/rotation so the far
   end still lands on `[±0.1, PLATFORM_TOP+0.07, −0.16]` (dock-local).
+
+---
+
+## 2026-07-24 — Buoy bob calmed (stop it rising above the water)
+
+### What changed (user: ボールがうえに行き過ぎるときがある → 周波数/amp ちょい低く)
+The harbor buoy occasionally rose above the sea surface at the top of its bob
+(its peak sat higher than the water's trough). Calmed the bob in
+`src/scene/Ports.tsx` (one line): amplitude `0.03→0.015` and frequency
+`1.4→1.1` in the buoy's `useFrame`. Peak rest height drops from `BUOY_Y+0.03`
+(0.02) to `BUOY_Y+0.015` (0.005), so the buoy now sits steadily at the
+waterline through the swell. `BUOY_Y` unchanged.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway, reverted): deep-zoom close-ups across 8 bob phases show
+  the buoy holding a steady waterline (no lift-off). Zero page errors.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` touched (a single animation line). Spec §4 already
+  describes a gently-bobbing buoy accurately, so no spec change was needed.
