@@ -255,8 +255,8 @@ request AND a matching update to this section. Its defining elements:
   a two-line panel fixed at the upper-left and settings fixed at the upper-right
   on both desktop and phones, inset only 8–12 px from the actual viewport
   corners rather than below the player-chip row; toasts center-top; world-event
-  banner centered below the player-chip row without overlapping it; NPC offer popup
-  with countdown.
+  banner centered below the player-chip row without overlapping it and layered
+  above every other in-game HUD element; NPC offer popup with countdown.
   (Amendment: development cards — the dev-card row lets the human buy a card and
   play a held one; playing a card that needs a target opens the robber phase
   (Knight/Earthquake), a free-road placement (Road Building), or a resource-pick

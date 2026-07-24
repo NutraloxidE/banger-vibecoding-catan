@@ -2041,3 +2041,11 @@ gameplay-only framing/features:
 - At 1280×800 the player row ends at 81.8px, leaving 6.2px before the banner;
   at 390×844 it ends at 87.2px, leaving 8.8px. No horizontal overflow or
   browser warnings/errors. Build and all eight simulations pass.
+
+### Same-session extension — world-event banner on top
+- Raised the world-event banner from `z-index: 15` to `50`, above the player
+  row, corner HUD, toasts, and NPC offers. Full-screen settings/trade overlays
+  (`60`) and the victory screen (`80`) intentionally remain above it.
+- Browser inspection confirms the intended stack (`20/30/40/45/50/60/80`) at
+  390×844 with no warnings/errors; the gameplay surface remains otherwise
+  unchanged. Build and all eight simulations pass.
