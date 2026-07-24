@@ -7,13 +7,14 @@ import { Port, Resource, VertexNode } from '../game/types';
 import { portSignTexture } from './textures';
 import { GAMEPLAY_WATER_LEVEL } from './Ambient';
 
-// Waterline-relative rest heights so the harbor boat + buoy float on the same
-// sea surface as the rest of the scene (Ambient owns the level). The boat rests
-// with its hull bottom below the sea surface and barely bobs, so it stays
-// seated in the water through the swell instead of lifting into an air gap —
-// while still showing its hull above the waterline; the buoy rides with its
-// lower half under.
-const BOAT_Y = GAMEPLAY_WATER_LEVEL - 0.055;
+// The moored boat is held at a FIXED height by its ropes to the (fixed) dock —
+// it does NOT follow the sea level, so nudging the water can't drag the rope
+// ends off the bollards; the sea just laps a little higher/lower on the hull.
+// (Value == the original GAMEPLAY_WATER_LEVEL(−0.03) − 0.055 rest, frozen here
+// so the hand-tuned ropes stay exactly aligned.) It barely bobs, so it never
+// lifts into an air gap. The free-floating buoy DOES ride the sea level and
+// sits with its lower half under.
+const BOAT_Y = -0.085;
 const BUOY_Y = GAMEPLAY_WATER_LEVEL + 0.02;
 // The hull + rigging are drawn a touch larger. The mooring ropes are kept
 // OUTSIDE this scale (and hand-tuned for the boat's depth) so their ends stay

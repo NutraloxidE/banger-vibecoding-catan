@@ -20,7 +20,7 @@ export const DEFAULT_WATER_LEVEL = -0.16;
 // Sea surface used on the gameplay screen (island base is at y=0, so this keeps
 // the coastline just meeting the water). Shared with Ports.tsx so the harbor
 // boat + buoy float at the same line.
-export const GAMEPLAY_WATER_LEVEL = -0.03;
+export const GAMEPLAY_WATER_LEVEL = -0.02;
 
 export function Water({ radius, level = DEFAULT_WATER_LEVEL }: { radius: number; level?: number }) {
   const ref = useRef<THREE.Mesh>(null);

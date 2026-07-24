@@ -1189,3 +1189,37 @@ waterline through the swell. `BUOY_Y` unchanged.
 ### Notes / scope
 - Only `src/scene/Ports.tsx` touched (a single animation line). Spec §4 already
   describes a gently-bobbing buoy accurately, so no spec change was needed.
+
+---
+
+## 2026-07-24 — Sea level nudged up slightly + moored boat decoupled from it
+
+### What changed (user: 海の水位若干だけ上げて)
+- Raised the gameplay sea level a touch: `GAMEPLAY_WATER_LEVEL −0.03 → −0.02`
+  (`src/scene/Ambient.tsx`), so the coastline/island sits a hair lower in the
+  sea. The free-floating buoy and the circling ambient boats follow it (they're
+  derived from the constant), staying at the waterline.
+- **Decoupled the moored harbor boat from the sea level** to protect the rope
+  alignment (the user's recurring concern). Previously `BOAT_Y =
+  GAMEPLAY_WATER_LEVEL − 0.055`, so raising the sea lifted the boat and dragged
+  the rope far-ends off the fixed dock bollards. Now `BOAT_Y = −0.085` (a fixed
+  constant == the old value at the −0.03 level), matching the real "boat held by
+  taut ropes to a fixed dock" model: the boat stays put and the sea just laps a
+  little higher on its hull. **Ropes are byte-for-byte unchanged and still land
+  on the bollards.**
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway, reverted): default view shows the island sitting
+  slightly lower in a higher sea; harbor close-up confirms the boat a touch more
+  submerged (hull still above the line) with its ropes still meeting the
+  bollards. Zero page errors. Spec §4 updated (boat now moored at a fixed
+  height, not sea-tracking).
+
+### Notes / scope
+- `Ambient.tsx` change is the shared water level, but gated behind the
+  `waterLevel` prop → frozen title still uses `DEFAULT_WATER_LEVEL −0.16`,
+  unaffected. Harbor boat height is now an absolute constant; only the buoy +
+  ambient boats track `GAMEPLAY_WATER_LEVEL`. If the sea level is nudged again,
+  the boat/ropes need no change; only reconsider `BOAT_Y` if the boat looks too
+  submerged.

@@ -120,10 +120,12 @@ request AND a matching update to this section. Its defining elements:
   mooring bollards sit on the seaward edge, and a small **moored rowboat**
   (open hull, benches, short mast with a furled beige sail) sits just off that
   edge, tied to the bollards by two taut ropes — so every harbor reads as a
-  distinct boat AND dock, never one merged silhouette. The boat rides low with
-  only a slight bob, so it stays seated in the sea through the swell (no air
-  gap) while its hull still shows above the waterline; the boat + the owner's
-  buoy ride on the raised sea surface, not above it.
+  distinct boat AND dock, never one merged silhouette. The boat is held at a
+  fixed height by its mooring ropes to the dock (it does not track the sea
+  level, so the ropes always meet the bollards) and only bobs slightly, riding
+  low so it stays seated in the sea through the swell (no air gap) while its
+  hull still shows above the waterline; the free-floating owner's buoy does
+  ride the sea surface.
   A barrel + crate of dockside cargo sit on the deck. The sign hangs from a
   raised mast at one end of the platform — high enough that it clears the deck
   planking — faces the island, sways gently in the breeze, and is
