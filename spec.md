@@ -246,10 +246,15 @@ request AND a matching update to this section. Its defining elements:
   user preference). Cancel via button + Esc.
 - HUD: player chips top (portrait, VP, resource-card count, held dev-card count,
   🛣️ longest-road / ⚔️ largest-army badges, personality/civ title, turn state,
-  threat glow, speech bubbles); resource hand + build cards + a dev-card row
+  threat glow, speech bubbles). On phones, every player chip keeps VP and total
+  resource-card count visible in a compact two-line readout directly below the
+  portrait, including inactive players; resource hand + build cards + a
+  dev-card row
   (buy button with deck-remaining count + playable/held held-card buttons) +
   roll / trade / end-turn bottom; chronicle log bottom-left; round + seed +
-  settings top-right; toasts center-top; world-event banner; NPC offer popup
+  settings top-right (on phones, fixed at the upper-right directly below the
+  player-chip row, never down by the bottom controls); toasts center-top;
+  world-event banner; NPC offer popup
   with countdown.
   (Amendment: development cards — the dev-card row lets the human buy a card and
   play a held one; playing a card that needs a target opens the robber phase

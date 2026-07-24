@@ -1956,3 +1956,50 @@ gameplay-only framing/features:
   winner. In-app Chromium confirms the vivid, bright reference-like grade on
   title and gameplay scenes, while computed styles show the exact filter on
   the canvas and `none` on the game/HUD wrapper; zero console errors.
+
+---
+
+## 2026-07-24 — Mobile player status below portraits
+
+### What changed
+- On phone-width gameplay screens, every player chip now shows VP and total
+  resource-card count in a compact two-line readout directly below its portrait.
+  This keeps inactive rivals' key status visible instead of reducing them to
+  portrait-only chips.
+- The desktop HUD is unchanged. The active phone chip still shows its existing
+  name, title/personality, turn, threat, and award context; duplicate VP/resource
+  values in that expanded area are hidden because they are already below the
+  portrait.
+- Frozen gameplay screen changed on explicit user request; `spec.md` §4 was
+  updated in the same change.
+
+### Verification
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner.
+- In-app Chromium at 390×844 shows all four chips in one row with both values
+  visible below every portrait, no overlap, and no horizontal overflow. At
+  1280px the compact mobile values are hidden and the existing desktop chip
+  details remain visible. No browser warnings or errors.
+
+---
+
+## 2026-07-24 — Mobile seed/settings HUD moved upper-right
+
+### What changed
+- Removed the phone-only rule that placed the round/seed/settings HUD 200px
+  above the bottom edge.
+- On phones the HUD is now fixed at the upper-right, directly below the player
+  chip row (`top: 96px; right: 8px`), leaving a small gap so it does not overlap
+  the compact VP/resource readouts.
+- Desktop positioning and all other gameplay HUD elements are unchanged.
+- Frozen gameplay screen changed on explicit user request; `spec.md` §4 was
+  updated in the same change.
+
+### Verification
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner.
+- In-app Chromium at 390×844 confirms the HUD sits at the upper-right with a
+  9px gap below the player-chip row, no overlap, and no horizontal overflow.
+  The settings panel opens downward from it and remains fully inside the
+  viewport. At 1280px the existing `top: 64px; right: 12px` desktop position
+  is unchanged. No browser warnings or errors.
