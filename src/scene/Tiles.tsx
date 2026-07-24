@@ -109,7 +109,7 @@ function makeTerrainTexture(terrain: Terrain) {
       const triangle = localX + localY < 1 ? 0 : 1;
       const facetX = cellX * 2 + triangle;
       const facetY = cellY * 2 + (triangle === 0 ? 1 : 0);
-      const facetTone = Math.floor(hashNoise(facetX, facetY) * 3) - 1;
+      const facetTone = Math.floor(hashNoise(facetX, facetY) * 3);
       const boundary = 0.835 + (hashNoise(facetX + 31, facetY + 17) - 0.5) * 0.035;
       const beach = hexRadius >= boundary + 0.075
         ? 1

@@ -1804,3 +1804,23 @@ gameplay-only framing/features:
   three facet shades are distinct, terrain types remain readable, and tokens,
   placement rings, docks, and HUD stay correctly layered. No console
   warnings/errors.
+
+---
+
+## 2026-07-24 — Terrain facets use base-or-lighter shades only
+
+### What changed
+- User feedback: the requested palette read too dark when one third of the
+  facets were darker than the supplied base colours.
+- Changed the deterministic three-level mapping from `-0.055 / 0 / +0.055`
+  to `0 / +0.055 / +0.110` HSL lightness. The supplied colour is now the
+  darkest possible facet; all variation moves toward higher lightness only.
+- Hue, saturation, exact base palette, triangular layout, sand transition,
+  nested regular-hex bands, crown geometry, setup preview, and gameplay are
+  unchanged.
+
+### Verified
+- Title and medium gameplay board checked in the in-app Chromium renderer:
+  overall tiles read brighter, all three lightness levels remain distinct,
+  and terrain identity/tokens/placement rings/docks/HUD remain clear. No
+  console warnings/errors.
