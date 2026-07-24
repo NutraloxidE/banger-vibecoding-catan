@@ -111,10 +111,14 @@ request AND a matching update to this section. Its defining elements:
   with a crisp specular glint and a hard-edged foam line where the cells
   meet, in a light pastel blue/white palette; raised on the gameplay
   screen so the island + docks sit IN the sea rather than floating above
-  it — the frozen title keeps the original sea level)/boats (slightly
+  it — the frozen title keeps the original sea level; the cell drift runs at
+  a slightly slower time frequency than the title screen's water for a calmer
+  swell)/boats (slightly
   enlarged for presence; kept well offshore so they
   read as open-water vessels and don't visually merge with the harbor docks)/
-  clouds, orbit/zoom/pan camera
+  clouds, orbit/zoom/pan camera. Scene lighting (ambient + both directional
+  lights) is a touch brighter than the title screen's so tiles/pieces/docks
+  read closer to the water's brightness instead of looking dim next to it.
   with soft auto-focus on events. (Desktop: WASD glides the view horizontally
   along the ground relative to the camera's facing direction — W forward,
   S back, A/D strafe — and takes precedence over auto-focus while held; the
