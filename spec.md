@@ -56,8 +56,10 @@ settings (next bullet).
 - The demo island uses the same refined tile surface as gameplay: each hex has
   a subtly crowned centre that slopes gently toward its six edges, with a
   narrow, irregular sandy beach band. Pastel biome colours transition into
-  sand through a few crisp, faceted colour steps for a stylized low-poly look
-  (no realistic grain or wet-sand shading). The exposed tile sides are sandy.
+  sand through a few crisp, faceted colour steps shaped as nested regular
+  hexagons parallel to the tile outline (never a circular radial spread), for
+  a stylized low-poly look (no realistic grain or wet-sand shading). The
+  exposed tile sides are sandy.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -135,7 +137,9 @@ request AND a matching update to this section. Its defining elements:
 - 3D board: biome-decorated hex tiles with a subtly crowned centre and a mild
   outward slope; every tile transitions through a narrow, irregular,
   pastel sand-beach band at its edge using crisp triangular low-poly colour
-  facets rather than realistic grain/wet shading, with sandy exposed sides
+  facets arranged in nested regular-hex bands parallel to the tile outline
+  (not circular radial bands), rather than realistic grain/wet shading, with
+  sandy exposed sides
   (the six shared edge/corner anchors keep their original height so roads,
   buildings, and harbors remain aligned); always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,

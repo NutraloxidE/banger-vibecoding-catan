@@ -77,6 +77,14 @@ function hashNoise(x: number, y: number) {
   return n - Math.floor(n);
 }
 
+function pointyHexRadius(x: number, z: number) {
+  const sector = Math.PI / 3;
+  const angle = Math.atan2(z, x);
+  const edgeDelta = ((angle + Math.PI / 6) % sector + sector) % sector - Math.PI / 6;
+  const edgeRadius = Math.cos(Math.PI / 6) / Math.cos(edgeDelta);
+  return Math.hypot(x, z) / edgeRadius;
+}
+
 function makeTerrainTexture(terrain: Terrain) {
   const size = 144;
   const facetSize = 18;
@@ -92,9 +100,7 @@ function makeTerrainTexture(terrain: Terrain) {
     for (let px = 0; px < size; px++) {
       const x = (px / (size - 1) - 0.5) * 2;
       const z = (py / (size - 1) - 0.5) * 2;
-      const q = Math.sqrt(3) / 3 * x - z / 3;
-      const r = 2 / 3 * z;
-      const hexRadius = 1.5 * Math.max(Math.abs(q), Math.abs(r), Math.abs(-q - r));
+      const hexRadius = pointyHexRadius(x, z);
       const cellX = Math.floor(px / facetSize);
       const cellY = Math.floor(py / facetSize);
       const localX = (px % facetSize) / facetSize;

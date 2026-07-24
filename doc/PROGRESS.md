@@ -1761,3 +1761,24 @@ gameplay-only framing/features:
   pastel facets read clearly at both camera distances; number tokens,
   placement rings, decorations, docks, and HUD remain correctly layered.
   No console warnings/errors.
+
+---
+
+## 2026-07-24 — Preserve alt design + make colour bands truly hexagonal
+
+### What changed
+- Preserved the pre-pastel realistic beach version at commit `17a6ac0` on
+  pushed branch `codex/alt-hex-tile-design`, so that design remains available
+  independently from the active pastel direction.
+- Fixed the active pastel texture's centre→edge colour spread. The previous
+  axial-coordinate approximation did not measure distance to a regular hex's
+  actual outline consistently, so the bands could read as rounded/circular.
+- Added `pointyHexRadius(x,z)`: for each direction it computes the exact radial
+  distance to the pointy-top regular-hex boundary, then normalizes the pixel's
+  centre distance against it. Terrain, transition, and sand thresholds now
+  form nested, similar regular hexagons parallel to the tile outline.
+
+### Verified
+- Title and medium gameplay screenshots show clearly hexagonal colour bands
+  while retaining the pastel triangular facets, crown, sandy edge, tokens,
+  placement rings, docks, and HUD. No console warnings/errors.
