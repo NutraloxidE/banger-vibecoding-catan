@@ -29,13 +29,19 @@ body {
 
 .screen { position: fixed; inset: 0; }
 .scene-bg { position: absolute; inset: 0; }
-.scene-bg canvas { display: block; }
+.scene-bg canvas {
+  display: block;
+  /* Final-frame color grade matching the supplied Clip Studio reference:
+     Hue 0, Saturation +24, Luminosity +17. Keeping this on the WebGL canvas
+     makes it a true scene post-effect without altering DOM HUD readability. */
+  filter: saturate(1.24) brightness(1.17);
+}
 
 /* Cover-fade used only while the title screen's background world swaps to a
    freshly generated island; matches the title scene's sky/fog color. */
 .title-scene-fade {
   position: absolute; inset: 0; pointer-events: none;
-  background: #9cc4de; opacity: 0;
+  background: #d4f9ff; opacity: 0;
   transition: opacity 0.9s ease-in-out;
 }
 .title-scene-fade-covered { opacity: 1; }

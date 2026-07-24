@@ -1911,3 +1911,48 @@ gameplay-only framing/features:
 - Updated the shared title/gameplay default to the latest pasted V2 controls:
   lightness `0.16`, saturation `1.09`, facet contrast `0.035`, and sand
   lightness `-0.040`; terrain, beach, and tile-side hex colours are unchanged.
+
+---
+
+## 2026-07-24 — Sky color set to #D4F9FF
+
+### What changed
+- Replaced the atmospheric `Sky` shader in both `GameScene` and `TitleScene`
+  with an exact solid scene background of `#D4F9FF`.
+- Matched both scenes' fog and the title world's regeneration cover-fade to
+  the same color so no old-color seam appears at the horizon or during swaps.
+- Terrain, water, lighting, camera, and UI remain unchanged.
+- Updated `AGENTS.md` session workflow: fetch first; if local `main` trails
+  `origin/main`, fast-forward it with `git pull --ff-only` before creating the
+  dedicated `codex/` task branch. Dirty in-flight work must still be preserved.
+
+### Verification
+- `npm run build` passes.
+- `npm run simulate` reaches a winner on all eight configurations.
+- In-app Chromium screenshots confirm the title and gameplay scenes use the
+  new pale-blue sky while water, terrain, HUD, and placement highlights remain
+  intact; zero browser console errors.
+
+### Same-session extension — brighter blue sky reflection on tiles
+- Changed the shared title/gameplay cool fill light from `#A8C8FF` at `0.35`
+  to the requested `#A6C8FF` at `0.55`. The stronger opposing fill lifts the
+  shadowed faces of the rough tile materials and reads as pale-blue sky bounce.
+- Tile base colors/materials, warm key light, water, camera, and UI are
+  unchanged.
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner. In-app Chromium screenshots confirm brighter cool-lit tile shadows
+  in both title and gameplay without washing out the terrain colors; water,
+  HUD, and placement highlights remain intact, with zero console errors.
+
+### Same-session extension — Clip Studio-style color-grade post-effect
+- Added a shared final-frame CSS color grade to the title/game WebGL canvas:
+  `saturate(1.24) brightness(1.17)`, mapping the supplied Clip Studio
+  Hue/Saturation/Luminosity reference (`0 / +24 / +17`).
+- The filter runs after the complete 3D scene is composited, so sky, sea,
+  terrain, pieces, ports, and 3D highlights receive one consistent grade.
+  DOM HUD/text are deliberately outside the filter to preserve readability.
+- No post-processing dependency or extra render pass was added.
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner. In-app Chromium confirms the vivid, bright reference-like grade on
+  title and gameplay scenes, while computed styles show the exact filter on
+  the canvas and `none` on the game/HUD wrapper; zero console errors.

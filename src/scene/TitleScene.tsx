@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
-import { Sky, OrbitControls } from '@react-three/drei';
+import { OrbitControls } from '@react-three/drei';
 import { generateBoard, coastalTileCenters } from '../game/board';
 import { DEFAULT_TILE_PALETTE_TUNING, TilePaletteTuning, Tiles } from './Tiles';
 import { Ambient, GAMEPLAY_WATER_LEVEL, GAMEPLAY_BOARD_SINK } from './Ambient';
@@ -42,11 +42,11 @@ export function TitleScene({ paletteTuning = DEFAULT_TILE_PALETTE_TUNING }: { pa
   return (
     <>
       <Canvas dpr={[1, 1.75]} camera={{ position: [9, 7, 9], fov: 48 }} style={{ touchAction: 'none' }}>
-        <fog attach="fog" args={['#9cc4de', 24, 60]} />
+        <color attach="background" args={['#d4f9ff']} />
+        <fog attach="fog" args={['#d4f9ff', 24, 60]} />
         <ambientLight intensity={0.85} />
         <directionalLight position={[10, 18, 6]} intensity={1.5} color="#fff4e0" />
-        <directionalLight position={[-8, 10, -10]} intensity={0.35} color="#a8c8ff" />
-        <Sky sunPosition={[60, 40, 20]} turbidity={6} rayleigh={1.6} />
+        <directionalLight position={[-8, 10, -10]} intensity={0.55} color="#a6c8ff" />
         <Ambient boardRadius={6.3} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} shoreTiles={shoreTiles} />
         {/* Sink the island into the sea by the same amount as the gameplay
             screen so the coastline dips just below the raised waterline instead
