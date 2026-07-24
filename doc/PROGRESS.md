@@ -1254,3 +1254,52 @@ height, the hull sat too deep. Per request, made the boat bigger AND raised it
   `BOAT_Y` + `BOAT_SCALE` + the fixed bollard `[±0.1, PLATFORM_TOP+0.07, −0.16]`
   — change any of those three and recompute length/position/rotation so the far
   end still lands on the bollard.
+
+---
+
+## 2026-07-24 — Cellular-noise (Worley) wave surface on the water
+
+### What changed (user request: 水面に波を作ってほしい、セルラーノイズで)
+Replaced the flat, whole-plane-bobbing sea with a real rippling surface driven
+by cellular (Worley) noise. All in `src/scene/Water` (`src/scene/Ambient.tsx`);
+shared by both the title (frozen) and gameplay (frozen) screens — done on
+explicit user request with a matching spec update.
+
+- **Geometry:** the sea plane was a fan `circleGeometry` (48 seg) with **no
+  interior vertices**, so it could only bob as a whole. Swapped to a subdivided
+  `RingGeometry(0.01, radius*6, 120, 44)` — keeps the circular silhouette but
+  its concentric phi-segments give interior vertices to displace.
+- **Shader:** new `THREE.ShaderMaterial` with inline GLSL (`WATER_VERT` /
+  `WATER_FRAG`). Vertex shader computes a 2-octave animated Worley height field
+  (`cellular()` returns F1/F2; feature points drift with `uTime`) over **world
+  XZ**, displaces `position.z` (local +Z → world up after the −90° X rotation),
+  and derives a per-vertex normal from the field gradient (neighbor samples).
+  Fragment shader does diffuse + a specular glint (light dir = scene key light
+  [10,18,6]) and paints foam (`uColorCrest`) where cells border (F2−F1 small),
+  biased toward crests. Colors chosen to sit near the old `#1c6ba0`
+  (deep `#0e5482` / shallow `#2a86be` / foam `#c6e6f4`), `transparent`
+  opacity 0.93 preserved. `uTime` advanced in `useFrame`.
+- Removed the old per-frame whole-plane vertical bob (the in-shader swell
+  replaces it). The darker `#0c3f63` underlayer circle is unchanged. Raycast
+  still disabled (never blocks input). Boats/clouds/Ports untouched.
+- `spec.md` §2 (title) and §4 (gameplay) water descriptions updated in the same
+  commit.
+
+### Verified
+- `npm run build` (tsc + vite) passes; `npm run simulate` reaches a winner on
+  all 8 configs (render-only change; simulate is headless).
+- Playwright (throwaway install, pre-installed Chromium, reverted out of
+  package.json — `git status` shows only `Ambient.tsx` + spec/progress):
+  title screen renders the animated Worley waves with foam crests and specular
+  glints over the sea; **zero page errors**, so the shader compiles and runs in
+  WebGL. Gameplay uses the identical `Water` component (only the sea level
+  differs), so it inherits the same surface.
+
+### Gotchas / notes
+- `Water` is shared by title + gameplay; there is no per-screen wave toggle —
+  changing the shader changes both. Both are frozen, so only touch on explicit
+  request + spec update.
+- Cellular displacement REQUIRES interior vertices — do not revert the sea to
+  `circleGeometry` (a fan has none). If you rescale the board, the ring already
+  tracks `radius`; retune `amp`/frequency in `WATER_VERT` if the swell reads too
+  strong/weak. `cameraPosition` in the frag shader is a three built-in uniform.

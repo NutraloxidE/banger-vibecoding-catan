@@ -22,19 +22,121 @@ export const DEFAULT_WATER_LEVEL = -0.16;
 // boat + buoy float at the same line.
 export const GAMEPLAY_WATER_LEVEL = -0.02;
 
-export function Water({ radius, level = DEFAULT_WATER_LEVEL }: { radius: number; level?: number }) {
-  const ref = useRef<THREE.Mesh>(null);
-  useFrame(({ clock }) => {
-    if (ref.current) {
-      ref.current.position.y = level + Math.sin(clock.elapsedTime * 0.7) * 0.03;
+// Cellular-noise (Worley) water surface. The sea plane is a subdivided ring
+// (a circle keeps the original silhouette, but a fan `circleGeometry` has no
+// interior vertices to displace — a ring's concentric phi-segments do). The
+// vertex shader raises each vertex by a cellular-noise height field and derives
+// a per-vertex normal from the field's gradient; the fragment shader shades it
+// (diffuse + a specular glint) and paints foam where Worley cells meet. All
+// procedural — no textures, matching the no-external-assets rule.
+const WATER_VERT = /* glsl */ `
+uniform float uTime;
+varying float vHeight;
+varying vec3 vNormalW;
+varying vec2 vCell;
+varying vec3 vWorldPos;
+
+vec2 hash2(vec2 p){
+  p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
+  return fract(sin(p) * 43758.5453123);
+}
+
+// Worley/cellular noise: returns (F1, F2) — distances to the nearest and
+// second-nearest animated feature points around p.
+vec2 cellular(vec2 p){
+  vec2 ip = floor(p);
+  vec2 fp = fract(p);
+  float f1 = 9.0, f2 = 9.0;
+  for (int j = -1; j <= 1; j++) {
+    for (int i = -1; i <= 1; i++) {
+      vec2 g = vec2(float(i), float(j));
+      vec2 o = hash2(ip + g);
+      o = 0.5 + 0.5 * sin(uTime * 0.55 + 6.2831853 * o); // drift the cells
+      vec2 r = g + o - fp;
+      float d = dot(r, r);
+      if (d < f1) { f2 = f1; f1 = d; }
+      else if (d < f2) { f2 = d; }
     }
-  });
+  }
+  return vec2(sqrt(f1), sqrt(f2));
+}
+
+// Two octaves of cellular noise → a swell height field; also hands back the
+// coarse cell (F1,F2) so the fragment shader can foam the crests.
+float waveField(vec2 w, out vec2 cellOut){
+  vec2 c1 = cellular(w * 0.18);
+  vec2 c2 = cellular(w * 0.44 + 5.0);
+  cellOut = c1;
+  return (c1.x - 0.5) * 0.9 + (c2.x - 0.5) * 0.35;
+}
+
+void main(){
+  vec3 pos = position;
+  vec2 w = (modelMatrix * vec4(pos, 1.0)).xz; // world XZ so waves are stable
+  vec2 cell;
+  float h = waveField(w, cell);
+  const float amp = 0.17;
+  const float e = 0.4;
+  vec2 ignore;
+  float hx = waveField(w + vec2(e, 0.0), ignore);
+  float hz = waveField(w + vec2(0.0, e), ignore);
+  pos.z += h * amp; // ring lies in XY; local +Z becomes world up after rotation
+  vHeight = h;
+  vCell = cell;
+  vNormalW = normalize(vec3(-(hx - h) * amp / e, 1.0, -(hz - h) * amp / e));
+  vWorldPos = (modelMatrix * vec4(pos, 1.0)).xyz;
+  gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+}
+`;
+
+const WATER_FRAG = /* glsl */ `
+uniform vec3 uColorDeep;
+uniform vec3 uColorShallow;
+uniform vec3 uColorCrest;
+uniform vec3 uLightDir;
+uniform float uOpacity;
+varying float vHeight;
+varying vec3 vNormalW;
+varying vec2 vCell;
+varying vec3 vWorldPos;
+
+void main(){
+  vec3 N = normalize(vNormalW);
+  vec3 L = normalize(uLightDir);
+  vec3 V = normalize(cameraPosition - vWorldPos);
+  vec3 H = normalize(L + V);
+  float diff = clamp(dot(N, L), 0.0, 1.0);
+  float spec = pow(clamp(dot(N, H), 0.0, 1.0), 60.0);
+  float depth = smoothstep(-0.5, 0.5, vHeight);
+  vec3 base = mix(uColorDeep, uColorShallow, depth);
+  // Foam where Worley cells border (F2-F1 small), biased toward wave crests.
+  float border = 1.0 - smoothstep(0.0, 0.15, vCell.y - vCell.x);
+  base = mix(base, uColorCrest, border * 0.55 * smoothstep(0.0, 0.35, vHeight + 0.12));
+  vec3 col = base * (0.55 + 0.6 * diff) + spec * vec3(1.0);
+  gl_FragColor = vec4(col, uOpacity);
+}
+`;
+
+export function Water({ radius, level = DEFAULT_WATER_LEVEL }: { radius: number; level?: number }) {
+  const mat = useMemo(() => new THREE.ShaderMaterial({
+    uniforms: {
+      uTime: { value: 0 },
+      uColorDeep: { value: new THREE.Color('#0e5482') },
+      uColorShallow: { value: new THREE.Color('#2a86be') },
+      uColorCrest: { value: new THREE.Color('#c6e6f4') },
+      uLightDir: { value: new THREE.Vector3(10, 18, 6).normalize() },
+      uOpacity: { value: 0.93 },
+    },
+    vertexShader: WATER_VERT,
+    fragmentShader: WATER_FRAG,
+    transparent: true,
+    side: THREE.DoubleSide,
+  }), []);
+  const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 120, 44), [radius]);
+  useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.elapsedTime; });
   return (
     <group>
-      <mesh ref={ref} rotation={[-Math.PI / 2, 0, 0]} position={[0, level, 0]} raycast={() => null}>
-        <circleGeometry args={[radius * 6, 48]} />
-        <meshStandardMaterial color="#1c6ba0" roughness={0.25} metalness={0.1} transparent opacity={0.93} />
-      </mesh>
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, level, 0]} geometry={geo} material={mat} raycast={() => null} />
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, level - 0.14, 0]} raycast={() => null}>
         <circleGeometry args={[radius * 6.2, 48]} />
         <meshStandardMaterial color="#0c3f63" />
