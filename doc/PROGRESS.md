@@ -1616,3 +1616,44 @@ and is not part of this request) is untouched.
   it for more/less submersion; it stays in sync across GameScene and Ports.
 - If more board-anchored scene content is ever added to `GameScene`, put it
   inside the sink `<group>` (or it will float at the old height).
+
+## 2026-07-24 — Lighten the water/wave processing (perf)
+
+User: "波の処理が多分重いから若干解像度下げる等、その他の最適化案があれば
+それを取り入れて、軽くしてほしい" — the wave surface is likely heavy; slightly
+lower its resolution and adopt other optimizations to make it lighter.
+
+Two surgical changes in `src/scene/Ambient.tsx` (the sole wave surface, shared by
+the frozen title + gameplay screens):
+
+- **Sea mesh resolution** `RingGeometry(0.01, r*6, 200, 72)` → `160, 56`
+  (~38% fewer vertices). The vertex shader runs the 3-octave Worley swell plus
+  two neighbour taps for the normal per vertex, so segment count dominates the
+  water's cost. The trimmed vertices mostly fell on far, near-flat, largely
+  off-screen water; near-coast ripple detail is preserved.
+- **Shore surf-foam noise gated.** The fine `shoreCellular` (a 9-tap Worley) was
+  evaluated for *every* fragment in the coast annulus, even where no foam is
+  drawn. Now wrapped in `if (shoreBand > 0.0)`. Output is byte-identical
+  (shoreFoam was multiplied by 0 there anyway) — pure fragment-shader win, and
+  neighbouring coast fragments are coherent so warps mostly take one path.
+
+Deliberately did NOT touch the vertex Worley octave count or the normal
+finite-difference (kept the frozen 3-octave displacement + shading look), and did
+not change water colours, drift speed, levels, or the shoreline algorithm.
+
+### Verified
+- `npm run build` passes (tsc + vite).
+- `npm run simulate` reaches a winner on all 8 configs.
+- Headless-Chromium screenshot of the frozen title screen: Worley wave cells,
+  cel foam borders, and the coastal surf-foam lace all render as before — no
+  visible regression from the lower mesh density.
+
+### Notes / scope
+- Frozen title + gameplay water changed per explicit user request; `spec.md`
+  §2 and §4 water wording updated in the same commit ("high-resolution mesh" →
+  "subdivided mesh (segment count tuned for performance)"). The 3-octave
+  displacement / detailed-ripple contract is unchanged.
+- If the water ever needs to be lighter still: the next safe lever is skipping
+  the finest displacement octave in the two normal neighbour taps (visible
+  shading change — would need a fresh screenshot check), or trimming segments
+  further. The shore-foam gate is already free.
