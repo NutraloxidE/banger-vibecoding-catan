@@ -61,12 +61,15 @@ settings (next bullet).
   a stylized low-poly look (no realistic grain or wet-sand shading). The
   exposed tile sides are sandy. Each terrain uses three deterministic
   lightness variants arranged across the triangular facets: the exact base
-  colour, base `+0.055` HSL lightness, and base `+0.110` HSL lightness. No
-  darker-than-base variant is generated. Base colours: forest `#138239`,
-  fields `#CBB34F`, mountains `#858892`, pasture `#91BC5E`, hills `#B45D30`,
-  and desert `#B45D30`. The title diorama applies the same additional `+0.12`
-  HSL lightness lift as gameplay, so both 3D worlds share the deliberately pale
-  palette. The setup SVG preview retains the exact unlifted base colours.
+  colour, base `+0.035` HSL lightness, and base `+0.070` HSL lightness. No
+  darker-than-base terrain variant is generated. Calibrated 3D base colours:
+  forest `#138239`, fields `#CFAC20`, mountains `#A3AAC2`, pasture `#96BF63`,
+  hills `#E89569`, and desert `#DBC67B`. The title diorama applies the same
+  additional `+0.16` HSL lightness lift as gameplay with a `1.09` saturation
+  multiplier, while the beach blend and exposed sandy side additionally receive
+  `-0.040` HSL lightness so the shore
+  stays distinct from the newly softened terrain palette. The setup SVG preview
+  retains its independent original unlifted palette.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -79,6 +82,19 @@ settings (next bullet).
 - Large gold `START GAME` (click sound, starts music); `CONTINUE GAME` +
   `reset save` appear only when a valid save exists; footer tagline.
 - Language toggle (EN / 日本語) top-right — the sole permitted overlay.
+- A normally invisible palette-calibration tool is the one explicit exception
+  to the frozen overlay rule. Seven consecutive taps/clicks in the title
+  screen's top-left corner (each within 900ms of the previous one) open a
+  mobile-friendly panel for live title-diorama adjustment of global HSL
+  lightness, saturation multiplier, the three facet levels' lightness spacing,
+  sandy-beach lightness, and the individual base colours for forest, fields,
+  mountains, pasture, hills, desert, beach, and the exposed sandy tile side.
+  The current values can be copied as a stable `HEXFALL_TILE_PALETTE_V2` text
+  payload for user feedback, including all numeric adjustments and hex colours. Calibration is
+  deliberately session-only and does not change saved settings or gameplay;
+  closing the panel keeps the live title preview, while a reload restores the
+  committed defaults. When locked, the hotspot is transparent and the title
+  screen remains visually identical.
 
 ## 3. Setup screen — "Configure Your World" (初代 design), FROZEN ✅
 
@@ -147,12 +163,14 @@ request AND a matching update to this section. Its defining elements:
   facets arranged in nested regular-hex bands parallel to the tile outline
   (not circular radial bands), rather than realistic grain/wet shading, with
   sandy exposed sides. Each terrain's facets use three deterministic
-  base-or-lighter variants (exact base, `+0.055`, `+0.110` HSL lightness;
-  never darker than base): forest `#138239`, fields `#CBB34F`, mountains
-  `#858892`, pasture `#91BC5E`, hills `#B45D30`, desert `#B45D30`
-  — then both the gameplay and title renderers add a further `+0.12` HSL
-  lightness lift to every top facet and the sandy tile side for deliberately
-  pale, strongly pastel 3D worlds. The setup SVG preview retains the base
+  base-or-lighter variants (exact base, `+0.035`, `+0.070` HSL lightness;
+  never darker than base): forest `#138239`, fields `#CFAC20`, mountains
+  `#A3AAC2`, pasture `#96BF63`, hills `#E89569`, desert `#DBC67B`
+  — then both the gameplay and title renderers add a further `+0.16` HSL
+  lightness lift and a `1.09` saturation multiplier to every top facet. The beach blend and sandy tile side use
+  their existing bases (`#F3D69C` / `#DFBD7D`) with a shared additional
+  `-0.040` HSL lightness adjustment, keeping the coastline legible against the
+  lighter terrain. The setup SVG preview retains its independent original base
   palette
   (the six shared edge/corner anchors keep their original height so roads,
   buildings, and harbors remain aligned); always-on-top number tokens

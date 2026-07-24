@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 import { BoardModel, Terrain, Tile } from '../game/types';
@@ -8,11 +8,11 @@ import { useGame } from '../game/store';
 
 export const TERRAIN_COLOR: Record<Terrain, string> = {
   forest: '#138239',
-  hills: '#b45d30',
-  fields: '#cbb34f',
-  pasture: '#91bc5e',
-  mountains: '#858892',
-  desert: '#b45d30',
+  hills: '#e89569',
+  fields: '#cfac20',
+  pasture: '#96bf63',
+  mountains: '#a3aac2',
+  desert: '#dbc67b',
 };
 
 // The old single cylinder stays underneath as the sandy cliff/soil body.
@@ -22,8 +22,34 @@ const hexBaseGeo = new THREE.CylinderGeometry(1, 1.06, 0.3, 6);
 const TILE_TOP_Y = 0.302;
 const TILE_CROWN = 0.055;
 const TILE_EDGE_SEGMENTS = 5;
-const FACET_LIGHTNESS_STEP = 0.055;
-export const TILE_PALETTE_LIGHTNESS = 0.12;
+const FACET_LIGHTNESS_STEP = 0.035;
+export const TILE_PALETTE_LIGHTNESS = 0.16;
+export const TILE_PALETTE_SATURATION = 1.09;
+export const TILE_SAND_LIGHTNESS = -0.04;
+
+export type TilePaletteColors = Record<Terrain | 'sand' | 'sandSide', string>;
+
+export interface TilePaletteTuning {
+  lightness: number;
+  saturation: number;
+  facetContrast: number;
+  sandLightness: number;
+  colors: TilePaletteColors;
+}
+
+export const DEFAULT_TILE_PALETTE_COLORS: TilePaletteColors = {
+  ...TERRAIN_COLOR,
+  sand: '#f3d69c',
+  sandSide: '#dfbd7d',
+};
+
+export const DEFAULT_TILE_PALETTE_TUNING: TilePaletteTuning = {
+  lightness: TILE_PALETTE_LIGHTNESS,
+  saturation: TILE_PALETTE_SATURATION,
+  facetContrast: FACET_LIGHTNESS_STEP,
+  sandLightness: TILE_SAND_LIGHTNESS,
+  colors: DEFAULT_TILE_PALETTE_COLORS,
+};
 
 function smooth01(v: number) {
   const x = THREE.MathUtils.clamp(v, 0, 1);
@@ -87,7 +113,25 @@ function pointyHexRadius(x: number, z: number) {
   return Math.hypot(x, z) / edgeRadius;
 }
 
-function makeTerrainTexture(terrain: Terrain, paletteLightness: number) {
+function tuneColor(color: THREE.Color, saturation: number, lightness: number) {
+  const hsl = { h: 0, s: 0, l: 0 };
+  color.getHSL(hsl);
+  color.setHSL(
+    hsl.h,
+    THREE.MathUtils.clamp(hsl.s * saturation, 0, 1),
+    THREE.MathUtils.clamp(hsl.l + lightness, 0, 1),
+  );
+  return color;
+}
+
+function makeTerrainTexture(
+  terrain: Terrain,
+  paletteLightness: number,
+  paletteSaturation: number,
+  facetContrast: number,
+  sandLightness: number,
+  paletteColors: TilePaletteColors,
+) {
   const size = 144;
   const facetSize = 18;
   const canvas = document.createElement('canvas');
@@ -95,8 +139,8 @@ function makeTerrainTexture(terrain: Terrain, paletteLightness: number) {
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
   const image = ctx.createImageData(size, size);
-  const terrainColor = new THREE.Color(TERRAIN_COLOR[terrain]);
-  const sandColor = new THREE.Color('#f3d69c');
+  const terrainColor = new THREE.Color(paletteColors[terrain]);
+  const sandColor = new THREE.Color(paletteColors.sand);
 
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
@@ -120,7 +164,11 @@ function makeTerrainTexture(terrain: Terrain, paletteLightness: number) {
             ? 0.28
             : 0;
       const color = terrainColor.clone().lerp(sandColor, beach);
-      color.offsetHSL(0, 0, paletteLightness + facetTone * FACET_LIGHTNESS_STEP);
+      tuneColor(
+        color,
+        paletteSaturation,
+        paletteLightness + facetTone * facetContrast + beach * sandLightness,
+      );
 
       const offset = (py * size + px) * 4;
       image.data[offset] = Math.round(color.r * 255);
@@ -324,7 +372,23 @@ function Robber({ x, z }: { x: number; z: number }) {
   );
 }
 
-export function Tiles({ board, seed, paletteLightness = 0 }: { board: BoardModel; seed: string; paletteLightness?: number }) {
+export function Tiles({
+  board,
+  seed,
+  paletteLightness = 0,
+  paletteSaturation = TILE_PALETTE_SATURATION,
+  facetContrast = FACET_LIGHTNESS_STEP,
+  sandLightness = TILE_SAND_LIGHTNESS,
+  paletteColors = DEFAULT_TILE_PALETTE_COLORS,
+}: {
+  board: BoardModel;
+  seed: string;
+  paletteLightness?: number;
+  paletteSaturation?: number;
+  facetContrast?: number;
+  sandLightness?: number;
+  paletteColors?: TilePaletteColors;
+}) {
   const clickTile = useGame((s) => s.clickTile);
   const robberTile = useGame((s) => s.game?.robberTile ?? -1);
   const phase = useGame((s) => s.game?.phase);
@@ -337,16 +401,24 @@ export function Tiles({ board, seed, paletteLightness = 0 }: { board: BoardModel
     (Object.keys(TERRAIN_COLOR) as Terrain[]).forEach((t) => {
       m[t] = new THREE.MeshStandardMaterial({
         color: '#ffffff',
-        map: makeTerrainTexture(t, paletteLightness),
+        map: makeTerrainTexture(t, paletteLightness, paletteSaturation, facetContrast, sandLightness, paletteColors),
         roughness: 0.94,
       });
     });
     return m as Record<Terrain, THREE.MeshStandardMaterial>;
-  }, [paletteLightness]);
+  }, [facetContrast, paletteColors, paletteLightness, paletteSaturation, sandLightness]);
   const sandSideMat = useMemo(() => {
-    const color = new THREE.Color('#dfbd7d').offsetHSL(0, 0, paletteLightness);
+    const color = tuneColor(new THREE.Color(paletteColors.sandSide), paletteSaturation, paletteLightness + sandLightness);
     return new THREE.MeshStandardMaterial({ color, roughness: 0.92 });
-  }, [paletteLightness]);
+  }, [paletteColors.sandSide, paletteLightness, paletteSaturation, sandLightness]);
+
+  useEffect(() => () => {
+    Object.values(mats).forEach((material) => {
+      material.map?.dispose();
+      material.dispose();
+    });
+    sandSideMat.dispose();
+  }, [mats, sandSideMat]);
 
   const robberSelecting = phase === 'robber' && isHumanTurn;
 
