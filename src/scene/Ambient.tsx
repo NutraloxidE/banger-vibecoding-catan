@@ -32,12 +32,10 @@ export const GAMEPLAY_WATER_LEVEL = -0.02;
 const WATER_VERT = /* glsl */ `
 uniform float uTime;
 uniform float uDriftSpeed;
-uniform float uRadius;
 varying float vHeight;
 varying vec3 vNormalW;
 varying vec2 vCell;
 varying vec3 vWorldPos;
-varying float vShoreDist;
 
 vec2 hash2(vec2 p){
   p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -79,7 +77,6 @@ float waveField(vec2 w, out vec2 cellOut){
 void main(){
   vec3 pos = position;
   vec2 w = (modelMatrix * vec4(pos, 1.0)).xz; // world XZ so waves are stable
-  vShoreDist = length(w) - uRadius; // distance outward from the land/water contact ring
   vec2 cell;
   float h = waveField(w, cell);
   const float amp = 0.16;
@@ -96,6 +93,8 @@ void main(){
 }
 `;
 
+const MAX_SHORE_TILES = 24;
+
 const WATER_FRAG = /* glsl */ `
 uniform vec3 uColorDeep;
 uniform vec3 uColorShallow;
@@ -105,11 +104,14 @@ uniform float uOpacity;
 uniform float uTime;
 uniform float uDriftSpeed;
 uniform float uShoreWidth;
+uniform float uHexApothem;
+uniform float uRadius;
+uniform vec2 uShoreTiles[${MAX_SHORE_TILES}];
+uniform int uShoreCount;
 varying float vHeight;
 varying vec3 vNormalW;
 varying vec2 vCell;
 varying vec3 vWorldPos;
-varying float vShoreDist;
 
 vec2 shoreHash2(vec2 p){
   p = vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)));
@@ -136,6 +138,17 @@ vec2 shoreCellular(vec2 p){
   return vec2(sqrt(f1), sqrt(f2));
 }
 
+// Signed distance to a regular hexagon (apothem r) with flat top/bottom edges
+// — negative inside, positive outside. iq's formula. The tiles are pointy-top
+// in +z, so the caller swaps components to rotate this 90°.
+float sdHexFlat(vec2 p, float r){
+  const vec3 k = vec3(-0.8660254, 0.5, 0.5773503);
+  p = abs(p);
+  p -= 2.0 * min(dot(k.xy, p), 0.0) * k.xy;
+  p -= vec2(clamp(p.x, -k.z * r, k.z * r), r);
+  return length(p) * sign(p.y);
+}
+
 void main(){
   vec3 N = normalize(vNormalW);
   vec3 L = normalize(uLightDir);
@@ -154,15 +167,27 @@ void main(){
   float border = step(vCell.y - vCell.x, 0.12) * step(-0.08, vHeight);
   base = mix(base, uColorCrest, border);
   vec3 col = base * (0.68 + 0.4 * diffToon) + spec * vec3(0.9);
-  // Shoreline surf: a fine cellular-noise lace anchored at the land/water
-  // contact ring, spreading outward and fading with distance from shore —
-  // never shows inward (under the island) where it would be hidden anyway.
-  float shoreOutward = smoothstep(-0.08, 0.06, vShoreDist);
-  float shoreFade = 1.0 - smoothstep(0.0, uShoreWidth, vShoreDist);
-  float shoreBand = shoreOutward * shoreFade;
-  vec2 shoreCell = shoreCellular(vWorldPos.xz * 3.4 + 9.0);
-  float shoreFoam = step(shoreCell.y - shoreCell.x, 0.2) * shoreBand;
-  col = mix(col, uColorCrest, shoreFoam * 0.9);
+  // Shoreline surf: a fine cellular-noise lace that hugs the ACTUAL tile
+  // silhouette — the distance field is the min over the coastal (outer-ring)
+  // tiles of a hexagon SDF, so the foam follows the jagged hex coastline
+  // rather than a circle. It spreads outward from the tile edge and fades to
+  // nothing uShoreWidth units out. A cheap radial pre-gate keeps the
+  // per-fragment tile loop confined to the coast annulus.
+  float radial = length(vWorldPos.xz);
+  if (radial > uRadius * 0.4 && radial < uRadius * 1.7) {
+    float d = 1e6;
+    for (int i = 0; i < ${MAX_SHORE_TILES}; i++) {
+      if (i >= uShoreCount) break;
+      vec2 rp = vWorldPos.xz - uShoreTiles[i];
+      d = min(d, sdHexFlat(vec2(rp.y, rp.x), uHexApothem)); // swap → pointy-top in +z
+    }
+    float shoreOutward = smoothstep(-0.03, 0.05, d);
+    float shoreFade = 1.0 - smoothstep(0.0, uShoreWidth, d);
+    float shoreBand = shoreOutward * shoreFade;
+    vec2 shoreCell = shoreCellular(vWorldPos.xz * 3.4 + 9.0);
+    float shoreFoam = step(shoreCell.y - shoreCell.x, 0.2) * shoreBand;
+    col = mix(col, uColorCrest, shoreFoam * 0.9);
+  }
   gl_FragColor = vec4(col, uOpacity);
 }
 `;
@@ -171,7 +196,13 @@ void main(){
 // look). GameScene passes a slightly slower value for a calmer gameplay swell.
 export const DEFAULT_WATER_DRIFT_SPEED = 0.55;
 
-export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAULT_WATER_DRIFT_SPEED }: { radius: number; level?: number; driftSpeed?: number }) {
+// Apothem (center-to-flat) of a coastal tile at the waterline. Tiles render as
+// a 6-gon of circumradius ~1.06 at their base, so apothem ≈ 1.06·√3/2 ≈ 0.9.
+const SHORE_HEX_APOTHEM = 0.9;
+// How far (world units) the surf foam reaches out from the tile edge.
+const SHORE_FOAM_WIDTH = 0.6;
+
+export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAULT_WATER_DRIFT_SPEED, shoreTiles }: { radius: number; level?: number; driftSpeed?: number; shoreTiles?: [number, number][] }) {
   const mat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
@@ -182,7 +213,10 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAUL
       uLightDir: { value: new THREE.Vector3(10, 18, 6).normalize() },
       uOpacity: { value: 0.9 },
       uRadius: { value: radius },
-      uShoreWidth: { value: radius * 0.16 },
+      uShoreWidth: { value: SHORE_FOAM_WIDTH },
+      uHexApothem: { value: SHORE_HEX_APOTHEM },
+      uShoreTiles: { value: Array.from({ length: MAX_SHORE_TILES }, () => new THREE.Vector2(9999, 9999)) },
+      uShoreCount: { value: 0 },
     },
     vertexShader: WATER_VERT,
     fragmentShader: WATER_FRAG,
@@ -190,10 +224,14 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAUL
     side: THREE.DoubleSide,
   }), []);
   useEffect(() => { mat.uniforms.uDriftSpeed.value = driftSpeed; }, [mat, driftSpeed]);
+  useEffect(() => { mat.uniforms.uRadius.value = radius; }, [mat, radius]);
   useEffect(() => {
-    mat.uniforms.uRadius.value = radius;
-    mat.uniforms.uShoreWidth.value = radius * 0.16;
-  }, [mat, radius]);
+    const arr = mat.uniforms.uShoreTiles.value as THREE.Vector2[];
+    const n = Math.min(shoreTiles?.length ?? 0, MAX_SHORE_TILES);
+    for (let i = 0; i < n; i++) arr[i].set(shoreTiles![i][0], shoreTiles![i][1]);
+    for (let i = n; i < MAX_SHORE_TILES; i++) arr[i].set(9999, 9999);
+    mat.uniforms.uShoreCount.value = n;
+  }, [mat, shoreTiles]);
   const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 200, 72), [radius]);
   useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.elapsedTime; });
   return (
@@ -241,7 +279,7 @@ function Cloud({ x, y, z, s, speed }: { x: number; y: number; z: number; s: numb
   );
 }
 
-export function Ambient({ boardRadius, boatDistance, waterLevel = DEFAULT_WATER_LEVEL, waterDriftSpeed = DEFAULT_WATER_DRIFT_SPEED }: { boardRadius: number; boatDistance?: number; waterLevel?: number; waterDriftSpeed?: number }) {
+export function Ambient({ boardRadius, boatDistance, waterLevel = DEFAULT_WATER_LEVEL, waterDriftSpeed = DEFAULT_WATER_DRIFT_SPEED, shoreTiles }: { boardRadius: number; boatDistance?: number; waterLevel?: number; waterDriftSpeed?: number; shoreTiles?: [number, number][] }) {
   // Inner boat orbit radius. Defaults to the original formula (keeps the frozen
   // title screen unchanged); GameScene passes a larger value so the gameplay
   // boats stay well offshore and don't visually merge with the coastal harbor
@@ -259,7 +297,7 @@ export function Ambient({ boardRadius, boatDistance, waterLevel = DEFAULT_WATER_
   })), []);
   return (
     <group>
-      <Water radius={boardRadius} level={waterLevel} driftSpeed={waterDriftSpeed} />
+      <Water radius={boardRadius} level={waterLevel} driftSpeed={waterDriftSpeed} shoreTiles={shoreTiles} />
       <Boat radius={worldR} speed={0.12} phase={0} dir={1} baseY={boatBaseY} />
       <Boat radius={worldR + 1.6} speed={0.09} phase={2.4} dir={-1} baseY={boatBaseY} />
       {clouds.map((c, i) => <Cloud key={i} {...c} />)}

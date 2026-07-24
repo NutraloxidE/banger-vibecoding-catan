@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky, OrbitControls } from '@react-three/drei';
-import { generateBoard } from '../game/board';
+import { generateBoard, coastalTileCenters } from '../game/board';
 import { Tiles } from './Tiles';
 import { Ambient } from './Ambient';
 
@@ -21,6 +21,7 @@ export function TitleScene() {
   const [seed, setSeed] = useState('HEXTOPIA-TITLE');
   const [covered, setCovered] = useState(false);
   const board = useMemo(() => generateBoard('medium', seed), [seed]);
+  const shoreTiles = useMemo(() => coastalTileCenters(board), [board]);
 
   useEffect(() => {
     let swapTimeout: ReturnType<typeof setTimeout>;
@@ -41,7 +42,7 @@ export function TitleScene() {
         <ambientLight intensity={0.75} />
         <directionalLight position={[10, 18, 6]} intensity={1.3} color="#fff4e0" />
         <Sky sunPosition={[60, 35, 20]} turbidity={6} rayleigh={1.8} />
-        <Ambient boardRadius={6.3} />
+        <Ambient boardRadius={6.3} shoreTiles={shoreTiles} />
         <Tiles board={board} seed={seed} />
         <OrbitControls autoRotate autoRotateSpeed={0.7} enablePan={false} enableZoom={false}
           minPolarAngle={0.9} maxPolarAngle={1.2} />

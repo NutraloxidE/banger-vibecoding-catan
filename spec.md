@@ -34,12 +34,13 @@ the periodic background-world regeneration below.
   lighting, fog, sky, water (a cellular-noise / Worley wave surface,
   high-resolution mesh + a fine third noise octave for detailed ripples,
   cel/toon-shaded in hard bands with a crisp foam edge, pastel blue/white
-  palette; a second, finer independent Worley field lines the exact
-  land/water contact ring with a fine surf-foam lace that spreads outward
-  from the coast and fades out with distance, so the shoreline itself reads
-  as a distinct wave-break band from the open-water foam), boats, drifting
-  clouds. Nothing more (no particles, birds, or launch transitions — tried
-  and rejected by the user).
+  palette; a second, finer independent Worley field lays a surf-foam lace
+  that follows the actual hex-tile coastline — a hexagon-SDF distance field
+  over the outer-ring tiles, so the foam hugs the jagged tile edges rather
+  than a circle — spreading outward from each tile edge and fading out with
+  distance, a distinct wave-break band from the open-water foam), boats,
+  drifting clouds. Nothing more (no particles, birds, or launch transitions
+  — tried and rejected by the user).
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -121,8 +122,10 @@ request AND a matching update to this section. Its defining elements:
   height field; cel/toon-shaded in hard bands from the field's gradient
   with a crisp specular glint and a hard-edged foam line where the cells
   meet, in a light pastel blue/white palette; a fine, independent Worley
-  field lines the land/water contact ring with a shoreline surf-foam lace
-  that spreads outward from the coast and fades with distance, distinct
+  field lays a shoreline surf-foam lace along the ACTUAL tile silhouette
+  (a hexagon-SDF distance field over the outer-ring/coastal tiles, so the
+  foam follows the jagged hex tile edges, not a circle) that spreads
+  outward from each tile edge and fades with distance, distinct
   from the open-water cell-border foam; raised on the gameplay
   screen so the island + docks sit IN the sea rather than floating above
   it — the frozen title keeps the original sea level; the cell drift runs at

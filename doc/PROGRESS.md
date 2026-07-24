@@ -1505,3 +1505,62 @@ screens — same shared-component pattern as every prior water-shader change):
   the `vShoreDist` radial-distance math would need revisiting — currently
   matches the same `radius` value already trusted for boat/dock placement
   elsewhere.
+
+---
+
+## 2026-07-24 — Shoreline foam now follows the actual tile edges (not a circle)
+
+### What changed (user request: 表現はあってるけどタイルに沿って表示されるように)
+Follow-up to the shoreline-foam entry above. The first pass anchored the surf
+lace to a **radial** distance from origin (`length(worldXZ) - boardRadius`), so
+it drew a smooth circular ring that didn't match the jagged hex-tile coastline.
+Reworked it to a real distance field over the coastal tiles so the foam hugs
+the actual island silhouette.
+
+- **`src/game/board.ts`**: new exported `coastalTileCenters(board)` — returns
+  the world (x,z) centers of the outer-ring tiles (`hexDist(q,r) === radius`;
+  the board is a full hexagon with no interior holes, so that's exactly the
+  coastal set). Max 6·radius tiles (small 12 / medium 18 / large 24).
+- **`src/scene/Ambient.tsx`** (`Water`, shared by both frozen screens):
+  - Vertex shader reverted to the pre-first-pass form (dropped the radial
+    `vShoreDist`/`uRadius` varying).
+  - Fragment shader gains a hexagon SDF (`sdHexFlat`, iq's formula) and, for
+    each coastal tile passed in `uShoreTiles[24]` (count `uShoreCount`),
+    takes `min` of the per-tile hex SDF → signed distance to the island's
+    real edge. The surf band is `smoothstep(-0.03,0.05,d) · (1 -
+    smoothstep(0,uShoreWidth,d))` (peaks just outside the tile edge, fades
+    out by `uShoreWidth ≈ 0.6` world units), masked by the same fine
+    `shoreCellular` Worley lace as before. Tiles are pointy-top in +z, so the
+    SDF is fed swapped components (`vec2(rp.y, rp.x)`); apothem `≈ 0.9`
+    (tile base circumradius ~1.06 · √3/2). A cheap radial pre-gate
+    (`0.4·uRadius < radial < 1.7·uRadius`, `uRadius` = `boardRadius`) confines
+    the ≤24-iteration per-fragment loop to the coast annulus; open sea and
+    deep interior skip it entirely.
+  - `Water`/`Ambient` gain a `shoreTiles?: [number,number][]` prop; the
+    `uShoreTiles` Vector2 array + `uShoreCount` are refreshed in a `useEffect`
+    on `shoreTiles` (material still `useMemo([])`, same pattern as the other
+    dynamic uniforms), so the title screen's 45s island swap updates the coast
+    live.
+- **`src/scene/GameScene.tsx`** and **`src/scene/TitleScene.tsx`**: compute
+  `coastalTileCenters(board)` (memoized) and pass it as `shoreTiles`.
+
+### Verified
+- `npm run build` + `npm run simulate` (all 8 configs) pass.
+- Playwright (throwaway `--no-save`, reverted; `git status` shows only
+  `board.ts`/`Ambient.tsx`/`GameScene.tsx`/`TitleScene.tsx` + spec/progress):
+  title screen and a freshly generated gameplay board both show the surf lace
+  tracing the jagged hex coastline tile-by-tile (clearly following the tile
+  edges, not a circle), fading out a short way into open water; open-water
+  foam / board / HUD / tokens unchanged; zero page errors.
+
+### Gotchas
+- The SDF is fed the OUTER-ring tiles only — correct because a full hex board
+  has no interior water, and interior fragments are occluded by the opaque
+  tiles anyway. If the board ever gets interior holes/lakes, revisit which
+  tiles are passed.
+- Watch the `WATER_FRAG` template literal: it's delimited by backticks, so a
+  literal backtick inside a GLSL comment (e.g. wrapping a uniform name in
+  \`code\`) terminates the string and breaks the build. Keep comments
+  backtick-free.
+- `MAX_SHORE_TILES = 24` sizes the GLSL `uShoreTiles[24]` array; raising the
+  max map radius past 4 means raising this too.

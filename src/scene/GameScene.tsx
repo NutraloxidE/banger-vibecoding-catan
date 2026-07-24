@@ -1,6 +1,8 @@
+import { useMemo } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import { useGame } from '../game/store';
+import { coastalTileCenters } from '../game/board';
 import { Tiles } from './Tiles';
 import { Ports } from './Ports';
 import { Pieces } from './Pieces';
@@ -17,6 +19,7 @@ const GAMEPLAY_WATER_DRIFT_SPEED = 0.4;
 export function GameScene() {
   const board = useGame((s) => s.game?.board);
   const seed = useGame((s) => s.game?.config.seed ?? 'x');
+  const shoreTiles = useMemo(() => (board ? coastalTileCenters(board) : []), [board]);
   if (!board) return null;
   const boardRadius = (board.radius * 2 + 1) * 0.9;
 
@@ -32,7 +35,7 @@ export function GameScene() {
       <directionalLight position={[10, 18, 6]} intensity={1.5} color="#fff4e0" />
       <directionalLight position={[-8, 10, -10]} intensity={0.35} color="#a8c8ff" />
       <Sky sunPosition={[60, 40, 20]} turbidity={6} rayleigh={1.6} />
-      <Ambient boardRadius={boardRadius} boatDistance={boardRadius * 2.5 + 5} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} />
+      <Ambient boardRadius={boardRadius} boatDistance={boardRadius * 2.5 + 5} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} shoreTiles={shoreTiles} />
       <Tiles board={board} seed={seed} />
       <Ports />
       <Pieces />
