@@ -252,7 +252,9 @@ request AND a matching update to this section. Its defining elements:
   dev-card row
   (buy button with deck-remaining count + playable/held held-card buttons) +
   roll / trade / end-turn bottom; chronicle log bottom-left; round + seed +
-  settings top-right; toasts center-top; world-event banner; NPC offer popup
+  settings top-right (on phones, fixed at the upper-right directly below the
+  player-chip row, never down by the bottom controls); toasts center-top;
+  world-event banner; NPC offer popup
   with countdown.
   (Amendment: development cards — the dev-card row lets the human buy a card and
   play a held one; playing a card that needs a target opens the robber phase

@@ -791,7 +791,7 @@ input[type='range'] { width: 100%; accent-color: var(--gold); height: 28px; }
   .placement-banner { bottom: 190px; width: 94vw; justify-content: space-between; }
   .dev-prompt { bottom: 250px; width: 94vw; }
   .npc-offer { top: 70px; right: 8px; width: 220px; }
-  .hud-corner { top: auto; bottom: 200px; right: 8px; }
+  .hud-corner { top: 96px; bottom: auto; right: 8px; }
   .stats-grid { grid-template-columns: 1fr; }
 
   /* trade modal: keep everything inside the viewport on phones */
