@@ -1130,3 +1130,41 @@ boat/buoy, which sat even higher at y≈0.02–0.05) hovered above the water.
 - Harbor boat/buoy heights are tied to `GAMEPLAY_WATER_LEVEL` via the imported
   constant, so re-tuning the sea level moves them together. If the island base
   (hex prism at y=0) ever changes, revisit `GAMEPLAY_WATER_LEVEL`.
+
+---
+
+## 2026-07-24 — Harbor boat: bigger, seated lower (no bob-float), ropes re-pinned
+
+### What changed (user: 揺れると浮きすぎる時ある / 船もうちょっとだけでかく / 紐がズレないよう注意)
+The moored boat sometimes lifted into an air gap during the bob, because its
+rest height put the hull bottom slightly ABOVE the sea's rest level and its own
+bob (±0.015, out of phase with the sea's ±0.03 swell) pushed it higher. Fixed
+in `src/scene/Ports.tsx` (only file touched):
+- **Seated lower + calmer.** `BOAT_Y = GAMEPLAY_WATER_LEVEL − 0.055` (was
+  −0.01), so the hull bottom rests ~0.025 below the sea surface; bob amplitude
+  cut 0.015→0.005 and roll 0.03→0.02. The boat now stays in the water through
+  the swell instead of floating, while its hull still shows above the line.
+- **A little bigger.** Hull + rigging wrapped in a `<group scale={1.2}>`
+  (`BOAT_SCALE`). The **ropes are kept OUTSIDE that scale** (siblings of the
+  scaled group) so scaling can't drag their ends off the bollards.
+- **Ropes re-pinned to the bollards.** Because the boat dropped, the ropes were
+  recomputed for the new depth: `ropeGeo` length 0.31→0.32, position
+  `[±0.1, 0.185, 0.215]→[±0.1, 0.222, 0.22]`, rotation.x `−0.36→−0.478`. Their
+  far ends land at boat-space `[±0.1, 0.295, 0.36]`, i.e. exactly the seaward
+  bollards `[±0.1, PLATFORM_TOP+0.07, −0.16]` (verified by the endpoint math).
+  With the tiny bob the boat barely moves, so the ropes stay pinned.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway `--no-save`, reverted): traditional small board — very
+  low, deep-zoom close-ups across several bob phases show the boat holding a
+  steady waterline (no lift/air gap), the larger hull reading clearly, and the
+  two ropes spanning hull→bollards on the seaward side. Default + seaward-side
+  views clean. Zero page errors.
+
+### Notes / scope
+- Only `src/scene/Ports.tsx` (+ spec/progress). `Ambient.tsx` untouched this
+  round, so the frozen title screen is unaffected by definition.
+- Rope geometry is hand-tuned to `BOAT_Y` + `BOAT_SCALE` + the bollard position.
+  If any of those change, recompute the rope length/position/rotation so the far
+  end still lands on `[±0.1, PLATFORM_TOP+0.07, −0.16]` (dock-local).

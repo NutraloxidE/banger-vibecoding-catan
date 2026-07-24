@@ -118,10 +118,12 @@ request AND a matching update to this section. Its defining elements:
   standing on four support pilings (足場) that sink into the water. All docks
   share a consistent local frame (island side vs. open-water side): two
   mooring bollards sit on the seaward edge, and a small **moored rowboat**
-  (open hull, benches, short mast with a furled beige sail) floats just off
-  that edge at the waterline, tied to the bollards by two taut ropes — so
-  every harbor reads as a distinct boat AND dock, never one merged silhouette
-  (the boat + the owner's buoy ride on the raised sea surface, not above it).
+  (open hull, benches, short mast with a furled beige sail) sits just off that
+  edge, tied to the bollards by two taut ropes — so every harbor reads as a
+  distinct boat AND dock, never one merged silhouette. The boat rides low with
+  only a slight bob, so it stays seated in the sea through the swell (no air
+  gap) while its hull still shows above the waterline; the boat + the owner's
+  buoy ride on the raised sea surface, not above it.
   A barrel + crate of dockside cargo sit on the deck. The sign hangs from a
   raised mast at one end of the platform — high enough that it clears the deck
   planking — faces the island, sways gently in the breeze, and is

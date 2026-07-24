@@ -8,10 +8,17 @@ import { portSignTexture } from './textures';
 import { GAMEPLAY_WATER_LEVEL } from './Ambient';
 
 // Waterline-relative rest heights so the harbor boat + buoy float on the same
-// sea surface as the rest of the scene (Ambient owns the level). Boat hull
-// bottom sits just at the surface; the buoy rides with its lower half under.
-const BOAT_Y = GAMEPLAY_WATER_LEVEL - 0.01;
+// sea surface as the rest of the scene (Ambient owns the level). The boat rests
+// with its hull bottom below the sea surface and barely bobs, so it stays
+// seated in the water through the swell instead of lifting into an air gap —
+// while still showing its hull above the waterline; the buoy rides with its
+// lower half under.
+const BOAT_Y = GAMEPLAY_WATER_LEVEL - 0.055;
 const BUOY_Y = GAMEPLAY_WATER_LEVEL + 0.02;
+// The hull + rigging are drawn a touch larger. The mooring ropes are kept
+// OUTSIDE this scale (and hand-tuned for the boat's depth) so their ends stay
+// pinned to the dock bollards.
+const BOAT_SCALE = 1.2;
 
 // Coastal harbors: a small dock + a hanging sign showing the trade rate.
 // Decoration + readout only — the trade math lives in rules.ts::bankRate.
@@ -51,7 +58,7 @@ const boatWallEndGeo = new THREE.BoxGeometry(0.03, 0.07, 0.13);
 const boatBenchGeo = new THREE.BoxGeometry(0.05, 0.02, 0.12);
 const boatMastGeo = new THREE.CylinderGeometry(0.014, 0.018, 0.34, 6);
 const furledSailGeo = new THREE.BoxGeometry(0.036, 0.24, 0.036);
-const ropeGeo = new THREE.BoxGeometry(0.016, 0.016, 0.31);
+const ropeGeo = new THREE.BoxGeometry(0.016, 0.016, 0.32);
 // Dockside cargo clutter (a barrel + a crate) on the landing deck.
 const barrelGeo = new THREE.CylinderGeometry(0.05, 0.055, 0.11, 8);
 const crateGeo = new THREE.BoxGeometry(0.1, 0.1, 0.1);
@@ -70,25 +77,33 @@ function MooredBoat({ phase }: { phase: number }) {
   useFrame(({ clock }) => {
     const g = ref.current;
     if (!g) return;
-    g.position.y = BOAT_Y + Math.sin(clock.elapsedTime * 1.3 + phase) * 0.015;
-    g.rotation.x = Math.sin(clock.elapsedTime * 0.9 + phase) * 0.03;
+    // Small bob + roll only — the boat rides low and barely moves vertically,
+    // so the mooring ropes stay pinned to the fixed dock bollards.
+    g.position.y = BOAT_Y + Math.sin(clock.elapsedTime * 1.3 + phase) * 0.005;
+    g.rotation.x = Math.sin(clock.elapsedTime * 0.9 + phase) * 0.02;
   });
   return (
     <group ref={ref} position={[0, BOAT_Y, -0.52]}>
-      {/* hull: flat bottom + low walls (open rowboat) */}
-      <mesh geometry={boatBaseGeo} material={hullMat} position={[0, 0.05, 0]} castShadow />
-      <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, 0.065]} />
-      <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, -0.065]} />
-      <mesh geometry={boatWallEndGeo} material={hullMat} position={[0.155, 0.095, 0]} />
-      <mesh geometry={boatWallEndGeo} material={hullMat} position={[-0.155, 0.095, 0]} />
-      <mesh geometry={boatBenchGeo} material={postMat} position={[0.08, 0.1, 0]} />
-      <mesh geometry={boatBenchGeo} material={postMat} position={[-0.08, 0.1, 0]} />
-      {/* short mast with the sail furled — in port, sail down */}
-      <mesh geometry={boatMastGeo} material={postMat} position={[-0.06, 0.27, 0]} />
-      <mesh geometry={furledSailGeo} material={sailclothMat} position={[-0.025, 0.26, 0]} rotation={[0, 0, 0.06]} />
-      {/* mooring ropes up to the dock's edge bollards */}
-      <mesh geometry={ropeGeo} material={ropeMat} position={[0.1, 0.185, 0.215]} rotation={[-0.36, 0, 0]} />
-      <mesh geometry={ropeGeo} material={ropeMat} position={[-0.1, 0.185, 0.215]} rotation={[-0.36, 0, 0]} />
+      {/* hull + rigging, drawn a little larger. Kept in its own scaled group so
+          the ropes (siblings below) are NOT scaled and keep reaching the dock. */}
+      <group scale={BOAT_SCALE}>
+        {/* hull: flat bottom + low walls (open rowboat) */}
+        <mesh geometry={boatBaseGeo} material={hullMat} position={[0, 0.05, 0]} castShadow />
+        <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, 0.065]} />
+        <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, -0.065]} />
+        <mesh geometry={boatWallEndGeo} material={hullMat} position={[0.155, 0.095, 0]} />
+        <mesh geometry={boatWallEndGeo} material={hullMat} position={[-0.155, 0.095, 0]} />
+        <mesh geometry={boatBenchGeo} material={postMat} position={[0.08, 0.1, 0]} />
+        <mesh geometry={boatBenchGeo} material={postMat} position={[-0.08, 0.1, 0]} />
+        {/* short mast with the sail furled — in port, sail down */}
+        <mesh geometry={boatMastGeo} material={postMat} position={[-0.06, 0.27, 0]} />
+        <mesh geometry={furledSailGeo} material={sailclothMat} position={[-0.025, 0.26, 0]} rotation={[0, 0, 0.06]} />
+      </group>
+      {/* mooring ropes up to the dock's edge bollards — unscaled, angled to span
+          from the low hull's stern rail up to the fixed bollards (far end lands
+          ~[±0.1, 0.295, 0.36] in boat space, right at each bollard). */}
+      <mesh geometry={ropeGeo} material={ropeMat} position={[0.1, 0.222, 0.22]} rotation={[-0.478, 0, 0]} />
+      <mesh geometry={ropeGeo} material={ropeMat} position={[-0.1, 0.222, 0.22]} rotation={[-0.478, 0, 0]} />
     </group>
   );
 }
