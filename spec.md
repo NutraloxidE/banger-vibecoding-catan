@@ -102,7 +102,9 @@ request AND a matching update to this section. Its defining elements:
 
 - 3D board: biome-decorated hex tiles, always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
-  water/boats (slightly enlarged for presence; kept well offshore so they
+  water (raised on the gameplay screen so the island + docks sit IN the sea
+  rather than floating above it — the frozen title keeps the original sea
+  level)/boats (slightly enlarged for presence; kept well offshore so they
   read as open-water vessels and don't visually merge with the harbor docks)/
   clouds, orbit/zoom/pan camera
   with soft auto-focus on events. (Desktop: WASD glides the view horizontally
@@ -117,10 +119,12 @@ request AND a matching update to this section. Its defining elements:
   share a consistent local frame (island side vs. open-water side): two
   mooring bollards sit on the seaward edge, and a small **moored rowboat**
   (open hull, benches, short mast with a furled beige sail) floats just off
-  that edge, tied to the bollards by two taut ropes — so every harbor reads
-  as a distinct boat AND dock, never one merged silhouette. A barrel + crate
-  of dockside cargo sit on the deck. The sign hangs from a raised mast at one
-  end of the platform, faces the island, sways gently in the breeze, and is
+  that edge at the waterline, tied to the bollards by two taut ropes — so
+  every harbor reads as a distinct boat AND dock, never one merged silhouette
+  (the boat + the owner's buoy ride on the raised sea surface, not above it).
+  A barrel + crate of dockside cargo sit on the deck. The sign hangs from a
+  raised mast at one end of the platform — high enough that it clears the deck
+  planking — faces the island, sways gently in the breeze, and is
   large enough to read the rate + resource from the default camera, reading
   correctly (non-mirrored) from either side. Two wooden plank bridges (with
   side rails + corner posts) span from the platform's island-side edge (not

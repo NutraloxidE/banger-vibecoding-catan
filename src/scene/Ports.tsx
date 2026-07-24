@@ -5,6 +5,13 @@ import { Html } from '@react-three/drei';
 import { useGame } from '../game/store';
 import { Port, Resource, VertexNode } from '../game/types';
 import { portSignTexture } from './textures';
+import { GAMEPLAY_WATER_LEVEL } from './Ambient';
+
+// Waterline-relative rest heights so the harbor boat + buoy float on the same
+// sea surface as the rest of the scene (Ambient owns the level). Boat hull
+// bottom sits just at the surface; the buoy rides with its lower half under.
+const BOAT_Y = GAMEPLAY_WATER_LEVEL - 0.01;
+const BUOY_Y = GAMEPLAY_WATER_LEVEL + 0.02;
 
 // Coastal harbors: a small dock + a hanging sign showing the trade rate.
 // Decoration + readout only — the trade math lives in rules.ts::bankRate.
@@ -63,11 +70,11 @@ function MooredBoat({ phase }: { phase: number }) {
   useFrame(({ clock }) => {
     const g = ref.current;
     if (!g) return;
-    g.position.y = 0.02 + Math.sin(clock.elapsedTime * 1.3 + phase) * 0.015;
+    g.position.y = BOAT_Y + Math.sin(clock.elapsedTime * 1.3 + phase) * 0.015;
     g.rotation.x = Math.sin(clock.elapsedTime * 0.9 + phase) * 0.03;
   });
   return (
-    <group ref={ref} position={[0, 0.02, -0.52]}>
+    <group ref={ref} position={[0, BOAT_Y, -0.52]}>
       {/* hull: flat bottom + low walls (open rowboat) */}
       <mesh geometry={boatBaseGeo} material={hullMat} position={[0, 0.05, 0]} castShadow />
       <mesh geometry={boatWallLongGeo} material={hullMat} position={[0, 0.095, 0.065]} />
@@ -160,7 +167,7 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
   // The pier/landing is a solid structure; only the buoy bobs and the hanging
   // sign sways gently in the breeze.
   useFrame(({ clock }) => {
-    if (buoyRef.current) buoyRef.current.position.y = 0.05 + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
+    if (buoyRef.current) buoyRef.current.position.y = BUOY_Y + Math.sin(clock.elapsedTime * 1.4 + phase) * 0.03;
     if (signRef.current) signRef.current.rotation.z = Math.sin(clock.elapsedTime * 1.1 + phase) * 0.05;
   });
 
@@ -192,12 +199,14 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
         {/* dockside cargo: a barrel + a crate waiting by the walkways */}
         <mesh geometry={crateGeo} material={crateMat} position={[0.17, PLATFORM_TOP + 0.05, 0.06]} rotation={[0, 0.5, 0]} castShadow />
         <mesh geometry={barrelGeo} material={barrelMat} position={[0.15, PLATFORM_TOP + 0.055, -0.09]} castShadow />
-        {/* mast at one end of the deck + the hanging sign, facing the island */}
-        <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.36, 0.04]} />
-        <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.66, 0.04]} />
+        {/* mast at one end of the deck + the hanging sign, facing the island.
+            Raised so the sign hangs clear above the deck (its bottom no longer
+            dips into the planking). */}
+        <mesh geometry={postGeo} material={postMat} position={[-0.16, 0.42, 0.04]} />
+        <mesh geometry={armGeo} material={postMat} position={[-0.02, 0.76, 0.04]} />
         {/* two back-to-back front-facing planes so the text reads correctly
             from either side (a single DoubleSide plane mirrors the back) */}
-        <group ref={signRef} position={[0.04, 0.4, 0.05]}>
+        <group ref={signRef} position={[0.04, 0.5, 0.05]}>
           <mesh geometry={signGeo} rotation={[0, Math.PI, 0]}>
             <meshBasicMaterial map={signTex} transparent side={THREE.FrontSide} />
           </mesh>
@@ -215,7 +224,7 @@ function PortDock({ port, ownerColor, showRate }: { port: Port; ownerColor: stri
         <MooredBoat phase={phase} />
       </group>
       {/* buoy floating on the open water beside the moored boat */}
-      <group ref={buoyRef} position={[0.34, 0.05, -0.34]}>
+      <group ref={buoyRef} position={[0.34, BUOY_Y, -0.34]}>
         <mesh geometry={buoyGeo} material={buoyMat} />
       </group>
       {/* Dedicated flat readout: when the camera looks from near overhead the

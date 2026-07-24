@@ -1084,3 +1084,49 @@ all in `src/scene/Ports.tsx`:
   (see the yaw comment in `PortDock`). Anything added to the dock must use it.
 - If `vertexScore`/board Y levels change, bridge `from` offset (0.2) assumes
   the platform half-depth 0.21.
+
+---
+
+## 2026-07-24 — Harbor polish: raise sign, lower boat/buoy, raise sea level
+
+### What changed (user: 旗が沈んでる→上げて / 舟とボールが浮きすぎ→少し低く / 水位が低すぎて不自然に浮く→上げて)
+Three coupled height tweaks. Root cause of the "floating" look: the island
+base is at y=0 but the sea sat at y=−0.16, so the whole island (and the harbor
+boat/buoy, which sat even higher at y≈0.02–0.05) hovered above the water.
+
+1. **Sea level raised — gameplay only.** `src/scene/Ambient.tsx`: `Water` gains
+   a `level` prop (default `DEFAULT_WATER_LEVEL = −0.16`); both the surface mesh
+   and the dark underlayer (`level − 0.14`) follow it. `Ambient` gains a
+   `waterLevel` prop (same −0.16 default) threaded to `Water`. New exported
+   `GAMEPLAY_WATER_LEVEL = −0.03` (island base ≈ 0, so the coastline now just
+   meets the sea). `src/scene/GameScene.tsx` passes it. **Frozen title
+   unchanged**: `TitleScene` calls `<Ambient boardRadius={6.3} />` with no
+   `waterLevel` → default −0.16 (verified byte-for-byte).
+2. **Circling boats follow the sea.** The ambient `Boat` now takes a `baseY`
+   and floats at `waterLevel + 0.11` (preserves the old −0.05 freeboard at the
+   title's −0.16 level; lifts with the raised gameplay sea so they don't sink).
+3. **Harbor boat + buoy lowered to the waterline.** `src/scene/Ports.tsx`
+   imports `GAMEPLAY_WATER_LEVEL` and derives `BOAT_Y = level − 0.01`,
+   `BUOY_Y = level + 0.02` (used for both the static position and the bob
+   baseline). Net: the moored boat's hull now sits at the sea surface and the
+   buoy rides half-submerged — the "little lower" the user asked for is small
+   in absolute terms (~0.06) because the sea coming up does most of the work.
+4. **Sign raised clear of the deck.** Mast post `y 0.36→0.42` (top now 0.78),
+   arm `0.66→0.76`, sign group `0.4→0.50` (bottom 0.24, ~0.10 above the deck
+   top at 0.14) so the flag no longer dips into the planking.
+
+### Verified
+- `npm run build` + all 8 `npm run simulate` configs pass (render-only).
+- Playwright (throwaway `--no-save`, reverted): traditional small board,
+  default + low-angle close-ups — island/docks now sit in the sea (coastline
+  meets water, no floating cliff), signs hang high & clear of the deck, moored
+  boat + red buoy ride at the waterline; **title screen screenshot unchanged**.
+  Zero page errors.
+
+### Notes / scope
+- `Ambient.tsx` is shared with the frozen title — the water/boat changes are
+  gated behind props that default to the original values, so only the gameplay
+  screen (which passes `waterLevel`/`boatDistance`) is affected.
+- Harbor boat/buoy heights are tied to `GAMEPLAY_WATER_LEVEL` via the imported
+  constant, so re-tuning the sea level moves them together. If the island base
+  (hex prism at y=0) ever changes, revisit `GAMEPLAY_WATER_LEVEL`.

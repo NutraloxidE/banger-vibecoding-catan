@@ -7,7 +7,7 @@ import { Pieces } from './Pieces';
 import { Highlights } from './Highlights';
 import { FxLayer } from './FxLayer';
 import { DiceRitual } from './DiceRitual';
-import { Ambient } from './Ambient';
+import { Ambient, GAMEPLAY_WATER_LEVEL } from './Ambient';
 import { CameraRig } from './CameraRig';
 
 export function GameScene() {
@@ -28,7 +28,7 @@ export function GameScene() {
       <directionalLight position={[10, 18, 6]} intensity={1.35} color="#fff4e0" />
       <directionalLight position={[-8, 10, -10]} intensity={0.3} color="#a8c8ff" />
       <Sky sunPosition={[60, 40, 20]} turbidity={6} rayleigh={1.6} />
-      <Ambient boardRadius={boardRadius} boatDistance={boardRadius * 2.5 + 5} />
+      <Ambient boardRadius={boardRadius} boatDistance={boardRadius * 2.5 + 5} waterLevel={GAMEPLAY_WATER_LEVEL} />
       <Tiles board={board} seed={seed} />
       <Ports />
       <Pieces />
