@@ -3,7 +3,11 @@ import { Canvas } from '@react-three/fiber';
 import { Sky, OrbitControls } from '@react-three/drei';
 import { generateBoard, coastalTileCenters } from '../game/board';
 import { Tiles } from './Tiles';
-import { Ambient } from './Ambient';
+import { Ambient, GAMEPLAY_WATER_LEVEL, GAMEPLAY_BOARD_SINK } from './Ambient';
+
+// Match the gameplay screen's calmer water swell (GameScene uses the same value)
+// so the title world reads as the same world, not a separate demo look.
+const GAMEPLAY_WATER_DRIFT_SPEED = 0.4;
 
 // How often the background world regenerates into a fresh procedural island,
 // and how long the cover-fade around the swap takes.
@@ -37,13 +41,19 @@ export function TitleScene() {
 
   return (
     <>
-      <Canvas dpr={[1, 1.5]} camera={{ position: [9, 7, 9], fov: 50 }} style={{ touchAction: 'none' }}>
-        <fog attach="fog" args={['#9cc4de', 22, 55]} />
-        <ambientLight intensity={0.75} />
-        <directionalLight position={[10, 18, 6]} intensity={1.3} color="#fff4e0" />
-        <Sky sunPosition={[60, 35, 20]} turbidity={6} rayleigh={1.8} />
-        <Ambient boardRadius={6.3} shoreTiles={shoreTiles} />
-        <Tiles board={board} seed={seed} />
+      <Canvas dpr={[1, 1.75]} camera={{ position: [9, 7, 9], fov: 48 }} style={{ touchAction: 'none' }}>
+        <fog attach="fog" args={['#9cc4de', 24, 60]} />
+        <ambientLight intensity={0.85} />
+        <directionalLight position={[10, 18, 6]} intensity={1.5} color="#fff4e0" />
+        <directionalLight position={[-8, 10, -10]} intensity={0.35} color="#a8c8ff" />
+        <Sky sunPosition={[60, 40, 20]} turbidity={6} rayleigh={1.6} />
+        <Ambient boardRadius={6.3} waterLevel={GAMEPLAY_WATER_LEVEL} waterDriftSpeed={GAMEPLAY_WATER_DRIFT_SPEED} shoreTiles={shoreTiles} />
+        {/* Sink the island into the sea by the same amount as the gameplay
+            screen so the coastline dips just below the raised waterline instead
+            of floating above it — the water itself stays put. */}
+        <group position={[0, -GAMEPLAY_BOARD_SINK, 0]}>
+          <Tiles board={board} seed={seed} />
+        </group>
         <OrbitControls autoRotate autoRotateSpeed={0.7} enablePan={false} enableZoom={false}
           minPolarAngle={0.9} maxPolarAngle={1.2} />
       </Canvas>
