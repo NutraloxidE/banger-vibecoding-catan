@@ -1737,3 +1737,27 @@ gameplay-only framing/features:
   and pushes each meaningful completed session branch to `origin`.
 - Purpose: every session gets an independently accessible Vercel Preview,
   making review and iteration practical from a phone.
+
+---
+
+## 2026-07-24 — Tile finish shifted to pastel low-poly
+
+### What changed
+- User feedback: the first beach texture felt oddly realistic. Removed the
+  fine sand grain, mottling, smooth blend, and dark wet-sand edge from
+  `src/scene/Tiles.tsx`.
+- Replaced the terrain palette with lighter pastel greens, coral, gold,
+  lavender-blue, and cream. The beach is now a warm pastel sand.
+- The runtime canvas texture now uses coarse triangular cells with three
+  discrete tone levels and stepped terrain→sand bands. Nearest magnification
+  keeps the facets crisp, giving the tiles a stylized low-poly energy instead
+  of a naturalistic surface.
+- Crown geometry, beach width, tile anchors, decorations, tokens, gameplay,
+  and board generation are unchanged. `spec.md` §§2/4 now explicitly reject
+  realistic grain/wet shading for the tile finish.
+
+### Verified
+- Title and medium gameplay board checked in the in-app Chromium renderer:
+  pastel facets read clearly at both camera distances; number tokens,
+  placement rings, decorations, docks, and HUD remain correctly layered.
+  No console warnings/errors.

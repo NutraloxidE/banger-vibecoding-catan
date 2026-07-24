@@ -7,12 +7,12 @@ import { tokenTexture } from './textures';
 import { useGame } from '../game/store';
 
 export const TERRAIN_COLOR: Record<Terrain, string> = {
-  forest: '#2f8f4a',
-  hills: '#c06a3d',
-  fields: '#e3c24a',
-  pasture: '#8fd05e',
-  mountains: '#8d93a1',
-  desert: '#e0cd8f',
+  forest: '#62bf8a',
+  hills: '#e58d78',
+  fields: '#f0d56f',
+  pasture: '#9bdc7c',
+  mountains: '#aab8d7',
+  desert: '#efd79d',
 };
 
 // The old single cylinder stays underneath as the sandy cliff/soil body.
@@ -78,15 +78,15 @@ function hashNoise(x: number, y: number) {
 }
 
 function makeTerrainTexture(terrain: Terrain) {
-  const size = 192;
+  const size = 144;
+  const facetSize = 18;
   const canvas = document.createElement('canvas');
   canvas.width = size;
   canvas.height = size;
   const ctx = canvas.getContext('2d')!;
   const image = ctx.createImageData(size, size);
   const terrainColor = new THREE.Color(TERRAIN_COLOR[terrain]);
-  const sandColor = new THREE.Color('#d9bd78');
-  const wetSandColor = new THREE.Color('#b99255');
+  const sandColor = new THREE.Color('#f3d69c');
 
   for (let py = 0; py < size; py++) {
     for (let px = 0; px < size; px++) {
@@ -95,15 +95,24 @@ function makeTerrainTexture(terrain: Terrain) {
       const q = Math.sqrt(3) / 3 * x - z / 3;
       const r = 2 / 3 * z;
       const hexRadius = 1.5 * Math.max(Math.abs(q), Math.abs(r), Math.abs(-q - r));
-      const broadNoise = hashNoise(Math.floor(px / 12), Math.floor(py / 12)) - 0.5;
-      const boundary = 0.84 + broadNoise * 0.045;
-      const beach = smooth01((hexRadius - boundary) / 0.1);
-      const wetEdge = smooth01((hexRadius - 0.955) / 0.04);
-      const grain = hashNoise(px, py) - 0.5;
-      const mottling = hashNoise(Math.floor(px / 4), Math.floor(py / 4)) - 0.5;
-      const color = terrainColor.clone().lerp(sandColor, beach).lerp(wetSandColor, wetEdge * 0.42);
-      const textureNoise = (0.025 + beach * 0.095) * grain + (0.015 + beach * 0.025) * mottling;
-      color.offsetHSL(0, beach * grain * 0.018, textureNoise);
+      const cellX = Math.floor(px / facetSize);
+      const cellY = Math.floor(py / facetSize);
+      const localX = (px % facetSize) / facetSize;
+      const localY = (py % facetSize) / facetSize;
+      const triangle = localX + localY < 1 ? 0 : 1;
+      const facetX = cellX * 2 + triangle;
+      const facetY = cellY * 2 + (triangle === 0 ? 1 : 0);
+      const facetTone = Math.floor(hashNoise(facetX, facetY) * 3) - 1;
+      const boundary = 0.835 + (hashNoise(facetX + 31, facetY + 17) - 0.5) * 0.035;
+      const beach = hexRadius >= boundary + 0.075
+        ? 1
+        : hexRadius >= boundary + 0.03
+          ? 0.62
+          : hexRadius >= boundary
+            ? 0.28
+            : 0;
+      const color = terrainColor.clone().lerp(sandColor, beach);
+      color.offsetHSL(0, 0, facetTone * 0.025);
 
       const offset = (py * size + px) * 4;
       image.data[offset] = Math.round(color.r * 255);
@@ -116,7 +125,8 @@ function makeTerrainTexture(terrain: Terrain) {
   ctx.putImageData(image, 0, 0);
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.anisotropy = 4;
+  texture.magFilter = THREE.NearestFilter;
+  texture.anisotropy = 2;
   return texture;
 }
 
@@ -145,7 +155,7 @@ const brickMat2 = new THREE.MeshStandardMaterial({ color: '#8d3f22' });
 const woolMat = new THREE.MeshStandardMaterial({ color: '#f2f0e8' });
 const sheepFaceMat = new THREE.MeshStandardMaterial({ color: '#3a3630' });
 const cactusMat = new THREE.MeshStandardMaterial({ color: '#4f9e57' });
-const sandSideMat = new THREE.MeshStandardMaterial({ color: '#caa765', roughness: 1 });
+const sandSideMat = new THREE.MeshStandardMaterial({ color: '#dfbd7d', roughness: 0.92 });
 // Number tokens draw on top of terrain so they're never buried by trees,
 // mountains, or other tile decorations (depthTest off + high renderOrder).
 const TOKEN_RENDER_ORDER = 900;
