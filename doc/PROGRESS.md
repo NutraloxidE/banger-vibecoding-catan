@@ -2049,3 +2049,15 @@ gameplay-only framing/features:
 - Browser inspection confirms the intended stack (`20/30/40/45/50/60/80`) at
   390×844 with no warnings/errors; the gameplay surface remains otherwise
   unchanged. Build and all eight simulations pass.
+
+### Same-session extension — permanent live bulletin rail
+- Reworked the top-center event banner into a permanent scrolling live rail
+  between the left metadata panel and right options control.
+- Active world events take over the rail; otherwise it scrolls the newest
+  chronicle line as a `LIVE` update.
+- Reserved vertical space by moving the player-chip row down to `top: 58px`;
+  toasts and NPC offers now begin at `152px`, below the shifted row.
+- Phone QA at 390×844 confirms the rail fits cleanly between both corner
+  controls, the player row starts below it, and the duplicated ticker remains
+  continuously populated both immediately and eight seconds into its cycle.
+  No horizontal overflow or browser warnings/errors.

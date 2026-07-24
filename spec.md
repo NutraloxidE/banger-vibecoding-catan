@@ -254,9 +254,12 @@ request AND a matching update to this section. Its defining elements:
   roll / trade / end-turn bottom; chronicle log bottom-left; round + seed in
   a two-line panel fixed at the upper-left and settings fixed at the upper-right
   on both desktop and phones, inset only 8–12 px from the actual viewport
-  corners rather than below the player-chip row; toasts center-top; world-event
-  banner centered below the player-chip row without overlapping it and layered
-  above every other in-game HUD element; NPC offer popup with countdown.
+  corners rather than below the player-chip row; a permanent scrolling live
+  bulletin rail occupies the top-center space between those corner controls,
+  showing the active world event when one exists and otherwise the latest
+  chronicle commentary; the player-chip row sits below that reserved rail;
+  toasts and the NPC offer popup sit below the player-chip row. The bulletin is
+  layered above every other in-game HUD element.
   (Amendment: development cards — the dev-card row lets the human buy a card and
   play a held one; playing a card that needs a target opens the robber phase
   (Knight/Earthquake), a free-road placement (Road Building), or a resource-pick

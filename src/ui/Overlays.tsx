@@ -74,14 +74,21 @@ export function NpcOfferPopup() {
 }
 
 export function EventBanner() {
-  const ev = useGame((s) => s.game?.worldEvent);
-  const round = useGame((s) => s.game?.round ?? 0);
+  const game = useGame((s) => s.game);
   const t = useT();
-  if (!ev) return null;
-  const left = Math.max(0, ev.untilRound - round + 1);
+  if (!game) return null;
+  const ev = game.worldEvent;
+  const left = ev ? Math.max(0, ev.untilRound - game.round + 1) : 0;
+  const latest = game.log[game.log.length - 1] ?? '';
+  const message = ev
+    ? <>🌍 <b>{ev.label}</b> — {ev.desc} <span className="dim">{t(left !== 1 ? 'event.roundsLeft' : 'event.roundLeft', { n: left })}</span></>
+    : <>LIVE — {latest}</>;
   return (
-    <div className="event-banner">
-      🌍 <b>{ev.label}</b> — {ev.desc} <span className="dim">{t(left !== 1 ? 'event.roundsLeft' : 'event.roundLeft', { n: left })}</span>
+    <div className={`event-banner ${ev ? 'active' : 'live'}`} aria-live="polite">
+      <div className="event-banner-track" key={ev ? `${ev.label}-${left}` : game.log.length}>
+        <span className="event-banner-item">{message}</span>
+        <span className="event-banner-item" aria-hidden="true">{message}</span>
+      </div>
     </div>
   );
 }
