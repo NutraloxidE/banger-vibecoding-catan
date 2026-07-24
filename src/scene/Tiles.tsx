@@ -15,8 +15,112 @@ export const TERRAIN_COLOR: Record<Terrain, string> = {
   desert: '#e0cd8f',
 };
 
+// The old single cylinder stays underneath as the sandy cliff/soil body.
+// A separately tessellated top lets the playable surface swell gently toward
+// the centre while keeping the six shared corner/edge anchors at y=0.3.
+const hexBaseGeo = new THREE.CylinderGeometry(1, 1.06, 0.3, 6);
+const TILE_TOP_Y = 0.302;
+const TILE_CROWN = 0.055;
+const TILE_EDGE_SEGMENTS = 5;
+
+function smooth01(v: number) {
+  const x = THREE.MathUtils.clamp(v, 0, 1);
+  return x * x * (3 - 2 * x);
+}
+
+function makeCrownedHexGeometry() {
+  const geo = new THREE.BufferGeometry();
+  const positions: number[] = [0, TILE_TOP_Y + TILE_CROWN, 0];
+  const uvs: number[] = [0.5, 0.5];
+  const indices: number[] = [];
+  const ringRadii = [0.28, 0.5, 0.7, 0.84, 0.94, 1];
+  const around = 6 * TILE_EDGE_SEGMENTS;
+
+  for (const radius of ringRadii) {
+    const crown = TILE_CROWN * (1 - smooth01((radius - 0.18) / 0.82));
+    for (let i = 0; i < around; i++) {
+      const side = Math.floor(i / TILE_EDGE_SEGMENTS);
+      const t = (i % TILE_EDGE_SEGMENTS) / TILE_EDGE_SEGMENTS;
+      const a0 = THREE.MathUtils.degToRad(side * 60 - 30);
+      const a1 = THREE.MathUtils.degToRad((side + 1) * 60 - 30);
+      const x = THREE.MathUtils.lerp(Math.cos(a0), Math.cos(a1), t) * radius;
+      const z = THREE.MathUtils.lerp(Math.sin(a0), Math.sin(a1), t) * radius;
+      positions.push(x, TILE_TOP_Y + crown, z);
+      uvs.push(x * 0.5 + 0.5, z * 0.5 + 0.5);
+    }
+  }
+
+  for (let i = 0; i < around; i++) {
+    indices.push(0, 1 + ((i + 1) % around), 1 + i);
+  }
+  for (let ring = 0; ring < ringRadii.length - 1; ring++) {
+    const inner = 1 + ring * around;
+    const outer = inner + around;
+    for (let i = 0; i < around; i++) {
+      const next = (i + 1) % around;
+      indices.push(inner + i, outer + next, outer + i);
+      indices.push(inner + i, inner + next, outer + next);
+    }
+  }
+
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uvs, 2));
+  geo.setIndex(indices);
+  geo.computeVertexNormals();
+  return geo;
+}
+
+const crownedHexGeo = makeCrownedHexGeometry();
+
+function hashNoise(x: number, y: number) {
+  const n = Math.sin(x * 127.1 + y * 311.7) * 43758.5453123;
+  return n - Math.floor(n);
+}
+
+function makeTerrainTexture(terrain: Terrain) {
+  const size = 192;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d')!;
+  const image = ctx.createImageData(size, size);
+  const terrainColor = new THREE.Color(TERRAIN_COLOR[terrain]);
+  const sandColor = new THREE.Color('#d9bd78');
+  const wetSandColor = new THREE.Color('#b99255');
+
+  for (let py = 0; py < size; py++) {
+    for (let px = 0; px < size; px++) {
+      const x = (px / (size - 1) - 0.5) * 2;
+      const z = (py / (size - 1) - 0.5) * 2;
+      const q = Math.sqrt(3) / 3 * x - z / 3;
+      const r = 2 / 3 * z;
+      const hexRadius = 1.5 * Math.max(Math.abs(q), Math.abs(r), Math.abs(-q - r));
+      const broadNoise = hashNoise(Math.floor(px / 12), Math.floor(py / 12)) - 0.5;
+      const boundary = 0.84 + broadNoise * 0.045;
+      const beach = smooth01((hexRadius - boundary) / 0.1);
+      const wetEdge = smooth01((hexRadius - 0.955) / 0.04);
+      const grain = hashNoise(px, py) - 0.5;
+      const mottling = hashNoise(Math.floor(px / 4), Math.floor(py / 4)) - 0.5;
+      const color = terrainColor.clone().lerp(sandColor, beach).lerp(wetSandColor, wetEdge * 0.42);
+      const textureNoise = (0.025 + beach * 0.095) * grain + (0.015 + beach * 0.025) * mottling;
+      color.offsetHSL(0, beach * grain * 0.018, textureNoise);
+
+      const offset = (py * size + px) * 4;
+      image.data[offset] = Math.round(color.r * 255);
+      image.data[offset + 1] = Math.round(color.g * 255);
+      image.data[offset + 2] = Math.round(color.b * 255);
+      image.data[offset + 3] = 255;
+    }
+  }
+
+  ctx.putImageData(image, 0, 0);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  texture.anisotropy = 4;
+  return texture;
+}
+
 // shared geometries/materials
-const hexGeo = new THREE.CylinderGeometry(1, 1.06, 0.3, 6);
 const trunkGeo = new THREE.CylinderGeometry(0.03, 0.045, 0.16, 5);
 const coneGeo = new THREE.ConeGeometry(0.12, 0.3, 6);
 const rockGeo = new THREE.ConeGeometry(0.2, 0.42, 5);
@@ -41,6 +145,7 @@ const brickMat2 = new THREE.MeshStandardMaterial({ color: '#8d3f22' });
 const woolMat = new THREE.MeshStandardMaterial({ color: '#f2f0e8' });
 const sheepFaceMat = new THREE.MeshStandardMaterial({ color: '#3a3630' });
 const cactusMat = new THREE.MeshStandardMaterial({ color: '#4f9e57' });
+const sandSideMat = new THREE.MeshStandardMaterial({ color: '#caa765', roughness: 1 });
 // Number tokens draw on top of terrain so they're never buried by trees,
 // mountains, or other tile decorations (depthTest off + high renderOrder).
 const TOKEN_RENDER_ORDER = 900;
@@ -213,7 +318,11 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
   const mats = useMemo(() => {
     const m: Partial<Record<Terrain, THREE.MeshStandardMaterial>> = {};
     (Object.keys(TERRAIN_COLOR) as Terrain[]).forEach((t) => {
-      m[t] = new THREE.MeshStandardMaterial({ color: TERRAIN_COLOR[t], roughness: 0.85 });
+      m[t] = new THREE.MeshStandardMaterial({
+        color: '#ffffff',
+        map: makeTerrainTexture(t),
+        roughness: 0.94,
+      });
     });
     return m as Record<Terrain, THREE.MeshStandardMaterial>;
   }, []);
@@ -225,12 +334,18 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
       {board.tiles.map((tile) => (
         <group key={tile.id} position={[tile.x, 0, tile.z]}>
           <mesh
-            geometry={hexGeo}
-            material={mats[tile.terrain]}
+            geometry={hexBaseGeo}
+            material={sandSideMat}
             position={[0, 0.15, 0]}
             onClick={(e) => { e.stopPropagation(); clickTile(tile.id); }}
           />
-          <group position={[0, 0.3, 0]}>
+          <mesh
+            geometry={crownedHexGeo}
+            material={mats[tile.terrain]}
+            rotation={[0, ((tile.id * 5) % 6) * Math.PI / 3, 0]}
+            onClick={(e) => { e.stopPropagation(); clickTile(tile.id); }}
+          />
+          <group position={[0, TILE_TOP_Y + TILE_CROWN, 0]}>
             <Deco tile={tile} seed={seed} />
             {tile.token !== null && (
               <group position={[0, 0.12, 0]}>
@@ -242,19 +357,19 @@ export function Tiles({ board, seed }: { board: BoardModel; seed: string }) {
             )}
           </group>
           {robberSelecting && tile.id !== robberTile && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.32, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, TILE_TOP_Y + TILE_CROWN + 0.02, 0]}>
               <ringGeometry args={[0.75, 0.9, 32]} />
               <meshBasicMaterial color="#ff5544" transparent opacity={0.5} />
             </mesh>
           )}
           {stormTile === tile.id && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.34, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, TILE_TOP_Y + TILE_CROWN + 0.04, 0]}>
               <ringGeometry args={[0.6, 0.95, 32]} />
               <meshBasicMaterial color="#7fb8ff" transparent opacity={0.4} />
             </mesh>
           )}
           {goldenTile === tile.id && (
-            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.33, 0]}>
+            <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, TILE_TOP_Y + TILE_CROWN + 0.03, 0]}>
               <ringGeometry args={[0.8, 0.95, 32]} />
               <meshBasicMaterial color="#ffce4a" transparent opacity={0.55} />
             </mesh>

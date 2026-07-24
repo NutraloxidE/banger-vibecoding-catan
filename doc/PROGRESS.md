@@ -1692,3 +1692,48 @@ gameplay-only framing/features:
 - Only `src/scene/TitleScene.tsx` + spec/progress touched. `Ambient.tsx`,
   `GameScene.tsx`, and the shared water shader are unchanged — the title just
   passes the gameplay props that already existed.
+
+---
+
+## 2026-07-24 — Refined crowned tiles with procedural sandy beaches
+
+### What changed
+- Replaced each tile's flat visible cap in `src/scene/Tiles.tsx` with a
+  tessellated hex top that rises subtly toward the centre (`+0.055`) and
+  eases back to the original `y=0.3` edge height. The underlying cylinder now
+  reads as a sandy soil/cliff body.
+- Added runtime-generated per-terrain canvas textures: biome colour occupies
+  the tile interior, then blends through a narrow, slightly irregular beach
+  boundary into sand. Fine colour noise gives the beach a dry grain, with a
+  slightly darker outermost wet-sand line. Tile-id rotations provide six
+  deterministic variations without external assets.
+- Decorations and number tokens were lifted by the same crown amount; robber,
+  storm, and Golden Hex rings were also raised above the new surface. Shared
+  edge/corner height remains unchanged, so roads, buildings, highlights, and
+  harbor bridge alignment are preserved.
+- The tile renderer is shared by gameplay and the title diorama, matching the
+  existing same-world visual contract. `spec.md` §§2/4 were updated for this
+  explicit tile-visual request.
+
+### Verified
+- `npm run build` passes.
+- In-app Chromium screenshots of the title and a generated medium gameplay
+  board show the gentle crown, sandy perimeter/side, biome-to-sand transition,
+  and readable terrain colours. Tokens, decorations, placement rings, docks,
+  and HUD remain correctly layered; no console warnings/errors.
+
+### Notes
+- The surface shape is controlled by `TILE_CROWN`; the beach width/irregularity
+  is localized in `makeTerrainTexture`. Gameplay logic and board generation
+  are untouched.
+
+---
+
+## 2026-07-24 — Per-session branch workflow
+
+- Added a repository workflow rule to `AGENTS.md`: every new development
+  session creates a task-specific `codex/` branch before editing, never works
+  directly on `main`, preserves any in-flight dirty worktree when branching,
+  and pushes each meaningful completed session branch to `origin`.
+- Purpose: every session gets an independently accessible Vercel Preview,
+  making review and iteration practical from a phone.

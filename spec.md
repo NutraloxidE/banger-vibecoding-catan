@@ -53,6 +53,10 @@ settings (next bullet).
   distance, a distinct wave-break band from the open-water foam), boats,
   drifting clouds. Nothing more (no particles, birds, or launch transitions
   — tried and rejected by the user).
+- The demo island uses the same refined tile surface as gameplay: each hex has
+  a subtly crowned centre that slopes gently toward its six edges, with a
+  narrow, irregular sandy beach band and fine procedural grain blending the
+  biome colour into the sand. The exposed tile sides are sandy as well.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -127,7 +131,11 @@ Order, top to bottom:
 Do not change its layout, visuals, or interactions without an explicit user
 request AND a matching update to this section. Its defining elements:
 
-- 3D board: biome-decorated hex tiles, always-on-top number tokens
+- 3D board: biome-decorated hex tiles with a subtly crowned centre and a mild
+  outward slope; every tile transitions through a narrow, irregular,
+  procedurally grainy sand-beach band at its edge, with sandy exposed sides
+  (the six shared edge/corner anchors keep their original height so roads,
+  buildings, and harbors remain aligned); always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,
   water (a cellular-noise / Worley wave surface — the sea plane is a
   subdivided mesh (segment count tuned for performance) vertex-displaced by
