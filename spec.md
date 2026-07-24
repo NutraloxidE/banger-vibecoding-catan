@@ -27,8 +27,19 @@ written here.
 ## 2. Title screen — first-commit look, FROZEN ✅
 
 **The atmosphere of the repository's first commit (07d9086) is the spec.**
-Keep it exactly as-is; the later additions kept are the language toggle and
-the periodic background-world regeneration below.
+Keep it exactly as-is; the later additions kept are the language toggle, the
+periodic background-world regeneration below, and the shared-world environment
+settings (next bullet).
+
+- **Environment settings match the gameplay screen** so the title reads as the
+  same world, not a separate demo. The title scene uses the gameplay values for
+  water level (`GAMEPLAY_WATER_LEVEL`), island sink (`GAMEPLAY_BOARD_SINK`, so
+  the coastline dips just below the raised waterline), water drift speed (the
+  calmer `0.4` swell), scene lighting (ambient + the warm key light + a cool
+  `#a8c8ff` fill directional light), fog (`24`–`60`), sky (`sunPosition
+  [60,40,20]`, `rayleigh 1.6`), camera FOV (`48`), and `dpr` (`[1, 1.75]`). The
+  title keeps its own identity where it differs on purpose: the slowly
+  auto-orbiting (non-interactive) camera and no harbors/docks.
 
 - Animated 3D demo island with slowly auto-orbiting camera, atmospheric
   lighting, fog, sky, water (a cellular-noise / Worley wave surface,

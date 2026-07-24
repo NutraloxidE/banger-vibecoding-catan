@@ -1657,3 +1657,38 @@ not change water colours, drift speed, levels, or the shoreline algorithm.
   the finest displacement octave in the two normal neighbour taps (visible
   shading change — would need a fresh screenshot check), or trimming segments
   further. The shore-foam gate is already free.
+
+---
+
+## 2026-07-24 — Title screen shares the gameplay world's environment settings
+
+### What changed (user request: タイトル画面のワールドをゲームプレイと同じに)
+The title-screen 3D world was intentionally differentiated from the gameplay
+world (own water level, brighter/less-lit look, no board sink). Per the user's
+AskUserQuestion pick (「環境設定のみ揃える」), the title now uses the gameplay
+screen's environment values so it reads as the same world — WITHOUT adopting
+gameplay-only framing/features:
+- `src/scene/TitleScene.tsx`: waterLevel → `GAMEPLAY_WATER_LEVEL`, drift speed →
+  `0.4` (matches GameScene's `GAMEPLAY_WATER_DRIFT_SPEED`); island sunk into the
+  sea via `<group position={[0,-GAMEPLAY_BOARD_SINK,0]}>` around `<Tiles>`;
+  lighting matched (ambient 0.75→0.85, key 1.3→1.5, added the cool `#a8c8ff`
+  fill directional light); fog `22,55`→`24,60`; sky `sunPosition [60,35,20]`→
+  `[60,40,20]`, `rayleigh 1.8`→`1.6`; camera FOV `50`→`48`; `dpr [1,1.5]`→
+  `[1,1.75]`.
+- **Deliberately kept title-only:** the slow auto-orbit (non-interactive)
+  camera, no harbors/docks/ports, and the periodic 45s world regeneration.
+  `boardRadius` stayed `6.3` — that already equals the gameplay medium board
+  `(3*2+1)*0.9`, so the water ring/foam matches with no change.
+- `spec.md` §2 (frozen title) updated in the same commit with the new
+  "environment settings match the gameplay screen" bullet.
+
+### Verified
+- `npm run build` (tsc + vite) passes; `npm run simulate` reaches a winner on
+  all 8 configs (render-only title change; simulate is headless/unaffected).
+- No live screenshot this session (Playwright not installed). Values are copied
+  verbatim from GameScene's env config, so parity is by construction.
+
+### Notes / scope
+- Only `src/scene/TitleScene.tsx` + spec/progress touched. `Ambient.tsx`,
+  `GameScene.tsx`, and the shared water shader are unchanged — the title just
+  passes the gameplay props that already existed.
