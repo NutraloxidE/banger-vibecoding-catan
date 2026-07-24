@@ -1344,3 +1344,42 @@ before (title + gameplay, both frozen, changed on explicit request).
 - Same gotcha as the first Worley entry: `Water` is shared by title + gameplay,
   no per-screen toggle. `spec.md` §2/§4 updated in the same commit to describe
   the resolution/palette/toon changes.
+
+---
+
+## 2026-07-24 — Gameplay visual polish: calmer water drift + brighter scene lighting
+
+### What changed
+Two small, user-requested tweaks scoped to the gameplay screen only (§4,
+FROZEN):
+
+- **Water noise drift frequency, slightly slower.** `Water` (`Ambient.tsx`)
+  now takes a `driftSpeed` prop (`uDriftSpeed` uniform) controlling the
+  `sin(uTime * uDriftSpeed + ...)` cell-drift term in `WATER_VERT`. Default is
+  `0.55` (byte-for-byte the original constant), so the frozen title screen —
+  which calls `<Ambient boardRadius={6.3} />` with no override — is
+  unaffected. `GameScene.tsx` passes `GAMEPLAY_WATER_DRIFT_SPEED = 0.4` via a
+  new `waterDriftSpeed` prop threaded through `Ambient` → `Water`, giving the
+  gameplay sea a calmer swell without touching the title's water.
+- **Gameplay scene lighting, slightly brighter.** `GameScene.tsx`'s
+  `ambientLight`/`directionalLight` intensities bumped a touch (0.75→0.85,
+  1.35→1.5, 0.3→0.35) so `MeshStandardMaterial`-lit tiles/pieces/docks read
+  closer to the water's brightness (the water shader has its own hardcoded
+  toon lighting, untouched by scene lights, so it reads brighter than the
+  rest of the board did before this). `TitleScene.tsx` has its own separate
+  light values and was not touched.
+
+### Verified
+- `npm run build` and `npm run simulate` (all 8 configs) pass.
+- Playwright screenshots: title screen unchanged (frozen reference intact);
+  gameplay screen renders correctly with the calmer water and brighter
+  tiles/pieces; before/after comparison confirmed the water shader (unlit by
+  scene lights) was already the brightest element relative to tiles.
+
+### Notes
+- `spec.md` §4 updated in the same commit per the frozen-surface rule.
+- Gotcha carried forward from the two Worley entries above: `Water` is shared
+  by title + gameplay. This session added a per-screen prop (`driftSpeed`,
+  mirroring the existing `level` prop pattern) instead of editing the shared
+  shader constant directly, specifically to keep the frozen title screen
+  byte-for-byte identical.

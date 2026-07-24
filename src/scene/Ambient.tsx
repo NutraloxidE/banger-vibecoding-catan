@@ -1,4 +1,4 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import * as THREE from 'three';
 import { useFrame } from '@react-three/fiber';
 
@@ -31,6 +31,7 @@ export const GAMEPLAY_WATER_LEVEL = -0.02;
 // procedural — no textures, matching the no-external-assets rule.
 const WATER_VERT = /* glsl */ `
 uniform float uTime;
+uniform float uDriftSpeed;
 varying float vHeight;
 varying vec3 vNormalW;
 varying vec2 vCell;
@@ -51,7 +52,7 @@ vec2 cellular(vec2 p){
     for (int i = -1; i <= 1; i++) {
       vec2 g = vec2(float(i), float(j));
       vec2 o = hash2(ip + g);
-      o = 0.5 + 0.5 * sin(uTime * 0.55 + 6.2831853 * o); // drift the cells
+      o = 0.5 + 0.5 * sin(uTime * uDriftSpeed + 6.2831853 * o); // drift the cells
       vec2 r = g + o - fp;
       float d = dot(r, r);
       if (d < f1) { f2 = f1; f1 = d; }
@@ -125,10 +126,15 @@ void main(){
 }
 `;
 
-export function Water({ radius, level = DEFAULT_WATER_LEVEL }: { radius: number; level?: number }) {
+// Default cell-drift time frequency (matches the frozen title screen's original
+// look). GameScene passes a slightly slower value for a calmer gameplay swell.
+export const DEFAULT_WATER_DRIFT_SPEED = 0.55;
+
+export function Water({ radius, level = DEFAULT_WATER_LEVEL, driftSpeed = DEFAULT_WATER_DRIFT_SPEED }: { radius: number; level?: number; driftSpeed?: number }) {
   const mat = useMemo(() => new THREE.ShaderMaterial({
     uniforms: {
       uTime: { value: 0 },
+      uDriftSpeed: { value: driftSpeed },
       uColorDeep: { value: new THREE.Color('#a3d3ec') },
       uColorShallow: { value: new THREE.Color('#dcf1f8') },
       uColorCrest: { value: new THREE.Color('#ffffff') },
@@ -140,6 +146,7 @@ export function Water({ radius, level = DEFAULT_WATER_LEVEL }: { radius: number;
     transparent: true,
     side: THREE.DoubleSide,
   }), []);
+  useEffect(() => { mat.uniforms.uDriftSpeed.value = driftSpeed; }, [mat, driftSpeed]);
   const geo = useMemo(() => new THREE.RingGeometry(0.01, radius * 6, 200, 72), [radius]);
   useFrame(({ clock }) => { mat.uniforms.uTime.value = clock.elapsedTime; });
   return (
@@ -187,7 +194,7 @@ function Cloud({ x, y, z, s, speed }: { x: number; y: number; z: number; s: numb
   );
 }
 
-export function Ambient({ boardRadius, boatDistance, waterLevel = DEFAULT_WATER_LEVEL }: { boardRadius: number; boatDistance?: number; waterLevel?: number }) {
+export function Ambient({ boardRadius, boatDistance, waterLevel = DEFAULT_WATER_LEVEL, waterDriftSpeed = DEFAULT_WATER_DRIFT_SPEED }: { boardRadius: number; boatDistance?: number; waterLevel?: number; waterDriftSpeed?: number }) {
   // Inner boat orbit radius. Defaults to the original formula (keeps the frozen
   // title screen unchanged); GameScene passes a larger value so the gameplay
   // boats stay well offshore and don't visually merge with the coastal harbor
@@ -205,7 +212,7 @@ export function Ambient({ boardRadius, boatDistance, waterLevel = DEFAULT_WATER_
   })), []);
   return (
     <group>
-      <Water radius={boardRadius} level={waterLevel} />
+      <Water radius={boardRadius} level={waterLevel} driftSpeed={waterDriftSpeed} />
       <Boat radius={worldR} speed={0.12} phase={0} dir={1} baseY={boatBaseY} />
       <Boat radius={worldR + 1.6} speed={0.09} phase={2.4} dir={-1} baseY={boatBaseY} />
       {clouds.map((c, i) => <Cloud key={i} {...c} />)}
