@@ -1782,3 +1782,25 @@ gameplay-only framing/features:
 - Title and medium gameplay screenshots show clearly hexagonal colour bands
   while retaining the pastel triangular facets, crown, sandy edge, tokens,
   placement rings, docks, and HUD. No console warnings/errors.
+
+---
+
+## 2026-07-24 — User-specified terrain palette with three shades
+
+### What changed
+- Applied the requested exact base colours in `src/scene/Tiles.tsx`:
+  forest `#138239`, fields `#CBB34F`, mountains `#858892`, pasture
+  `#91BC5E`, hills `#B45D30`, desert `#B45D30`.
+- Each triangular low-poly facet deterministically receives one of three HSL
+  lightness levels: dark (`-0.055`), the exact base colour, or light
+  (`+0.055`). Hue and saturation remain anchored to the supplied colour.
+- Updated the setup screen's separate `PREVIEW_COLOR` map to the same exact
+  base palette so its SVG board preview remains truthful to the 3D board.
+- Sand colour, nested regular-hex beach boundary, crown geometry, decorations,
+  and gameplay are unchanged.
+
+### Verified
+- Title and medium gameplay board checked in the in-app Chromium renderer:
+  three facet shades are distinct, terrain types remain readable, and tokens,
+  placement rings, docks, and HUD stay correctly layered. No console
+  warnings/errors.

@@ -7,12 +7,12 @@ import { tokenTexture } from './textures';
 import { useGame } from '../game/store';
 
 export const TERRAIN_COLOR: Record<Terrain, string> = {
-  forest: '#62bf8a',
-  hills: '#e58d78',
-  fields: '#f0d56f',
-  pasture: '#9bdc7c',
-  mountains: '#aab8d7',
-  desert: '#efd79d',
+  forest: '#138239',
+  hills: '#b45d30',
+  fields: '#cbb34f',
+  pasture: '#91bc5e',
+  mountains: '#858892',
+  desert: '#b45d30',
 };
 
 // The old single cylinder stays underneath as the sandy cliff/soil body.
@@ -22,6 +22,7 @@ const hexBaseGeo = new THREE.CylinderGeometry(1, 1.06, 0.3, 6);
 const TILE_TOP_Y = 0.302;
 const TILE_CROWN = 0.055;
 const TILE_EDGE_SEGMENTS = 5;
+const FACET_LIGHTNESS_STEP = 0.055;
 
 function smooth01(v: number) {
   const x = THREE.MathUtils.clamp(v, 0, 1);
@@ -118,7 +119,7 @@ function makeTerrainTexture(terrain: Terrain) {
             ? 0.28
             : 0;
       const color = terrainColor.clone().lerp(sandColor, beach);
-      color.offsetHSL(0, 0, facetTone * 0.025);
+      color.offsetHSL(0, 0, facetTone * FACET_LIGHTNESS_STEP);
 
       const offset = (py * size + px) * 4;
       image.data[offset] = Math.round(color.r * 255);

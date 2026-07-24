@@ -59,7 +59,11 @@ settings (next bullet).
   sand through a few crisp, faceted colour steps shaped as nested regular
   hexagons parallel to the tile outline (never a circular radial spread), for
   a stylized low-poly look (no realistic grain or wet-sand shading). The
-  exposed tile sides are sandy.
+  exposed tile sides are sandy. Each terrain uses three deterministic
+  lightness variants (dark/base/light) arranged across the triangular facets,
+  with these exact base colours: forest `#138239`, fields `#CBB34F`,
+  mountains `#858892`, pasture `#91BC5E`, hills `#B45D30`, and desert
+  `#B45D30`.
 - The island starts on a fixed seed (`HEXTOPIA-TITLE`), then every 45s
   regenerates into a freshly, randomly seeded procedural island, hidden
   behind a ~0.9s cover-fade (`src/scene/TitleScene.tsx`) so the background
@@ -139,7 +143,10 @@ request AND a matching update to this section. Its defining elements:
   pastel sand-beach band at its edge using crisp triangular low-poly colour
   facets arranged in nested regular-hex bands parallel to the tile outline
   (not circular radial bands), rather than realistic grain/wet shading, with
-  sandy exposed sides
+  sandy exposed sides. Each terrain's facets use three deterministic
+  lightness variants around its exact base colour: forest `#138239`, fields
+  `#CBB34F`, mountains `#858892`, pasture `#91BC5E`, hills `#B45D30`, desert
+  `#B45D30`
   (the six shared edge/corner anchors keep their original height so roads,
   buildings, and harbors remain aligned); always-on-top number tokens
   (depthTest off, raised — never buried by decorations), robber piece,

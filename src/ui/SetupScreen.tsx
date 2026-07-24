@@ -90,12 +90,12 @@ function PresetDropdown({ value, onPick }: { value: PresetKey | null; onPick: (k
 
 // 2D colors for the live preview (matches the 3D board's terrain palette)
 const PREVIEW_COLOR: Record<Terrain, string> = {
-  forest: '#2f8f4a',
-  hills: '#c06a3d',
-  fields: '#e3c24a',
-  pasture: '#8fd05e',
-  mountains: '#8d93a1',
-  desert: '#e0cd8f',
+  forest: '#138239',
+  hills: '#b45d30',
+  fields: '#cbb34f',
+  pasture: '#91bc5e',
+  mountains: '#858892',
+  desert: '#b45d30',
 };
 
 // Live SVG preview of the exact board this seed + size will generate.
