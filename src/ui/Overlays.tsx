@@ -96,36 +96,38 @@ export function HudCorner() {
 
   if (!game) return null;
   return (
-    <div className="hud-corner">
+    <>
       <div className="hud-meta">
         <span title="Round">{t('hud.round', { n: game.round })}</span>
         <span title={t('hud.seedTip')}>🌱 {game.config.seed}</span>
       </div>
-      <button className="btn btn-ghost" onClick={() => { sfx.click(); setOpen(!open); }}>⚙</button>
-      {open && (
-        <div className="settings-pop">
-          <h4>{t('hud.settings')}</h4>
-          <label className="vol-row">
-            <span>{t('setup.language')}</span>
-            <LangToggle compact />
-          </label>
-          {([['volMaster', 'hud.master'], ['volMusic', 'hud.music'], ['volFx', 'hud.effects'], ['volVoice', 'hud.voices']] as const).map(([k, label]) => (
-            <label key={k} className="vol-row">
-              <span>{t(label)}</span>
-              <input type="range" min={0} max={1} step={0.05} value={settings[k] as number}
-                onChange={(e) => setSetting(k, Number(e.target.value))} />
+      <div className="hud-options">
+        <button className="btn btn-ghost" onClick={() => { sfx.click(); setOpen(!open); }}>⚙</button>
+        {open && (
+          <div className="settings-pop">
+            <h4>{t('hud.settings')}</h4>
+            <label className="vol-row">
+              <span>{t('setup.language')}</span>
+              <LangToggle compact />
             </label>
-          ))}
-          <label className="chk">
-            <input type="checkbox" checked={settings.fastMode}
-              onChange={(e) => setSetting('fastMode', e.target.checked)} />
-            {t('hud.fastToggle')}
-          </label>
-          <button className="btn btn-ghost" onClick={() => { sfx.click(); setOpen(false); goTitle(); }}>
-            {t('hud.quit')}
-          </button>
-        </div>
-      )}
-    </div>
+            {([['volMaster', 'hud.master'], ['volMusic', 'hud.music'], ['volFx', 'hud.effects'], ['volVoice', 'hud.voices']] as const).map(([k, label]) => (
+              <label key={k} className="vol-row">
+                <span>{t(label)}</span>
+                <input type="range" min={0} max={1} step={0.05} value={settings[k] as number}
+                  onChange={(e) => setSetting(k, Number(e.target.value))} />
+              </label>
+            ))}
+            <label className="chk">
+              <input type="checkbox" checked={settings.fastMode}
+                onChange={(e) => setSetting('fastMode', e.target.checked)} />
+              {t('hud.fastToggle')}
+            </label>
+            <button className="btn btn-ghost" onClick={() => { sfx.click(); setOpen(false); goTitle(); }}>
+              {t('hud.quit')}
+            </button>
+          </div>
+        )}
+      </div>
+    </>
   );
 }

@@ -2003,3 +2003,24 @@ gameplay-only framing/features:
   The settings panel opens downward from it and remains fully inside the
   viewport. At 1280px the existing `top: 64px; right: 12px` desktop position
   is unchanged. No browser warnings or errors.
+
+---
+
+## 2026-07-24 — Round/seed left, options right on all screens
+
+### What changed
+- Split the gameplay corner HUD into two independently fixed groups on both
+  desktop and phones.
+- Round and seed now appear as a compact two-line panel at the upper-left.
+- The options gear remains fixed at the upper-right, with its settings panel
+  still opening downward inside the viewport.
+- Frozen gameplay HUD changed on explicit user request; `spec.md` §4 was
+  updated in the same change. No shared UI primitives or game logic changed.
+
+### Verification
+- `npm run build` passes; all eight `npm run simulate` configurations reach a
+  winner.
+- In-app Chromium at 1280×800 and 390×844 confirms the two-line left panel and
+  right options control are fixed in the requested corners, with no overlap or
+  horizontal overflow. The open settings panel fits both viewports, and the
+  browser reports no warnings or errors.

@@ -251,9 +251,10 @@ request AND a matching update to this section. Its defining elements:
   portrait, including inactive players; resource hand + build cards + a
   dev-card row
   (buy button with deck-remaining count + playable/held held-card buttons) +
-  roll / trade / end-turn bottom; chronicle log bottom-left; round + seed +
-  settings top-right (on phones, fixed at the upper-right directly below the
-  player-chip row, never down by the bottom controls); toasts center-top;
+  roll / trade / end-turn bottom; chronicle log bottom-left; round + seed in
+  a two-line panel fixed at the upper-left and settings fixed at the upper-right
+  on both desktop and phones (directly below the player-chip row on phones);
+  toasts center-top;
   world-event banner; NPC offer popup
   with countdown.
   (Amendment: development cards — the dev-card row lets the human buy a card and
